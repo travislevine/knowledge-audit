@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Knowledge Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/audit.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <span class="eyebrow">Self-assessment</span>
+    <h1>Knowledge Audit</h1>
+    <p class="lede">Quizzes for finding gaps in what I know and how I think. Each one starts easy and gets harder, unlocks levels at 70%, and ends with a gap report and study plan. Confidence ratings on every answer show where I'm sure but wrong.</p>
+  </header>
+
+  <section class="audits" id="audits">
+    <article class="audit-card" data-id="cs-foundations" data-total="75">
+      <div class="stack" style="gap:6px">
+        <h2>CS Foundations Audit</h2>
+        <p>Networking, the web, encryption, security, operating systems, data representation, databases and core programming ideas. Levels 2 and 3 use real snippets, calculations and ordering questions.</p>
+        <span class="progress-note">75 questions · 3 levels · 8 areas</span>
+      </div>
+      <a class="btn primary" href="audits/cs-foundations.html">Open</a>
+    </article>
+    <article class="audit-card" data-id="engineering-theory" data-total="45">
+      <div class="stack" style="gap:6px">
+        <h2>Engineering Theory Audit</h2>
+        <p>Architecture and system design, dev process and DevOps, CS concepts, and how software businesses run.</p>
+        <span class="progress-note">45 questions · 3 levels · 4 areas</span>
+      </div>
+      <a class="btn primary" href="audits/engineering-theory.html">Open</a>
+    </article>
+    <article class="audit-card" data-id="thinking-skills" data-total="75">
+      <div class="stack" style="gap:6px">
+        <h2>Thinking Skills Audit</h2>
+        <p>Logic and arguments, evidence and probability, biases and self-awareness, and problem solving and decisions.</p>
+        <span class="progress-note">75 questions · 3 levels · 4 areas</span>
+      </div>
+      <a class="btn primary" href="audits/thinking-skills.html">Open</a>
+    </article>
+  </section>
+
+  <section class="panel">
+    <h3>Saving results</h3>
+    <p>Run the save server from the repo folder and every answer is written to <code>results/&lt;audit&gt;.json</code>, ready to commit:</p>
+    <pre class="cmd">python3 serve.py</pre>
+    <p class="small muted">Opening the HTML files directly also works. Progress is then kept in the browser, and each audit has Export and Import buttons for moving results in and out of the repo.</p>
+  </section>
+</div>
+<script>
+(function () {
+  "use strict";
+  const served = /^https?:$/.test(location.protocol);
+  async function load(id) {
+    if (served) {
+      try {
+        const res = await fetch("/api/results/" + id, { cache: "no-store" });
+        if (res.headers.get("X-Knowledge-Audit")) return res.ok ? res.json() : null;
+      } catch (e) {}
+    }
+    try { return JSON.parse(localStorage.getItem("knowledge-audit:" + id)); } catch (e) { return null; }
+  }
+  document.querySelectorAll(".audit-card").forEach(async card => {
+    const data = await load(card.dataset.id);
+    const answered = data && data.first ? Object.keys(data.first).length : 0;
+    if (!answered) return;
+    const passed = data.passed ? Object.keys(data.passed).filter(k => data.passed[k]).length : 0;
+    const note = card.querySelector(".progress-note");
+    note.textContent = `${answered} of ${card.dataset.total} answered · ${passed} level${passed === 1 ? "" : "s"} passed`;
+    card.querySelector(".btn").textContent = "Continue";
+  });
+})();
+</script>
+</body>
+</html>
