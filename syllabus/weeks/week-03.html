@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 3: Algorithms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 3 of 10 · about 10 hours</span>
+    <h1>Algorithms</h1>
+    <p class="lede">With the data structures from week 2 in hand, this week is about the classic algorithms that use them: searching, sorting, exploring graphs and finding shortest paths. More importantly, you'll learn the three main strategies for designing your own algorithms: divide and conquer, greedy choices and dynamic programming. These ideas come up far beyond interviews, in databases, networks, build tools and maps.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Implement binary search correctly using loop invariants</li>
+      <li>Explain insertion sort, merge sort and quicksort, their costs and stability</li>
+      <li>Represent graphs and choose between BFS and DFS</li>
+      <li>Find shortest paths with Dijkstra's algorithm and order tasks with topological sort</li>
+      <li>Recognize when to use divide and conquer, greedy or dynamic programming</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 3.1 and 3.2 (binary search, sorting)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 3.3 and 3.4 (graphs, shortest paths)</td></tr>
+      <tr><td>Day 3</td><td>Lesson 3.5 (algorithm design)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: route planner</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 3.1 ===================== -->
+  <section class="lesson" id="w3-l1">
+    <header><span class="eyebrow">Lesson 3.1 · 40 min</span><h2>Binary search and invariants</h2></header>
+
+    <p>If a list is <b>sorted</b>, you don't need to scan it. Look at the middle element: if it's too small, the target can only be in the right half; if it's too big, only in the left half. Each comparison throws away half of what's left, so a million items take at most about 20 comparisons (2²⁰ ≈ 1 million). That's <b>O(log n)</b>.</p>
+
+    <div data-widget="bsearch"></div>
+
+    <h3>Getting it right with an invariant</h3>
+    <p>Binary search is famously easy to get subtly wrong, with off-by-one errors and infinite loops. Jon Bentley found that most professional programmers he tested couldn't write a correct one. The reliable approach is to state an <b>invariant</b>, a fact that's true before and after every iteration, and write the code to keep it true:</p>
+    <p class="keyidea">Invariant: if the target is in the list, it's somewhere in <code>items[lo..hi]</code> (inclusive).</p>
+    <pre class="code"><code>def binary_search(items, target):
+    lo, hi = 0, len(items) - 1          <span class="c"># invariant holds: the whole list</span>
+    while lo &lt;= hi:                      <span class="c"># range is non-empty</span>
+        mid = (lo + hi) // 2
+        if items[mid] == target:
+            return mid
+        if items[mid] &lt; target:
+            lo = mid + 1                <span class="c"># target can't be at mid or left of it</span>
+        else:
+            hi = mid - 1                <span class="c"># target can't be at mid or right of it</span>
+    return -1                           <span class="c"># range is empty: not present</span></code></pre>
+    <p>Each branch shrinks the range by at least one (<code>mid + 1</code> or <code>mid - 1</code>, never just <code>mid</code>), so the loop must end. When it does, the range is empty, and by the invariant the target isn't there.</p>
+    <div class="note-box warn"><strong>A bug that hid for years</strong><p>In languages with fixed-size integers, <code>(lo + hi) / 2</code> can overflow when lo and hi are both large, giving a negative index. This bug sat in Java's standard library binary search for about nine years before it was found in 2006. The safe form is <code>lo + (hi - lo) / 2</code>. Python's integers can't overflow, so it doesn't matter there.</p></div>
+
+    <h3>Variants you'll actually use</h3>
+    <ul>
+      <li><b>Lower bound</b>: the first position where an item ≥ target could go. This finds where to insert, the first of several duplicates, or the start of a range. Python's <code>bisect.bisect_left</code> does this.</li>
+      <li><b>Binary search on the answer</b>: when "is x enough?" is false up to some point and true after it, you can binary search over x. <code>git bisect</code> finds the commit that introduced a bug this way, testing about log₂(n) commits instead of all n.</li>
+    </ul>
+
+    <div class="check" data-id="w3-c1" data-answer="1">
+      <p class="check-q">At most how many comparisons does binary search need on a sorted list of 1,000,000 items?</p>
+      <ol class="check-o"><li>About 1,000</li><li>About 20</li><li>About 500,000</li><li>About 6</li></ol>
+      <div class="check-why">Each comparison halves the range: log₂(1,000,000) ≈ 20. For a billion items it's only about 30.</div>
+    </div>
+    <div class="check" data-id="w3-c2" data-answer="2">
+      <p class="check-q">Someone changes <code>lo = mid + 1</code> to <code>lo = mid</code> in the code above. What can go wrong?</p>
+      <ol class="check-o"><li>Nothing; it's equivalent</li><li>It returns the wrong index</li><li>When lo and hi are next to each other, mid equals lo, so the range never shrinks and the loop runs forever</li><li>It becomes O(n)</li></ol>
+      <div class="check-why">With lo = 4 and hi = 5, mid = 4. If items[4] &lt; target, setting lo = mid leaves lo at 4 forever. Every branch must strictly shrink the range.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=P3YID7liBug" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/P3YID7liBug/mqdefault.jpg" alt="" loading="lazy"><span><b>Algorithms: Binary Search</b><small>HackerRank</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 3.2 ===================== -->
+  <section class="lesson" id="w3-l2">
+    <header><span class="eyebrow">Lesson 3.2 · 55 min</span><h2>Sorting</h2></header>
+
+    <p>Sorting is worth studying even though you'll almost always call a library sort. Sorted data makes other problems easy (binary search, finding duplicates, merging), and the main sorting algorithms are the clearest examples of the design ideas used everywhere else.</p>
+
+    <h3>Insertion sort: O(n²), but useful</h3>
+    <p>Take each item in turn and slide it left into its place among the already-sorted items before it, like sorting a hand of cards. In the worst case each item moves past all the others: O(n²). But it's simple, sorts in place, and is <b>very fast on small or nearly sorted inputs</b>, where it's close to O(n). That's why real sorting libraries switch to insertion sort for small pieces.</p>
+
+    <h3>Merge sort: divide and conquer</h3>
+    <ol>
+      <li><b>Divide</b>: split the list in half.</li>
+      <li><b>Conquer</b>: sort each half (recursively).</li>
+      <li><b>Combine</b>: merge the two sorted halves by repeatedly taking the smaller front item.</li>
+    </ol>
+    <pre class="code"><code>def merge_sort(items):
+    if len(items) &lt;= 1:
+        return items
+    mid = len(items) // 2
+    left, right = merge_sort(items[:mid]), merge_sort(items[mid:])
+    merged, i, j = [], 0, 0
+    while i &lt; len(left) and j &lt; len(right):
+        if left[i] &lt;= right[j]:          <span class="c"># &lt;= keeps equal items in order: stable</span>
+            merged.append(left[i]); i += 1
+        else:
+            merged.append(right[j]); j += 1
+    return merged + left[i:] + right[j:]</code></pre>
+    <p>There are log₂ n levels of halving, and each level does O(n) total merging work, so merge sort is <b>O(n log n) in every case</b>. It needs O(n) extra memory for merging, and it's <b>stable</b>.</p>
+
+    <h3>Quicksort: partition around a pivot</h3>
+    <p>Pick a <b>pivot</b>, then rearrange the list so everything smaller is on its left and everything larger on its right. The pivot is now in its final position. Recurse on the two sides. With reasonably balanced splits it's <b>O(n log n)</b>, sorts in place, and is very fast in practice. With consistently bad pivots, such as always the first element on already-sorted data, the splits are lopsided and it degrades to <b>O(n²)</b>. Random or median-of-three pivots make that very unlikely. Standard quicksort isn't stable.</p>
+
+    <div data-widget="sort"></div>
+
+    <h3>Stability</h3>
+    <p>A sort is <b>stable</b> if items that compare equal keep their original order. That matters when you sort by one field after another: sort employees by name, then stably by department, and each department stays alphabetical. Python's <code>sorted()</code> and <code>list.sort()</code> are guaranteed stable.</p>
+
+    <h3>The O(n log n) limit, and what real libraries use</h3>
+    <p>Any sort that only learns about the data by <b>comparing</b> pairs needs at least about n log₂ n comparisons in the worst case. There are n! possible orderings, and each comparison can at best halve the possibilities. Non-comparison sorts like <b>counting sort</b> and <b>radix sort</b> get under that limit by exploiting the keys themselves (small integers, fixed-length strings), running in O(n + k).</p>
+    <p>Real libraries use hybrids: Python and Java (for objects) use <b>Timsort</b>, a merge sort that detects already-sorted runs and uses insertion sort for small pieces. C++ and Rust use quicksort variants (introsort, pdqsort) that fall back to heapsort to guarantee O(n log n).</p>
+
+    <div class="check" data-id="w3-c3" data-answer="0">
+      <p class="check-q">Your data is almost sorted: only a few items are out of place. Which algorithm does especially well here?</p>
+      <ol class="check-o"><li>Insertion sort, which runs close to O(n) on nearly sorted input</li><li>Quicksort with the first element as pivot</li><li>Merge sort, which does better on sorted data than on random data</li><li>None; all sorts take the same time</li></ol>
+      <div class="check-why">Each item only slides a short distance. Quicksort with a first-element pivot is actually at its <i>worst</i> on sorted data, and merge sort does the same O(n log n) work regardless (Timsort's run detection is what fixes this in practice).</div>
+    </div>
+    <div class="check" data-id="w3-c4" data-answer="3">
+      <p class="check-q">You sort a list of orders by date, then sort the result by customer. You want each customer's orders to stay in date order. What property must the second sort have?</p>
+      <ol class="check-o"><li>It must be in place</li><li>It must be O(n log n)</li><li>It must be a comparison sort</li><li>It must be stable</li></ol>
+      <div class="check-why">A stable sort keeps orders with the same customer in their existing (date) order. Alternatively, sort once by the key (customer, date).</div>
+    </div>
+    <div class="check" data-id="w3-c5" data-answer="1">
+      <p class="check-q">What is merge sort's running time on a list of n items?</p>
+      <ol class="check-o"><li>O(n) best case, O(n²) worst case</li><li>O(n log n) in all cases</li><li>O(log n)</li><li>O(n²) in all cases</li></ol>
+      <div class="check-why">It always splits evenly: log n levels with O(n) merging per level. The trade-off is O(n) extra memory.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=KF2j-9iSf4Q" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/KF2j-9iSf4Q/mqdefault.jpg" alt="" loading="lazy"><span><b>Algorithms: Merge Sort</b><small>HackerRank</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=SLauY6PpjW4" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/SLauY6PpjW4/mqdefault.jpg" alt="" loading="lazy"><span><b>Algorithms: Quicksort</b><small>HackerRank</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 3.3 ===================== -->
+  <section class="lesson" id="w3-l3">
+    <header><span class="eyebrow">Lesson 3.3 · 50 min</span><h2>Graphs, BFS and DFS</h2></header>
+
+    <p>A <b>graph</b> is a set of <b>vertices</b> (nodes) connected by <b>edges</b>. That simple idea models an enormous range of things: road maps, social networks, web links, network routers, course prerequisites, package dependencies, and states in a game. Edges can be <b>directed</b> (one-way, like "A follows B") or <b>undirected</b>, and <b>weighted</b> (a distance or cost) or unweighted.</p>
+
+    <h3>Representing a graph</h3>
+    <ul>
+      <li><b>Adjacency list</b>: for each vertex, a list of its neighbors. In Python, a dict of lists: <code>{"A": ["B", "C"], "B": ["D"], …}</code>. It uses O(V + E) space and is the default choice, since most real graphs are <b>sparse</b> (few edges per vertex).</li>
+      <li><b>Adjacency matrix</b>: a V × V grid where cell [i][j] says whether there's an edge. It answers "is there an edge from i to j?" in O(1), but uses O(V²) space. That only makes sense for small or dense graphs.</li>
+    </ul>
+    <p>A grid such as a maze or a game map is a graph too: each cell is a vertex, connected to its neighbors up, down, left and right.</p>
+
+    <h3>Breadth-first search (BFS)</h3>
+    <p>BFS explores outward in <b>layers</b>: first the start, then everything 1 step away, then everything 2 steps away, and so on. It uses a <b>queue</b>. Because it reaches every vertex by the fewest possible edges, <b>BFS finds shortest paths in unweighted graphs</b>.</p>
+    <pre class="code"><code>from collections import deque
+
+def shortest_path(graph, start, goal):
+    previous = {start: None}            <span class="c"># doubles as the visited set</span>
+    queue = deque([start])
+    while queue:
+        node = queue.popleft()
+        if node == goal:                <span class="c"># walk back through previous to build the path</span>
+            path = []
+            while node is not None:
+                path.append(node)
+                node = previous[node]
+            return path[::-1]
+        for nxt in graph[node]:
+            if nxt not in previous:     <span class="c"># mark when queued, so nothing is queued twice</span>
+                previous[nxt] = node
+                queue.append(nxt)
+    return None</code></pre>
+
+    <h3>Depth-first search (DFS)</h3>
+    <p>DFS goes as deep as it can along one branch before backing up, using a <b>stack</b> (or recursion, which uses the call stack). It finds <i>a</i> path, not necessarily the shortest. It's the natural tool for exploring everything reachable, finding connected components, detecting cycles, solving puzzles by backtracking, and ordering dependencies (next lesson).</p>
+
+    <div data-widget="grid"></div>
+
+    <p>Both BFS and DFS visit each vertex and edge at most once, so both are <b>O(V + E)</b>. Both also need a <b>visited set</b>. Without it, any graph with a cycle would make them loop forever, which is the most common graph bug.</p>
+
+    <div class="check" data-id="w3-c6" data-answer="0">
+      <p class="check-q">You want the fewest moves between two squares in a maze where every move costs the same. Which algorithm?</p>
+      <ol class="check-o"><li>BFS, which explores in layers, so the first time it reaches the goal is by a shortest path</li><li>DFS, because it goes deep quickly</li><li>Binary search</li><li>Either; they always find the same path</li></ol>
+      <div class="check-why">BFS guarantees shortest paths in unweighted graphs. DFS can wander a long way round before reaching the goal; try both in the widget.</div>
+    </div>
+    <div class="check" data-id="w3-c7" data-answer="2">
+      <p class="check-q">A social network has 100 million users, each with about 200 friends. Why use an adjacency list rather than an adjacency matrix?</p>
+      <ol class="check-o"><li>Matrices can't represent friendships</li><li>Lists are always faster for every operation</li><li>A matrix would need 10¹⁶ cells, almost all empty; a list stores only the ~20 billion actual connections</li><li>Lists keep friends sorted</li></ol>
+      <div class="check-why">(10⁸)² = 10¹⁶ cells versus O(V + E). Real graphs are sparse, so adjacency lists are the default.</div>
+    </div>
+    <div class="check" data-id="w3-c8" data-answer="3">
+      <p class="check-q">A BFS implementation never finishes on a graph where A links to B and B links back to A. What's the most likely bug?</p>
+      <ol class="check-o"><li>It uses a queue instead of a stack</li><li>The graph is too big</li><li>BFS can't handle directed graphs</li><li>It doesn't track visited vertices, so it keeps going round the A → B → A cycle</li></ol>
+      <div class="check-why">Every graph traversal needs a visited set (marked when a node is queued or first seen) whenever the graph can contain cycles.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=zaBhtODEL0w" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/zaBhtODEL0w/mqdefault.jpg" alt="" loading="lazy"><span><b>Algorithms: Graph Search, DFS and BFS</b><small>HackerRank</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 3.4 ===================== -->
+  <section class="lesson" id="w3-l4">
+    <header><span class="eyebrow">Lesson 3.4 · 45 min</span><h2>Shortest paths and dependency order</h2></header>
+
+    <h3>Dijkstra's algorithm</h3>
+    <p>When edges have weights, like road distances or network latencies, the path with the fewest edges isn't necessarily the cheapest. <b>Dijkstra's algorithm</b> finds the cheapest path from one source to every other vertex, as long as <b>no edge weight is negative</b>.</p>
+    <p>It keeps a tentative distance for every vertex (0 for the source, infinity for the rest) and repeats:</p>
+    <ol>
+      <li>Take the unvisited vertex with the <b>smallest</b> tentative distance. Its distance is now final.</li>
+      <li><b>Relax</b> each of its edges: if going through this vertex gives a neighbor a shorter distance than it currently has, update the neighbor's distance (and remember the vertex as its predecessor).</li>
+    </ol>
+    <p>"Take the smallest" is a job for a <b>min-heap</b> (week 2), which makes the whole algorithm <b>O((V + E) log V)</b>.</p>
+    <pre class="code"><code>Edges: A–B 4, A–C 1, C–B 2, B–D 1, C–D 5        (from A)
+
+Step  Take   A   B        C   D         Why
+0     –      0   ∞        ∞   ∞
+1     A      0   4        1   ∞         relax A's edges
+2     C      0   3 (via C) 1   6         1 + 2 = 3 beats 4; 1 + 5 = 6
+3     B      0   3        1   4 (via B) 3 + 1 = 4 beats 6
+4     D      done: A → C → B → D costs 4</code></pre>
+    <p>Why no negative edges? Once a vertex is taken as the smallest, Dijkstra assumes nothing can ever reach it more cheaply. A negative edge found later could break that assumption. Graphs with negative weights need <b>Bellman-Ford</b>, which is slower at O(V × E). Route planners also use <b>A*</b>, which is Dijkstra plus an estimate of the remaining distance (like a straight line on a map) to search towards the goal first.</p>
+
+    <h3>Topological sort</h3>
+    <p>Many problems are about <b>order</b>, not distance: build steps that depend on other steps, packages that depend on packages, courses with prerequisites, spreadsheet cells that use other cells. Model "A must happen before B" as a directed edge A → B. If the graph has no cycles (a <b>DAG</b>, directed acyclic graph), a <b>topological sort</b> lists the vertices so every edge points forward.</p>
+    <p><b>Kahn's algorithm</b> does it with a queue:</p>
+    <ol>
+      <li>Count each vertex's <b>in-degree</b> (the number of edges coming in).</li>
+      <li>Queue every vertex with in-degree 0, meaning it has nothing left to wait for.</li>
+      <li>Repeatedly take a vertex from the queue, add it to the output, and decrease its neighbors' in-degrees. Queue any neighbor that drops to 0.</li>
+      <li>If the output ends up with fewer vertices than the graph, the rest are stuck waiting on each other: there's a <b>cycle</b>, so no valid order exists.</li>
+    </ol>
+    <p>This is how <code>make</code>, package managers like pip and npm, and task schedulers work out what to run first, and how they report circular dependencies.</p>
+
+    <div class="check" data-id="w3-c9" data-answer="1">
+      <p class="check-q">Why does Dijkstra's algorithm use a priority queue (min-heap)?</p>
+      <ol class="check-o"><li>To store the edges in sorted order</li><li>Every step needs the unvisited vertex with the smallest tentative distance, and a heap gives that in O(log V)</li><li>To detect negative edges</li><li>To keep track of visited vertices</li></ol>
+      <div class="check-why">Scanning all vertices for the minimum each time gives O(V²). A heap makes it O((V + E) log V), which is much better for sparse graphs.</div>
+    </div>
+    <div class="check" data-id="w3-c10" data-answer="2">
+      <p class="check-q">Course X requires Y, Y requires Z, and Z requires X. What does a topological sort report?</p>
+      <ol class="check-o"><li>The order Z, Y, X</li><li>The order X, Y, Z</li><li>That no valid order exists, because the prerequisites form a cycle</li><li>An arbitrary order</li></ol>
+      <div class="check-why">None of the three ever reaches in-degree 0, so Kahn's algorithm outputs nothing for them. That's exactly how build tools detect circular dependencies.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=GazC3A4OQTE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/GazC3A4OQTE/mqdefault.jpg" alt="" loading="lazy"><span><b>Dijkstra's Algorithm</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 3.5 ===================== -->
+  <section class="lesson" id="w3-l5">
+    <header><span class="eyebrow">Lesson 3.5 · 60 min</span><h2>Algorithm design: divide and conquer, greedy, dynamic programming</h2></header>
+
+    <p>Most algorithms you'll meet, and most you'll invent, use one of a few strategies. Recognizing which one fits is the hard part; the code usually follows.</p>
+
+    <h3>Divide and conquer</h3>
+    <p>Split the problem into <b>independent</b> smaller pieces, solve each one (usually recursively), and combine the answers. Merge sort and binary search are the classic examples. The key word is <i>independent</i>: the halves of a merge sort never need each other's results. Splitting in half each time is where the log n factor in O(n log n) comes from.</p>
+
+    <h3>Greedy algorithms</h3>
+    <p>Build the answer one step at a time, always taking the choice that looks best right now, and never reconsider. Greedy algorithms are simple and fast, and <b>sometimes correct</b>. Dijkstra's algorithm is greedy (always take the closest vertex), and so is scheduling the most meetings in one room by always picking the one that ends earliest.</p>
+    <p>But greedy can fail. Make change for 6 using coins {1, 3, 4}: greedy takes the biggest coin first, 4, then 1, then 1, for 3 coins. The best answer is 3 + 3: 2 coins. Greedy happens to work for standard currency, but not for arbitrary coin systems. <b>You need a reason why the locally best choice can't hurt you later</b>; without one, test it against a brute-force solution.</p>
+
+    <h3>Dynamic programming</h3>
+    <p>Dynamic programming (DP) applies when a problem breaks into subproblems that <b>overlap</b>, meaning the same smaller question gets asked many times, and the best answer can be built from the best answers to subproblems. Instead of recomputing, <b>solve each subproblem once and store the answer</b>.</p>
+    <p>Fibonacci shows the overlap. <code>fib(5)</code> calls <code>fib(4)</code> and <code>fib(3)</code>, and <code>fib(4)</code> calls <code>fib(3)</code> again, and so on, giving exponential work. There are two ways to fix it:</p>
+    <pre class="code"><code>from functools import cache
+
+@cache                                  <span class="c"># top-down: memoization</span>
+def fib(n):
+    return n if n &lt; 2 else fib(n - 1) + fib(n - 2)
+
+def fib_table(n):                       <span class="c"># bottom-up: tabulation</span>
+    a, b = 0, 1
+    for _ in range(n):
+        a, b = b, a + b
+    return a</code></pre>
+    <p>Both are O(n) instead of O(2ⁿ). Here's the coin problem solved properly with a table, where <code>best[x]</code> is the fewest coins that make the amount x:</p>
+    <pre class="code"><code>def min_coins(coins, amount):
+    best = [0] + [float("inf")] * amount
+    for x in range(1, amount + 1):
+        for c in coins:
+            if c &lt;= x:
+                best[x] = min(best[x], best[x - c] + 1)   <span class="c"># use coin c, then best way to make the rest</span>
+    return best[amount] if best[amount] != float("inf") else -1
+
+min_coins([1, 3, 4], 6)    <span class="c"># 2  (3 + 3)</span></code></pre>
+    <p>A reliable recipe for DP problems:</p>
+    <ol>
+      <li><b>Define the state</b>: what smaller question will you answer? ("Fewest coins for amount x.")</li>
+      <li><b>Write the recurrence</b>: how does the answer for a state come from smaller states? (Try each coin as the last one.)</li>
+      <li><b>Set the base cases</b>: the smallest states you can answer directly. (Amount 0 needs 0 coins.)</li>
+      <li><b>Choose an order</b>: make sure smaller states are computed before they're needed, or use memoization and let recursion handle it.</li>
+    </ol>
+    <p>DP appears in edit distance (spell checkers, <code>diff</code>), sequence alignment in biology, route planning, and many optimization problems.</p>
+
+    <h3>When there's no fast algorithm</h3>
+    <p>Some problems, like finding the shortest route that visits every city (the traveling salesman problem), have no known algorithm that's efficient for all inputs. These <b>NP-hard</b> problems come up in scheduling, packing and routing. In practice you use heuristics, approximations or limits on the input size. Recognizing that you're facing one saves you from searching for a perfect fast solution that probably doesn't exist.</p>
+
+    <div class="check" data-id="w3-c11" data-answer="1">
+      <p class="check-q">What makes a problem a good fit for dynamic programming rather than plain divide and conquer?</p>
+      <ol class="check-o"><li>The input is sorted</li><li>The subproblems overlap, meaning the same smaller question comes up many times, so storing answers saves repeated work</li><li>The problem involves a graph</li><li>A greedy choice always works</li></ol>
+      <div class="check-why">Merge sort's halves never repeat, so there's nothing to cache. Fibonacci and coin change ask the same subquestions over and over, which is where DP pays off.</div>
+    </div>
+    <div class="check" data-id="w3-c12" data-answer="3">
+      <p class="check-q">With coins {1, 5, 6, 9}, how many coins does the greedy "take the biggest coin that fits" approach use for 11, and what's optimal?</p>
+      <ol class="check-o"><li>Greedy 2, optimal 2</li><li>Greedy 3, optimal 3</li><li>Greedy 2, optimal 3</li><li>Greedy 3 (9 + 1 + 1), optimal 2 (5 + 6)</li></ol>
+      <div class="check-why">Greedy grabs 9 and is left needing two 1s. DP considers every last coin and finds 5 + 6. Always ask why a greedy choice is safe before trusting it.</div>
+    </div>
+    <div class="check" data-id="w3-c13" data-answer="0">
+      <p class="check-q">What's the difference between memoization and tabulation?</p>
+      <ol class="check-o"><li>Memoization is top-down (recursion plus a cache of answers); tabulation is bottom-up (fill a table from the smallest subproblems up)</li><li>Memoization is always faster</li><li>Tabulation only works for Fibonacci</li><li>They solve different kinds of problems</li></ol>
+      <div class="check-why">Both store each subproblem's answer once. Memoization is often easier to write; tabulation avoids recursion depth limits and can sometimes keep only the last row of the table to save memory.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=P8Xa2BitN3I" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/P8Xa2BitN3I/mqdefault.jpg" alt="" loading="lazy"><span><b>Algorithms: Memoization and Dynamic Programming</b><small>HackerRank</small></span></a>
+    </div>
+
+    <div class="note-box"><strong>Week 3 in one paragraph</strong><p>Binary search turns sorted data into O(log n) lookups, as long as you keep an invariant. Good comparison sorts are O(n log n), and stability matters when sorting by several keys. Graphs model connections; BFS gives shortest paths when steps cost the same, DFS explores and orders, Dijkstra handles non-negative weights with a heap, and topological sort orders dependencies and catches cycles. To design algorithms, split independent pieces (divide and conquer), justify greedy choices before trusting them, and cache overlapping subproblems (dynamic programming).</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Route planner: search, sort and shortest paths</h2>
+    <p>Build the core of a small route planner: binary search and merge sort, BFS through a grid maze, Dijkstra over a weighted map of towns, a topological sort for course planning (with cycle detection), and dynamic programming for making change. Then run the included demo script to see it all working on real-looking data.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-03-routes/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-03-routes
+python3 -m unittest -v
+python3 demo.py        <span class="c"># once the tests pass</span></code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li>All functions in <code>routes.py</code> implemented without the library shortcuts listed in the README</li>
+      <li>All tests passing, and <code>demo.py</code> running</li>
+      <li>Short answers to the design questions at the bottom of the README</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 3 quiz</h2>
+    <p>15 questions covering all five lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-03.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-02.html">← Week 2</a><a class="btn" href="../index.html">Back to the syllabus</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 3;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
