@@ -10,6 +10,23 @@ and builds a gap report with a study plan and links to resources.
 | Engineering Theory | 45 | Architecture, DevOps, CS concepts, how software businesses run |
 | Thinking Skills | 75 | Logic, evidence and probability, biases, problem solving and decisions |
 
+## CS Breadth Syllabus
+
+A 10-week plan covering the core of a computer science degree, about 10 hours
+a week. Each week has written lessons with interactive widgets and
+checkpoint questions, short videos, a Python mini-project with tests, a
+15-question quiz and a self-rating. Weeks 1–3 are written so far:
+
+1. How computers represent and run things
+2. Programming fundamentals and data structures
+3. Algorithms
+
+Open `syllabus/index.html` (or the link on the landing page). Projects live
+in `syllabus/projects/` and run with `python3 -m unittest -v`.
+
+Progress is summarized in `results/REPORT.md`, rebuilt after every save. See
+`syllabus/REVIEW.md` for how someone else can review it.
+
 ## How it works
 
 - Pick an answer, then lock it in as **Guessing**, **Fairly sure** or **Certain**.
@@ -25,7 +42,9 @@ python3 serve.py
 ```
 
 This opens `http://localhost:8000` and saves every answer to
-`results/<audit>.json`. Commit those files to keep a history of your progress:
+`results/<id>.json` (audits, weekly quizzes and `syllabus.json`), then
+rebuilds `results/REPORT.md`. Commit those files to keep a history of your
+progress:
 
 ```bash
 git add results/
@@ -47,8 +66,11 @@ audits/*.html         one page per audit
 audits/data/*.js      question banks
 assets/audit.js       quiz engine (scoring, levels, report, saving)
 assets/audit.css      shared styles
+syllabus/             10-week syllabus: lessons, quizzes, projects
+assets/syllabus.*     syllabus engine and styles
 serve.py              local server + results API
-results/              saved progress (one JSON file per audit)
+report.py             builds results/REPORT.md from results/*.json
+results/              saved progress (one JSON file per audit or quiz)
 ```
 
 ## Adding an audit
