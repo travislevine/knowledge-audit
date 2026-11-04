@@ -5,8 +5,9 @@
     python3 serve.py --port 9000
     python3 serve.py --no-browser
 
-Every answer is written to results/<audit-id>.json, so progress can be
-committed with git. Uses only the standard library (Python 3.8+).
+Every answer is written to results/<id>.json (one file per audit, weekly
+quiz, plus syllabus.json), and results/REPORT.md is rebuilt after each save.
+Commit the results/ folder to keep a history. Standard library only (3.8+).
 """
 import argparse
 import json
@@ -20,6 +21,8 @@ from functools import partial
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+import report
 
 ROOT = Path(__file__).resolve().parent
 RESULTS = ROOT / "results"
@@ -84,7 +87,7 @@ class Handler(SimpleHTTPRequestHandler):
             data = json.loads(self.rfile.read(length))
         except ValueError:
             return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "body is not valid JSON"})
-        if not isinstance(data, dict) or data.get("audit") != audit_id:
+        if not isinstance(data, dict) or data.get("audit", data.get("id")) != audit_id:
             return self.send_json(HTTPStatus.BAD_REQUEST, {"error": "body does not match this audit"})
 
         RESULTS.mkdir(exist_ok=True)
@@ -100,6 +103,10 @@ class Handler(SimpleHTTPRequestHandler):
                 if os.path.exists(tmp):
                     os.unlink(tmp)
                 return self.send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+            try:
+                report.write_report()
+            except Exception as exc:  # a broken report must never block saving
+                self.log_error("could not rebuild REPORT.md: %s", exc)
         self.send_json(HTTPStatus.NO_CONTENT)
 
     def log_message(self, fmt, *args):
