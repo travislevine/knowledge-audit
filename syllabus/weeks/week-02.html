@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 2: Programming fundamentals and data structures</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 2 of 10 · about 10 hours</span>
+    <h1>Programming fundamentals and data structures</h1>
+    <p class="lede">This week covers the ideas that decide whether code is correct and whether it's fast: how variables really refer to data, how recursion uses the call stack, how to reason about growth with Big-O, and the handful of data structures that almost every program is built from. If week 1 was about what's in memory, week 2 is about how programs organize it.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Predict how values, references and mutation behave, including closures and scope</li>
+      <li>Write and trace recursive functions, and explain the call stack</li>
+      <li>Find the Big-O of code and compare growth rates</li>
+      <li>Explain dynamic arrays and linked lists, including amortized cost</li>
+      <li>Explain how hash tables work: hashing, collisions, load factor and resizing</li>
+      <li>Choose between stacks, queues, trees, heaps and hash maps for a problem</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 2.1 and 2.2 (references, recursion)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 2.3 and 2.4 (Big-O, arrays and linked lists)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 2.5 and 2.6 (hash tables, stacks, queues, trees, heaps)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: build your own data structures</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 2.1 ===================== -->
+  <section class="lesson" id="w2-l1">
+    <header><span class="eyebrow">Lesson 2.1 · 45 min</span><h2>Values, references, scope and closures</h2></header>
+
+    <p>A surprising number of bugs come from one misunderstanding: what a variable actually holds. In Python, JavaScript, Java (for objects), Ruby and C#, <b>a variable is a name that refers to an object</b> somewhere in memory. Assignment doesn't copy the object; it makes the name point at it.</p>
+    <pre class="code"><code>a = [1, 2, 3]
+b = a          <span class="c"># b now refers to the SAME list as a</span>
+b.append(4)
+print(a)       <span class="c"># [1, 2, 3, 4]</span>
+print(a is b)  <span class="c"># True: one object, two names</span></code></pre>
+    <p>Two names for one object is called <b>aliasing</b>. It's harmless when the object can't change, and a source of bugs when it can.</p>
+
+    <h3>Mutable vs immutable</h3>
+    <p>In Python, <code>int</code>, <code>float</code>, <code>str</code>, <code>tuple</code> and <code>frozenset</code> are <b>immutable</b>: operations on them create new objects. <code>list</code>, <code>dict</code>, <code>set</code> and most custom objects are <b>mutable</b>: they can change in place, and every name referring to them sees the change.</p>
+    <pre class="code"><code>s = "hi"
+t = s
+t += "!"       <span class="c"># creates a NEW string and rebinds t</span>
+print(s)       <span class="c"># "hi" (unchanged)</span>
+
+x = [1]
+y = x
+y += [2]       <span class="c"># for lists, += mutates in place</span>
+print(x)       <span class="c"># [1, 2]</span></code></pre>
+
+    <h3>Passing arguments</h3>
+    <p>When you call a function, the parameter becomes another name for the same object. This is sometimes called "call by sharing". The function can <b>mutate</b> the object the caller passed in, but <b>reassigning</b> the parameter only changes the local name:</p>
+    <pre class="code"><code>def add_item(items):
+    items.append("x")    <span class="c"># caller sees this</span>
+
+def replace(items):
+    items = ["new"]      <span class="c"># only rebinds the local name; caller sees nothing</span></code></pre>
+    <p>To avoid surprises, either don't mutate arguments, or make it obvious from the name (<code>sort_in_place</code>) and return <code>None</code>, as <code>list.sort()</code> does. Copy when you need independence: <code>list(a)</code> or <code>a.copy()</code> makes a <b>shallow copy</b> (a new outer list, same inner objects); <code>copy.deepcopy(a)</code> copies everything recursively.</p>
+
+    <h3>Equality vs identity</h3>
+    <p><code>==</code> asks "are these equal in value?" and <code>is</code> asks "are these the same object?" (in JavaScript, <code>===</code> on objects checks identity). Use <code>is</code> only for singletons like <code>None</code>.</p>
+
+    <h3>Scope and closures</h3>
+    <p><b>Scope</b> is where a name is visible. Python looks names up in order: Local, Enclosing function, Global, Built-in (LEGB). A <b>closure</b> is a function that remembers variables from the scope where it was created, even after that scope has finished:</p>
+    <pre class="code"><code>def make_counter():
+    count = 0
+    def increment():
+        nonlocal count      <span class="c"># modify the enclosing variable, don't create a local</span>
+        count += 1
+        return count
+    return increment
+
+c = make_counter()
+c(); c()
+print(c())   <span class="c"># 3: count lives on inside the closure</span></code></pre>
+    <p>Closures capture <b>variables, not values</b>. A function looks the variable up when it <i>runs</i>, not when it's created, which leads to the classic late-binding bug:</p>
+    <pre class="code"><code>fns = [lambda: i for i in range(3)]
+print([f() for f in fns])    <span class="c"># [2, 2, 2], not [0, 1, 2]</span>
+fns = [lambda i=i: i for i in range(3)]   <span class="c"># fix: bind the current value as a default</span></code></pre>
+
+    <div class="check" data-id="w2-c1" data-answer="1">
+      <p class="check-q">What does this print?</p>
+      <pre class="code"><code>def reset(nums):
+    nums = []
+data = [1, 2]
+reset(data)
+print(data)</code></pre>
+      <ol class="check-o"><li>[]</li><li>[1, 2]</li><li>None</li><li>An error</li></ol>
+      <div class="check-why"><code>nums = []</code> only rebinds the local name to a new list. The caller's list is untouched. <code>nums.clear()</code> would have emptied it.</div>
+    </div>
+    <div class="check" data-id="w2-c2" data-answer="2">
+      <p class="check-q"><code>grid = [[0] * 3] * 3</code>, then <code>grid[0][0] = 1</code>. What is <code>grid</code>?</p>
+      <ol class="check-o"><li>[[1, 0, 0], [0, 0, 0], [0, 0, 0]]</li><li>An error</li><li>[[1, 0, 0], [1, 0, 0], [1, 0, 0]]</li><li>[[1, 1, 1], [0, 0, 0], [0, 0, 0]]</li></ol>
+      <div class="check-why">Multiplying the outer list copies the <i>reference</i> three times, so all three rows are the same list object. Build independent rows with <code>[[0] * 3 for _ in range(3)]</code>.</div>
+    </div>
+    <div class="check" data-id="w2-c3" data-answer="0">
+      <p class="check-q">Why can a Python <code>tuple</code> be used as a dictionary key, but a <code>list</code> can't?</p>
+      <ol class="check-o"><li>Tuples are immutable, so their hash can't change after they're stored; a list could change and end up in the wrong bucket</li><li>Lists are slower</li><li>Tuples are always shorter</li><li>Dictionaries only accept strings and tuples</li></ol>
+      <div class="check-why">Hash tables (lesson 2.5) find a key by its hash. If a key could change after insertion, its hash would change and the table could never find it again. So Python only allows hashable (in practice, immutable) keys.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 2.2 ===================== -->
+  <section class="lesson" id="w2-l2">
+    <header><span class="eyebrow">Lesson 2.2 · 40 min</span><h2>Recursion and the call stack</h2></header>
+
+    <p>A <b>recursive</b> function solves a problem by calling itself on a smaller version of the same problem. Every recursive function needs two parts:</p>
+    <ul>
+      <li>A <b>base case</b>: an input simple enough to answer directly, with no further calls.</li>
+      <li>A <b>recursive case</b>: break the problem into a smaller piece, call yourself on it, and combine the result.</li>
+    </ul>
+    <pre class="code"><code>def total(nums):
+    if not nums:                    <span class="c"># base case: empty list</span>
+        return 0
+    return nums[0] + total(nums[1:])  <span class="c"># first item + total of the rest</span></code></pre>
+    <p>The trick to writing recursion is to <b>trust the recursive call</b>. Don't trace every level in your head. Assume <code>total(nums[1:])</code> correctly returns the sum of the rest, and only ask: given that, how do I get the answer for the whole list? Then check that the base case is right and that every call moves towards it.</p>
+
+    <h3>The call stack</h3>
+    <p>Each function call gets a <b>stack frame</b>: a block of memory holding its parameters, local variables and the place to return to. Frames are pushed when a function is called and popped when it returns, so the most recent call is always on top (last in, first out). Here's <code>factorial(3)</code>:</p>
+    <pre class="code"><code>factorial(3)                    stack grows ↓
+  → 3 * factorial(2)            [factorial(3)]
+      → 2 * factorial(1)        [factorial(3), factorial(2)]
+          → returns 1           [factorial(3), factorial(2), factorial(1)]
+      ← 2 * 1 = 2               frames pop as each call returns
+  ← 3 * 2 = 6</code></pre>
+    <p>The stack has a limited size. Recursion without a working base case, or simply too deep, causes a <b>stack overflow</b>. Python stops at a recursion depth of about 1,000 by default (<code>RecursionError</code>) and doesn't optimize tail calls, so very deep recursion in Python should usually become a loop. The same stack is what you see in an exception traceback: it's the list of frames that were active when the error happened.</p>
+
+    <h3>When recursion is the right tool</h3>
+    <p>Recursion fits problems with a recursive shape: trees (a tree is a node plus smaller trees), nested data like JSON or folders, divide-and-conquer algorithms like merge sort (week 3), and backtracking searches. For simple iteration over a list, a loop is clearer and avoids the depth limit.</p>
+    <pre class="code"><code>def depth(node):
+    if node is None:
+        return 0
+    return 1 + max(depth(node.left), depth(node.right))</code></pre>
+
+    <h3>A warning: repeated work</h3>
+    <p>Naive recursive Fibonacci, <code>fib(n) = fib(n-1) + fib(n-2)</code>, recomputes the same values again and again: <code>fib(40)</code> makes over 300 million calls. Caching results (memoization) brings that down to about 40. You'll see this properly with dynamic programming in week 3.</p>
+
+    <div class="check" data-id="w2-c4" data-answer="3">
+      <p class="check-q">What's wrong with this function?</p>
+      <pre class="code"><code>def count_down(n):
+    print(n)
+    count_down(n - 1)</code></pre>
+      <ol class="check-o"><li>It counts up instead of down</li><li>Functions can't call themselves</li><li>It prints n twice</li><li>It has no base case, so it recurses until the stack overflows (RecursionError in Python)</li></ol>
+      <div class="check-why">Add <code>if n &lt; 0: return</code> (or similar) at the top. Every recursive function needs a case that stops.</div>
+    </div>
+    <div class="check" data-id="w2-c5" data-answer="1">
+      <p class="check-q">What is the call stack used for?</p>
+      <ol class="check-o"><li>Storing every object a program creates</li><li>Keeping track of active function calls: their local variables, parameters, and where to return to</li><li>Holding the program's source code</li><li>Caching recursive results automatically</li></ol>
+      <div class="check-why">Objects created with lists, dicts and so on generally live on the heap; the stack holds frames for active calls. When a function returns, its frame is popped and its local variables disappear (unless a closure keeps them alive).</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=Mv9NEXX1VHc" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/Mv9NEXX1VHc/mqdefault.jpg" alt="" loading="lazy"><span><b>What on Earth is Recursion?</b><small>Computerphile</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=KEEKn7Me-ms" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/KEEKn7Me-ms/mqdefault.jpg" alt="" loading="lazy"><span><b>Algorithms: Recursion</b><small>HackerRank</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 2.3 ===================== -->
+  <section class="lesson" id="w2-l3">
+    <header><span class="eyebrow">Lesson 2.3 · 45 min</span><h2>Big-O: how code scales</h2></header>
+
+    <p>Timing code tells you how fast it is on one machine with one input. <b>Big-O notation</b> describes something more useful: <b>how the work grows as the input grows</b>. An O(n) algorithm does roughly twice the work when n doubles; an O(n²) one does four times the work.</p>
+
+    <h3>The rules</h3>
+    <ul>
+      <li><b>Drop constants.</b> 3n + 5 is O(n). Constants depend on the machine and language; growth doesn't.</li>
+      <li><b>Keep only the dominant term.</b> n² + 100n is O(n²), because for large n the n² term swamps everything else.</li>
+      <li><b>Different inputs get different letters.</b> Looping over a list of n users and then a list of m orders is O(n + m), not O(n). A loop over orders inside a loop over users is O(n × m).</li>
+      <li><b>Usually we mean the worst case</b>, unless someone says "average" or "amortized".</li>
+    </ul>
+
+    <h3>The common classes, fastest to slowest</h3>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Big-O</th><th>Name</th><th>Typical example</th></tr></thead>
+      <tbody>
+        <tr><td>O(1)</td><td>constant</td><td>index into an array, look up a key in a hash map</td></tr>
+        <tr><td>O(log n)</td><td>logarithmic</td><td>binary search: halve the problem each step</td></tr>
+        <tr><td>O(n)</td><td>linear</td><td>scan a list once</td></tr>
+        <tr><td>O(n log n)</td><td>linearithmic</td><td>good sorting algorithms (merge sort, Timsort)</td></tr>
+        <tr><td>O(n²)</td><td>quadratic</td><td>compare every pair (nested loops over the same data)</td></tr>
+        <tr><td>O(2ⁿ)</td><td>exponential</td><td>try every subset; naive recursive Fibonacci</td></tr>
+      </tbody>
+    </table></div>
+
+    <div data-widget="growth"></div>
+
+    <h3>Reading Big-O from code</h3>
+    <pre class="code"><code>for x in items:              <span class="c"># O(n)</span>
+    ...
+
+for x in items:              <span class="c"># O(n²): n iterations, each doing n work</span>
+    for y in items:
+        ...
+
+while n &gt; 1:                 <span class="c"># O(log n): n halves every iteration</span>
+    n //= 2
+
+for x in items:              <span class="c"># O(n²) in disguise:</span>
+    if x in other_list:      <span class="c">#   "in" on a list is itself an O(n) scan</span>
+        ...</code></pre>
+    <p>That last one is the most common performance bug in real code. Turning <code>other_list</code> into a set first (<code>other = set(other_list)</code>) makes each lookup O(1), and the whole loop O(n).</p>
+
+    <h3>Space complexity and amortized cost</h3>
+    <p>Big-O can also describe <b>memory</b>. Building a set of n items uses O(n) extra space; a recursive function n levels deep uses O(n) stack space. Trading memory for speed, as in the set trick above, is one of the most common optimizations.</p>
+    <p><b>Amortized</b> cost averages occasional expensive operations over many cheap ones. Appending to a Python list is usually O(1), but sometimes the list must grow and copy everything (O(n)). Because it doubles in size each time, those copies are rare enough that the average cost per append stays O(1). The next lesson shows why.</p>
+
+    <div class="check" data-id="w2-c6" data-answer="2">
+      <p class="check-q">What is the Big-O of this function?</p>
+      <pre class="code"><code>def f(items):
+    total = 0
+    for x in items:
+        total += x
+    for x in items:
+        for y in range(10):
+            total += x * y
+    return total</code></pre>
+      <ol class="check-o"><li>O(n²)</li><li>O(10n²)</li><li>O(n)</li><li>O(n log n)</li></ol>
+      <div class="check-why">The first loop is n and the second is n × 10. That's 11n in total, and dropping the constant gives O(n). The inner loop runs a fixed 10 times; it doesn't grow with the input.</div>
+    </div>
+    <div class="check" data-id="w2-c7" data-answer="0">
+      <p class="check-q">An O(n²) report takes 2 seconds for 10,000 rows. Roughly how long for 100,000 rows?</p>
+      <ol class="check-o"><li>About 200 seconds</li><li>About 20 seconds</li><li>About 4 seconds</li><li>About 2,000 seconds</li></ol>
+      <div class="check-why">10× the input means 10² = 100× the work: 2 s × 100 = 200 s. This kind of estimate is how you spot code that will fall over at production scale.</div>
+    </div>
+    <div class="check" data-id="w2-c8" data-answer="3">
+      <p class="check-q">Which change most improves <code>for u in users: if u.id in banned_ids_list: ...</code> when both lists are large?</p>
+      <ol class="check-o"><li>Sorting <code>users</code> first</li><li>Using a while loop instead of a for loop</li><li>Moving the code into a function</li><li>Converting <code>banned_ids_list</code> to a set once, before the loop</li></ol>
+      <div class="check-why"><code>in</code> on a list scans it (O(m)), so the loop is O(n × m). A set lookup is O(1) on average, which makes the loop O(n + m), counting the one-off cost of building the set.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=v4cd1O4zkGw" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/v4cd1O4zkGw/mqdefault.jpg" alt="" loading="lazy"><span><b>Big O Notation</b><small>HackerRank</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 2.4 ===================== -->
+  <section class="lesson" id="w2-l4">
+    <header><span class="eyebrow">Lesson 2.4 · 40 min</span><h2>Arrays and linked lists</h2></header>
+
+    <h3>Arrays: one contiguous block</h3>
+    <p>An <b>array</b> stores its elements side by side in one block of memory. If each element is 8 bytes and the array starts at address 1000, element <i>i</i> lives at <code>1000 + 8 × i</code>. Because that's simple arithmetic, <b>indexing is O(1)</b> no matter how big the array is. Arrays are also cache-friendly, as you saw in week 1.</p>
+    <p>The cost is that inserting or deleting in the middle means shifting every later element over: O(n). Adding or removing at the <i>end</i> is cheap.</p>
+
+    <h3>Dynamic arrays: how lists grow</h3>
+    <p>A raw array has a fixed size. A <b>dynamic array</b> (Python's <code>list</code>, Java's <code>ArrayList</code>, C++'s <code>vector</code>, JavaScript arrays) hides that: it allocates more space than it needs (its <b>capacity</b>), and when it fills up it allocates a bigger block, usually 1.5 to 2 times larger, and copies everything across.</p>
+    <p>Copying n items is O(n), so why is append still called O(1)? Because with doubling, the copies get rarer as the list grows. To append n items, the copies cost 1 + 2 + 4 + … + n, which is less than 2n in total. Spread over n appends, that's less than 2 copies per append: <b>amortized O(1)</b>. If the array grew by a fixed amount instead (say 10 slots each time), the total copying would be O(n²). Geometric growth is what makes it work, and you'll implement it in this week's project.</p>
+
+    <h3>Linked lists: nodes and pointers</h3>
+    <p>A <b>linked list</b> stores each element in its own <b>node</b>, together with a pointer to the next node (and, in a doubly linked list, the previous one). Nodes can live anywhere in memory.</p>
+    <pre class="code"><code>head → [ 3 | •] → [ 7 | •] → [ 9 | None]
+
+class Node:
+    def __init__(self, value, next=None):
+        self.value = value
+        self.next = next</code></pre>
+    <ul>
+      <li><b>Insert or delete at a node you already have:</b> O(1). Just change a couple of pointers, with no shifting.</li>
+      <li><b>Find the i-th element:</b> O(n). You have to walk from the head.</li>
+      <li><b>Memory:</b> an extra pointer or two per element, and poor cache locality.</li>
+    </ul>
+
+    <h3>Which to use?</h3>
+    <p>In practice, <b>dynamic arrays win almost every time</b>, because of O(1) indexing and cache-friendliness. Linked lists earn their place when you hold references to nodes and need O(1) removal from the middle (an LRU cache, which you'll build this week) or when you need a queue with fast operations at both ends. For that, Python provides <code>collections.deque</code>.</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Operation</th><th>Dynamic array</th><th>Linked list</th></tr></thead>
+      <tbody>
+        <tr><td>Get element i</td><td>O(1)</td><td>O(n)</td></tr>
+        <tr><td>Append at end</td><td>O(1) amortized</td><td>O(1) with a tail pointer</td></tr>
+        <tr><td>Insert / delete at front</td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Insert / delete at a known node</td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Search for a value</td><td>O(n)</td><td>O(n)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="check" data-id="w2-c9" data-answer="1">
+      <p class="check-q">Why is <code>list.pop(0)</code> slow on a long Python list, while <code>list.pop()</code> is fast?</p>
+      <ol class="check-o"><li>pop(0) has to search for the element first</li><li>Removing the first element shifts every other element one place left, which is O(n); removing the last is O(1)</li><li>pop(0) copies the whole list into a new one</li><li>They're actually the same speed</li></ol>
+      <div class="check-why">Python lists are dynamic arrays. For a queue, use <code>collections.deque</code>, whose <code>popleft()</code> is O(1).</div>
+    </div>
+    <div class="check" data-id="w2-c10" data-answer="0">
+      <p class="check-q">A dynamic array grows by doubling. Why is append still O(1) amortized even though growing copies every element?</p>
+      <ol class="check-o"><li>Doubling makes the copies rare: the total copying across n appends is under 2n, so the average per append is constant</li><li>The copying happens in a background thread</li><li>Copying memory is always O(1)</li><li>The array never actually needs to grow</li></ol>
+      <div class="check-why">1 + 2 + 4 + … + n &lt; 2n. Growing by a fixed number of slots instead would make the total O(n²).</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=njTh_OwMljA" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/njTh_OwMljA/mqdefault.jpg" alt="" loading="lazy"><span><b>Data Structures: Linked Lists</b><small>HackerRank</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 2.5 ===================== -->
+  <section class="lesson" id="w2-l5">
+    <header><span class="eyebrow">Lesson 2.5 · 45 min</span><h2>Hash tables</h2></header>
+
+    <p>Hash tables are probably the most useful data structure in everyday programming. Python's <code>dict</code> and <code>set</code>, JavaScript's <code>Map</code> and objects, and Java's <code>HashMap</code> are all hash tables. They give <b>O(1) average time</b> to insert, look up and delete by key.</p>
+
+    <h3>How they work</h3>
+    <ol>
+      <li>The table is an array of <b>buckets</b>.</li>
+      <li>A <b>hash function</b> turns a key into a large integer. The same key always gives the same hash, and different keys usually give different hashes.</li>
+      <li>The bucket index is <code>hash(key) % number_of_buckets</code>.</li>
+      <li>Store the key-value pair in that bucket. To look it up later, hash the key again and go straight to the same bucket.</li>
+    </ol>
+    <p>No scanning is needed: the hash tells you where to look.</p>
+
+    <h3>Collisions</h3>
+    <p>Different keys sometimes land in the same bucket. That's a <b>collision</b>, and it's unavoidable when there are more possible keys than buckets. There are two main ways to handle it:</p>
+    <ul>
+      <li><b>Separate chaining</b>: each bucket holds a small list of entries. A lookup hashes to the bucket, then checks the few keys there. Java's HashMap and the widget below work this way.</li>
+      <li><b>Open addressing</b>: if a bucket is taken, probe other buckets in a fixed pattern until you find a free one. Python's dict works this way.</li>
+    </ul>
+
+    <div data-widget="hashtable"></div>
+
+    <h3>Load factor and resizing</h3>
+    <p>The <b>load factor</b> is entries ÷ buckets. As it rises, chains get longer and lookups slow down. So when it passes a threshold (often 0.75), the table <b>resizes</b>: it allocates about twice as many buckets and <b>rehashes</b> every key, because <code>hash % buckets</code> changes when the number of buckets changes. Like dynamic arrays, this doubling keeps inserts O(1) amortized.</p>
+
+    <h3>When O(1) isn't O(1)</h3>
+    <p>O(1) is the <i>average</i> case. If many keys collide, a bucket's chain becomes long and operations degrade to O(n). That can happen with a poor hash function, or on purpose: in "hash flooding" attacks, attackers send keys crafted to collide and slow a server to a crawl. That's why modern languages randomize their string hashes per process. Java's HashMap also switches a long chain into a balanced tree.</p>
+
+    <h3>Rules for keys</h3>
+    <ul>
+      <li>Keys must be <b>hashable</b>, and their hash must never change while they're in the table. That's why mutable lists can't be dict keys (lesson 2.1).</li>
+      <li>If you define equality for your own class, define the hash to match: <b>equal objects must have equal hashes</b>. In Python that means implementing <code>__eq__</code> and <code>__hash__</code> together (dataclasses with <code>frozen=True</code> do it for you).</li>
+      <li>Hash tables don't keep keys sorted. Python dicts do preserve insertion order (since 3.7), but that's a feature of the implementation, not of hash tables in general.</li>
+    </ul>
+
+    <div class="check" data-id="w2-c11" data-answer="2">
+      <p class="check-q">A hash table has 8 buckets and 7 entries, and resizes when the load factor exceeds 0.75. You insert one more key. What happens?</p>
+      <ol class="check-o"><li>Nothing special; the key goes in a bucket</li><li>The table removes the oldest key</li><li>Load factor becomes 8/8 = 1.0 &gt; 0.75, so it grows (say to 16 buckets) and rehashes every key into its new bucket</li><li>The insert fails</li></ol>
+      <div class="check-why">Every key must be rehashed because its bucket index is <code>hash % buckets</code>, and the number of buckets just changed. (With 7 entries it was already at 0.875, so a real table would have resized earlier.)</div>
+    </div>
+    <div class="check" data-id="w2-c12" data-answer="1">
+      <p class="check-q">What's the worst-case time to look up a key in a hash table with separate chaining, if every key has collided into one bucket?</p>
+      <ol class="check-o"><li>O(1)</li><li>O(n)</li><li>O(log n)</li><li>O(n²)</li></ol>
+      <div class="check-why">The lookup has to check every entry in that one chain. Good hash functions and resizing make this very unlikely by accident; randomized hashing defends against attackers forcing it.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=shs0KM3wKv8" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/shs0KM3wKv8/mqdefault.jpg" alt="" loading="lazy"><span><b>Data Structures: Hash Tables</b><small>HackerRank</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 2.6 ===================== -->
+  <section class="lesson" id="w2-l6">
+    <header><span class="eyebrow">Lesson 2.6 · 50 min</span><h2>Stacks, queues, trees and heaps</h2></header>
+
+    <h3>Stacks and queues</h3>
+    <p>These two are defined by the <b>order things come out</b>:</p>
+    <ul>
+      <li>A <b>stack</b> is last in, first out (LIFO): push on top, pop from the top. Uses: the call stack, undo, browser back buttons, checking that brackets match, and depth-first search.</li>
+      <li>A <b>queue</b> is first in, first out (FIFO): add at the back, remove from the front. Uses: job queues, print queues, message queues between services (week 9), and breadth-first search.</li>
+    </ul>
+    <p>In Python, a list works well as a stack (<code>append</code> and <code>pop</code> are both O(1) at the end). For a queue, use <code>collections.deque</code>, as you saw in lesson 2.4.</p>
+    <pre class="code"><code>def balanced(text):
+    pairs = {")": "(", "]": "[", "}": "{"}
+    stack = []
+    for ch in text:
+        if ch in "([{":
+            stack.append(ch)
+        elif ch in pairs:
+            if not stack or stack.pop() != pairs[ch]:
+                return False
+    return not stack
+
+balanced("{[()()]}")   <span class="c"># True</span>
+balanced("([)]")       <span class="c"># False</span></code></pre>
+
+    <h3>Trees</h3>
+    <p>A <b>tree</b> is a hierarchy: a <b>root</b> node, where each node has zero or more <b>children</b> and every node except the root has exactly one <b>parent</b>. Nodes with no children are <b>leaves</b>. File systems, the HTML DOM, JSON, organization charts and the syntax of code itself are all trees.</p>
+    <p>A <b>binary search tree (BST)</b> is a binary tree (at most two children per node) with an ordering rule: <b>everything in a node's left subtree is smaller, everything in its right subtree is larger</b>. To find a value, compare it at each node and go left or right, discarding half the remaining tree each step if it's balanced.</p>
+    <pre class="code"><code>          50
+        /    \
+      30      70
+     /  \    /  \
+   20   40  60   80     find 60: 50 → right → 70 → left → 60 (3 steps)</code></pre>
+    <ul>
+      <li>A <b>balanced</b> BST has height about log₂ n, so search, insert and delete are <b>O(log n)</b>. It also keeps everything sorted, so you can walk it in order or find all keys in a range, which a hash table can't do.</li>
+      <li>Insert sorted data into a plain BST and it degenerates into a linked list: height n, so operations become <b>O(n)</b>. Self-balancing trees (red-black trees, AVL trees) fix this by rotating nodes. Databases use a wide, shallow cousin, the <b>B-tree</b>, for their indexes (week 7).</li>
+    </ul>
+
+    <h3>Heaps and priority queues</h3>
+    <p>Sometimes you don't need everything sorted. You just need to repeatedly get the <b>smallest</b> (or largest) item: the next job by priority, the next event by time, the closest unvisited node in Dijkstra's algorithm (week 3). That's a <b>priority queue</b>, and the usual implementation is a <b>binary heap</b>.</p>
+    <p>A min-heap is a binary tree where <b>every parent is ≤ its children</b>, so the smallest item is always at the root. It's stored compactly in an array: the children of index <i>i</i> are at <code>2i + 1</code> and <code>2i + 2</code>, and its parent is at <code>(i − 1) // 2</code>.</p>
+    <ul>
+      <li><b>Peek at the minimum:</b> O(1), since it's <code>heap[0]</code>.</li>
+      <li><b>Push:</b> put the item at the end, then "sift up", swapping with its parent while it's smaller. O(log n).</li>
+      <li><b>Pop the minimum:</b> move the last item to the root, then "sift down", swapping with the smaller child while it's larger. O(log n).</li>
+    </ul>
+    <p>Python's <code>heapq</code> module implements this on a plain list. You'll write your own this week.</p>
+
+    <h3>Choosing a structure</h3>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>You need to…</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Look things up by key, fast</td><td>Hash map (dict)</td></tr>
+        <tr><td>Check membership, remove duplicates</td><td>Hash set</td></tr>
+        <tr><td>Keep items in order, index by position</td><td>Dynamic array (list)</td></tr>
+        <tr><td>Process the most recent item first</td><td>Stack</td></tr>
+        <tr><td>Process items in arrival order</td><td>Queue (deque)</td></tr>
+        <tr><td>Repeatedly get the smallest or largest item</td><td>Heap (priority queue)</td></tr>
+        <tr><td>Keep keys sorted, with range queries</td><td>Balanced tree (or a sorted list for mostly-static data)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="check" data-id="w2-c13" data-answer="2">
+      <p class="check-q">A hospital system must always treat the most urgent patient next, while new patients keep arriving. Which structure fits best?</p>
+      <ol class="check-o"><li>A queue (first come, first served)</li><li>A stack</li><li>A priority queue backed by a heap</li><li>A sorted list, re-sorted after every arrival</li></ol>
+      <div class="check-why">A heap gives O(log n) inserts and O(log n) "remove most urgent". Re-sorting the whole list on every arrival is O(n log n) each time.</div>
+    </div>
+    <div class="check" data-id="w2-c14" data-answer="0">
+      <p class="check-q">You insert 1, 2, 3, 4, 5 … 1,000 in order into a plain (non-balancing) binary search tree. How long does a search take now?</p>
+      <ol class="check-o"><li>O(n): each new key goes to the right of the last, so the tree is really a linked list</li><li>O(log n), as for any BST</li><li>O(1)</li><li>O(n log n)</li></ol>
+      <div class="check-why">BSTs are only O(log n) when balanced. Self-balancing trees (red-black, AVL) or B-trees keep the height logarithmic no matter what order the data arrives in.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=wjI1WNcIntg" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/wjI1WNcIntg/mqdefault.jpg" alt="" loading="lazy"><span><b>Data Structures: Stacks and Queues</b><small>HackerRank</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=oSWTXtMglKE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/oSWTXtMglKE/mqdefault.jpg" alt="" loading="lazy"><span><b>Data Structures: Trees</b><small>HackerRank</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=t0Cq6tVNRBA" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/t0Cq6tVNRBA/mqdefault.jpg" alt="" loading="lazy"><span><b>Data Structures: Heaps</b><small>HackerRank</small></span></a>
+    </div>
+
+    <div class="note-box"><strong>Week 2 in one paragraph</strong><p>Variables refer to objects, so watch for aliasing and mutation. Recursion means trusting a smaller call and having a base case, all running on the call stack. Big-O tells you how work grows; watch for hidden loops like <code>in</code> on a list. Arrays give fast indexing and locality, linked lists give cheap splicing, hash tables give O(1) average lookups, heaps give the minimum fast, and balanced trees keep things sorted. Picking the right structure is often the whole optimization.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Build your own data structures</h2>
+    <p>Implement four classes in plain Python, without using the built-in structure that does the same job: a dynamic array that grows by doubling, a hash map with separate chaining and resizing, a binary min-heap, and an LRU cache that combines a hash map with a doubly linked list.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-02-structures/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-02-structures
+python3 -m unittest -v</code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li><code>DynamicArray</code>, <code>HashMap</code>, <code>MinHeap</code> and <code>LRUCache</code> implemented in <code>structures.py</code></li>
+      <li>All tests passing</li>
+      <li>The Big-O table at the bottom of the README filled in</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 2 quiz</h2>
+    <p>15 questions covering all six lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-02.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-01.html">← Week 1</a><a class="btn" href="week-03.html">Next: Week 3 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 2;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
