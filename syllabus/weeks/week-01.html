@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 1: How computers represent and run things</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 1 of 10 · about 10 hours</span>
+    <h1>How computers represent and run things</h1>
+    <p class="lede">Everything a computer does comes down to patterns of bits and a processor that follows instructions one at a time. This week you'll learn how those bits become numbers, negative numbers, fractions and text, and what actually happens when your code runs. Almost every strange bug involving overflow, rounding or garbled text traces back to something in this week.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Convert between binary, decimal and hexadecimal, and reason with powers of two</li>
+      <li>Explain two's complement and predict integer overflow</li>
+      <li>Explain why floating point is approximate, and how to handle money and comparisons</li>
+      <li>Explain Unicode, code points and UTF-8, and diagnose garbled text</li>
+      <li>Describe the fetch-decode-execute cycle and the memory hierarchy</li>
+      <li>Explain compiling, interpreting, bytecode and JIT compilation</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 1.1 and 1.2 (bits, bases, negative numbers)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 1.3 and 1.4 (floating point, text)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 1.5 and 1.6 (the CPU, how code runs)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: bitkit</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 1.1 ===================== -->
+  <section class="lesson" id="w1-l1">
+    <header><span class="eyebrow">Lesson 1.1 · 45 min</span><h2>Bits, bytes and number bases</h2></header>
+
+    <p>A <b>bit</b> is the smallest unit of information: a single 0 or 1. Hardware stores bits as two physical states, like a high or low voltage, or a charged or uncharged cell. Two states are easy to tell apart reliably even with electrical noise, which is why computers use binary rather than decimal.</p>
+    <p>One bit alone can't say much, so bits are grouped. Eight bits make a <b>byte</b>, the smallest unit most computers can address in memory. Every file, image, network packet and variable is ultimately a sequence of bytes. What those bytes <i>mean</i> depends entirely on how a program chooses to interpret them. The same byte can be the number 65, the letter A, or part of a pixel's color.</p>
+
+    <h3>Place value, in any base</h3>
+    <p>You already know how base 10 works: in 352, the 3 means 3 hundreds, because each position is worth ten times the one to its right (1, 10, 100…). Binary is the same idea with base 2: each position is worth twice the one to its right.</p>
+    <pre class="code"><code>Binary:     1     0     1     1     0     1
+Place:     32    16     8     4     2     1
+Value:     32  +  0  +  8  +  4  +  0  +  1  =  45</code></pre>
+    <p>To convert decimal to binary, repeatedly take the largest power of two that fits. For 45: 32 fits (13 left), 16 doesn't, 8 fits (5 left), 4 fits (1 left), 2 doesn't, 1 fits. That gives 101101. Another method is to divide by 2 repeatedly and read the remainders from bottom to top.</p>
+
+    <div data-widget="bits" data-mode="unsigned"></div>
+
+    <h3>Powers of two are worth memorizing</h3>
+    <p><b>n bits can represent 2ⁿ different values.</b> One byte gives 2⁸ = 256 values, so an unsigned byte holds 0 to 255. This one rule answers many questions: how many colors 24 bits can encode (2²⁴ ≈ 16.7 million), why IPv4 runs out of addresses (2³² ≈ 4.3 billion), and how many bits you need for 1,000 values (2¹⁰ = 1,024, so 10 bits).</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Power</th><th>Value</th><th>Where you see it</th></tr></thead>
+      <tbody>
+        <tr><td>2⁸</td><td>256</td><td>values in a byte</td></tr>
+        <tr><td>2¹⁰</td><td>1,024</td><td>"kilo" in memory sizes (KiB)</td></tr>
+        <tr><td>2¹⁶</td><td>65,536</td><td>port numbers (0–65535)</td></tr>
+        <tr><td>2³²</td><td>≈ 4.3 billion</td><td>IPv4 addresses, 32-bit integers</td></tr>
+        <tr><td>2⁶⁴</td><td>≈ 1.8 × 10¹⁹</td><td>64-bit integers and memory addresses</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Hexadecimal: binary for humans</h3>
+    <p>Long binary strings are hard to read, so programmers use <b>hexadecimal</b> (base 16), with digits 0–9 then A–F for 10–15. The key fact: <b>one hex digit is exactly 4 bits</b>, so a byte is always two hex digits. You convert by splitting binary into groups of four:</p>
+    <pre class="code"><code>1011 0110   →   B 6   →   0xB6
+B = 11, so 0xB6 = 11 × 16 + 6 = 182</code></pre>
+    <p>You'll see hex everywhere: colors (<code>#FF8800</code> is red 255, green 136, blue 0), memory addresses, MAC addresses, hashes, and escape sequences like <code>\x41</code>. The <code>0x</code> prefix just marks a number as hex.</p>
+
+    <div class="check" data-id="w1-c1" data-answer="2">
+      <p class="check-q">What is 0x2F in decimal?</p>
+      <ol class="check-o"><li>32</li><li>45</li><li>47</li><li>215</li></ol>
+      <div class="check-why">2 × 16 + F (15) = 47. In binary it's 0010 1111: each hex digit maps to one group of four bits.</div>
+    </div>
+    <div class="check" data-id="w1-c2" data-answer="1">
+      <p class="check-q">You need to give each of 3,000 users a unique ID made of bits. What's the minimum number of bits?</p>
+      <ol class="check-o"><li>11</li><li>12</li><li>16</li><li>3,000</li></ol>
+      <div class="check-why">2¹¹ = 2,048 is too few and 2¹² = 4,096 is enough, so 12 bits. To find the minimum, look for the smallest n where 2ⁿ ≥ the number of values.</div>
+    </div>
+    <div class="check" data-id="w1-c3" data-answer="0">
+      <p class="check-q">Shifting a binary number one place to the left (adding a 0 on the right) does what to its value?</p>
+      <ol class="check-o"><li>Doubles it, as long as no bits fall off the top</li><li>Adds 1</li><li>Halves it</li><li>Nothing; it's the same number</li></ol>
+      <div class="check-why">Every bit moves to a position worth twice as much, just as appending a 0 in decimal multiplies by ten. Compilers use shifts as fast multiplication and division by powers of two. Try the shift buttons in the widget above.</div>
+    </div>
+
+    <div class="note-box"><strong>Key idea</strong><p>Bits have no meaning on their own. A program decides whether a byte is a number, a letter, or a color. Every encoding this week is an agreement about how to read bits.</p></div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=1GSjbWt0c9M" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/1GSjbWt0c9M/mqdefault.jpg" alt="" loading="lazy"><span><b>Representing Numbers and Letters with Binary</b><small>Crash Course Computer Science #4</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 1.2 ===================== -->
+  <section class="lesson" id="w1-l2">
+    <header><span class="eyebrow">Lesson 1.2 · 40 min</span><h2>Negative numbers and overflow</h2></header>
+
+    <p>Unsigned integers only cover zero and up. To store negative numbers we need a convention for which bit patterns mean negative values. The obvious idea, using the top bit as a sign (0 positive, 1 negative), has two problems: it gives you both +0 and −0, and the circuits for adding signed numbers become more complicated.</p>
+
+    <h3>Two's complement</h3>
+    <p>Almost every modern computer uses <b>two's complement</b> instead. The rule is simple: <b>the top bit's place value is negative</b>. In 8 bits, the leftmost bit is worth −128 instead of +128, and the other bits keep their usual values.</p>
+    <pre class="code"><code>0000 0101  =                      4 + 1  =    5
+1111 1011  = −128 + 64 + 32 + 16 + 8 + 2 + 1  =   −5
+1000 0000  = −128                              = −128
+0111 1111  = 64 + 32 + 16 + 8 + 4 + 2 + 1      =  127</code></pre>
+    <p>So an 8-bit signed integer ranges from −128 to 127. In general, n bits give −2ⁿ⁻¹ to 2ⁿ⁻¹ − 1. A 32-bit int ranges from about −2.1 billion to +2.1 billion.</p>
+    <p>To negate a number in two's complement, <b>flip every bit and add 1</b>. For 5: 0000 0101 → flip → 1111 1010 → add 1 → 1111 1011 = −5. The big advantage is that the hardware doesn't need separate circuits for subtraction: adding 5 and −5 as plain binary gives 1 0000 0000, and since only 8 bits are kept, the carry falls off and the result is 0.</p>
+
+    <div data-widget="bits" data-mode="signed"></div>
+
+    <h3>Overflow</h3>
+    <p>Fixed-width integers can only hold so much. When a result doesn't fit, it <b>overflows</b>. In two's complement the result usually wraps around: 127 + 1 in 8 bits is 0111 1111 + 1 = 1000 0000, which is −128. Press +1 on 127 in the widget to see it.</p>
+    <p>Different languages handle overflow differently, and this matters for bugs:</p>
+    <ul>
+      <li><b>Java and C#</b> (by default) wrap silently.</li>
+      <li><b>C and C++</b>: unsigned overflow wraps, but signed overflow is <i>undefined behavior</i>. The compiler may assume it never happens and optimize in surprising ways.</li>
+      <li><b>Rust</b> panics on overflow in debug builds and wraps in release builds, and offers explicit methods like <code>checked_add</code>.</li>
+      <li><b>Python</b> integers have arbitrary precision, so they never overflow. They just use more memory as they grow.</li>
+      <li><b>JavaScript</b> numbers are 64-bit floats, so integers above 2⁵³ silently lose precision instead (that's next lesson's topic).</li>
+    </ul>
+    <div class="note-box warn"><strong>Real-world overflow</strong><p>The "Year 2038 problem": many systems store time as a signed 32-bit count of seconds since 1 January 1970. That counter reaches 2³¹ − 1 on 19 January 2038 and then wraps to a date in 1901. In 1996 the first Ariane 5 rocket was destroyed when a 64-bit float was converted to a 16-bit integer that couldn't hold it.</p></div>
+
+    <div class="check" data-id="w1-c4" data-answer="3">
+      <p class="check-q">In 8-bit two's complement, what does the bit pattern 1111 1111 represent?</p>
+      <ol class="check-o"><li>255</li><li>−127</li><li>−128</li><li>−1</li></ol>
+      <div class="check-why">−128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 = −1. All ones is always −1 in two's complement, whatever the width. Read as unsigned, the same pattern is 255.</div>
+    </div>
+    <div class="check" data-id="w1-c5" data-answer="1">
+      <p class="check-q">A Java program stores a player's score in an <code>int</code> (32-bit signed). The score passes 2,147,483,647. What happens?</p>
+      <ol class="check-o"><li>Java throws an exception</li><li>It wraps around to a large negative number</li><li>It automatically switches to a 64-bit long</li><li>It stays at the maximum value</li></ol>
+      <div class="check-why">Java ints wrap silently, so 2,147,483,647 + 1 becomes −2,147,483,648. Use <code>long</code>, or <code>Math.addExact</code>, which throws on overflow, when values might grow that large.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=4qH4unVtJkE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/4qH4unVtJkE/mqdefault.jpg" alt="" loading="lazy"><span><b>Twos complement: Negative numbers in binary</b><small>Ben Eater</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 1.3 ===================== -->
+  <section class="lesson" id="w1-l3">
+    <header><span class="eyebrow">Lesson 1.3 · 45 min</span><h2>Floating point</h2></header>
+
+    <p>Integers can't hold fractions, and fixed-width integers can't hold very large or very small values. <b>Floating point</b> solves both with the same idea as scientific notation: store a number as a few significant digits and an exponent, as in 6.02 × 10²³. The decimal point "floats" to wherever the exponent puts it.</p>
+
+    <h3>How IEEE 754 stores a number</h3>
+    <p>Nearly all hardware follows the IEEE 754 standard. A 32-bit float (a <code>float</code> in C or Java) has three fields; a 64-bit double (<code>double</code>, Python's <code>float</code>, every JavaScript number) has the same three with more bits:</p>
+    <ul>
+      <li><b>Sign</b> (1 bit): 0 for positive, 1 for negative.</li>
+      <li><b>Exponent</b> (8 bits in float32, 11 in float64): a power of two, stored with a bias (127 for float32) so it can be negative.</li>
+      <li><b>Fraction</b> (23 bits in float32, 52 in float64): the significant digits after an implied leading 1.</li>
+    </ul>
+    <p>The value is <code>(−1)^sign × 1.fraction × 2^(exponent − 127)</code>. Float64 gives about 15–17 significant decimal digits; float32 gives about 7.</p>
+
+    <div data-widget="float"></div>
+
+    <h3>Why 0.1 + 0.2 ≠ 0.3</h3>
+    <p>Floats store binary fractions: halves, quarters, eighths and so on. Some decimals are exact in binary (0.5, 0.25, 0.75), but most aren't. Just as 1/3 = 0.333… never ends in decimal, <b>0.1 never ends in binary</b>: it's 0.000110011001100… forever. The float stores the nearest value it can, which is very slightly off. Type 0.1 into the widget above and look at the "Actually stored" value.</p>
+    <pre class="code"><code>&gt;&gt;&gt; 0.1 + 0.2
+0.30000000000000004
+&gt;&gt;&gt; 0.1 + 0.2 == 0.3
+False
+&gt;&gt;&gt; import math
+&gt;&gt;&gt; math.isclose(0.1 + 0.2, 0.3)
+True</code></pre>
+    <p>This isn't a bug in Python or JavaScript. Every language that uses IEEE floats behaves this way. Three practical rules follow:</p>
+    <ol>
+      <li><b>Don't compare floats with <code>==</code>.</b> Check whether they're within a small tolerance instead (<code>math.isclose</code>, or <code>abs(a - b) &lt; 1e-9</code>).</li>
+      <li><b>Don't use floats for money.</b> Store whole cents as integers, or use a decimal type (Python's <code>decimal.Decimal</code>, SQL's <code>NUMERIC</code>, Java's <code>BigDecimal</code>).</li>
+      <li><b>Precision runs out for large numbers.</b> A float64 represents every integer exactly only up to 2⁵³ (about 9 × 10¹⁵). Beyond that, gaps appear. Twitter's API returns tweet IDs as strings for this reason: JavaScript would round them. Try 16777217 in the widget: it's 2²⁴ + 1, too precise for float32.</li>
+    </ol>
+
+    <h3>Special values</h3>
+    <p>IEEE 754 also defines <b>infinity</b> (1.0 / 0.0 in many languages), <b>NaN</b> ("not a number", e.g. 0.0 / 0.0), and a <b>negative zero</b>. NaN has a famous property: it's not equal to anything, including itself, so <code>x != x</code> is a classic NaN check.</p>
+
+    <div class="check" data-id="w1-c6" data-answer="2">
+      <p class="check-q">Which of these can a binary float store <i>exactly</i>?</p>
+      <ol class="check-o"><li>0.1</li><li>0.2</li><li>0.375</li><li>1/3</li></ol>
+      <div class="check-why">0.375 = 1/4 + 1/8, a finite sum of binary fractions (0.011 in binary). 0.1, 0.2 and 1/3 all repeat forever in binary, so they get rounded.</div>
+    </div>
+    <div class="check" data-id="w1-c7" data-answer="1">
+      <p class="check-q">An online shop stores prices as floats and adds up a cart of 1,000 items priced $0.10. What's the best fix for the tiny rounding errors in the total?</p>
+      <ol class="check-o"><li>Round the total to 2 decimal places at the end</li><li>Store prices as whole cents in integers (or use a decimal type)</li><li>Switch from float32 to float64</li><li>Use <code>==</code> more carefully</li></ol>
+      <div class="check-why">Rounding at the end hides the symptom, but errors can still affect tax calculations, comparisons and reports along the way. Integer cents or decimal types are exact for money. Float64 only makes the errors smaller.</div>
+    </div>
+    <div class="check" data-id="w1-c8" data-answer="0">
+      <p class="check-q">In a float32, what does the exponent field mainly control?</p>
+      <ol class="check-o"><li>The scale, meaning where the binary point sits (how big or small the number is)</li><li>How many significant digits are stored</li><li>Whether the number is negative</li><li>Whether the number is an integer</li></ol>
+      <div class="check-why">The exponent sets the scale (a power of two). The fraction field sets the precision, and the sign bit sets the sign. Because precision is fixed, the gap between neighboring floats grows as the exponent grows.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=PZRI1IfStY0" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/PZRI1IfStY0/mqdefault.jpg" alt="" loading="lazy"><span><b>Floating Point Numbers</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 1.4 ===================== -->
+  <section class="lesson" id="w1-l4">
+    <header><span class="eyebrow">Lesson 1.4 · 40 min</span><h2>Text, Unicode and UTF-8</h2></header>
+
+    <p>To store text, we need an agreement that maps characters to numbers. The early standard was <b>ASCII</b> (1963): 128 characters, including English letters, digits, punctuation and control codes like newline, numbered 0–127. 'A' is 65, 'a' is 97, '0' is 48. ASCII fits in 7 bits, so in a byte the top bit was always free.</p>
+    <p>ASCII has no é, no ñ, no Cyrillic, no Chinese, no emoji. For decades, different regions used that spare top bit in incompatible ways (Latin-1, Windows-1252, Shift-JIS and many more). A file written in one encoding and read in another came out garbled.</p>
+
+    <h3>Unicode separates "which character" from "which bytes"</h3>
+    <p><b>Unicode</b> fixed this by giving every character in every writing system a unique number called a <b>code point</b>, written <code>U+</code> followed by hex: 'A' is U+0041, 'é' is U+00E9, '€' is U+20AC, '😀' is U+1F600. There are over 150,000 assigned characters, and room for about 1.1 million.</p>
+    <p>A code point is an abstract number. An <b>encoding</b> decides how to store it as bytes. The three Unicode encodings are UTF-8, UTF-16 and UTF-32, and UTF-8 has won: it's used by roughly 98% of web pages.</p>
+
+    <h3>How UTF-8 works</h3>
+    <p>UTF-8 is variable-length: each code point takes 1 to 4 bytes.</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Code points</th><th>Bytes</th><th>Bit pattern</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>U+0000–U+007F</td><td>1</td><td class="mono">0xxxxxxx</td><td>ASCII: A, 7, {</td></tr>
+        <tr><td>U+0080–U+07FF</td><td>2</td><td class="mono">110xxxxx 10xxxxxx</td><td>é, ñ, Ω, Arabic, Hebrew</td></tr>
+        <tr><td>U+0800–U+FFFF</td><td>3</td><td class="mono">1110xxxx 10xxxxxx 10xxxxxx</td><td>€, ✓, most CJK</td></tr>
+        <tr><td>U+10000–U+10FFFF</td><td>4</td><td class="mono">11110xxx 10xxxxxx ×3</td><td>emoji, rare scripts</td></tr>
+      </tbody>
+    </table></div>
+    <p>This design has several useful properties:</p>
+    <ul>
+      <li><b>ASCII is valid UTF-8.</b> Old English text needed no conversion.</li>
+      <li><b>It's self-synchronizing.</b> A byte starting <code>10</code> is always a continuation byte, so you can jump into the middle of a stream and find where the next character starts.</li>
+      <li><b>No byte in a multi-byte sequence looks like an ASCII character</b>, so a '/' or a null byte never appears by accident in the middle of a character.</li>
+    </ul>
+
+    <div data-widget="utf8"></div>
+
+    <h3>Characters, code points and bytes are different counts</h3>
+    <p>"Café" is 4 characters but 5 bytes in UTF-8. Languages disagree on what "length" means: Python's <code>len("café")</code> is 4 (code points), but <code>len("café".encode())</code> is 5 (bytes). JavaScript's <code>.length</code> counts UTF-16 units, so <code>"😀".length</code> is 2. Some characters a reader sees as one, like 👍🏽 or flags, are several code points joined together. These differences matter for database column limits, truncating strings, and protocols that send lengths.</p>
+
+    <h3>Mojibake</h3>
+    <p>When bytes written in one encoding are read as another, you get <b>mojibake</b>: "café" turns into "cafÃ©", because the two UTF-8 bytes of é (C3 A9) are read as two Windows-1252 characters. The fix is to use UTF-8 consistently: in files, in the database and its connection, and in HTTP headers (<code>Content-Type: text/html; charset=utf-8</code>).</p>
+
+    <div class="check" data-id="w1-c9" data-answer="2">
+      <p class="check-q">How many bytes does the string "naïve" take in UTF-8?</p>
+      <ol class="check-o"><li>5</li><li>10</li><li>6</li><li>20</li></ol>
+      <div class="check-why">n, a, v and e are ASCII (1 byte each). ï is U+00EF, in the 2-byte range. 4 + 2 = 6.</div>
+    </div>
+    <div class="check" data-id="w1-c10" data-answer="0">
+      <p class="check-q">A byte in a UTF-8 stream starts with the bits <code>10</code>. What does that tell you?</p>
+      <ol class="check-o"><li>It's a continuation byte in the middle of a multi-byte character</li><li>It's an ASCII character</li><li>It starts a 2-byte character</li><li>It's invalid UTF-8</li></ol>
+      <div class="check-why">Lead bytes start with 0 (ASCII), 110, 1110 or 11110, which tells you the length. Continuation bytes always start with 10, which is what makes UTF-8 self-synchronizing.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=MijmeoH9LT4" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/MijmeoH9LT4/mqdefault.jpg" alt="" loading="lazy"><span><b>Characters, Symbols and the Unicode Miracle</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 1.5 ===================== -->
+  <section class="lesson" id="w1-l5">
+    <header><span class="eyebrow">Lesson 1.5 · 50 min</span><h2>Inside the CPU</h2></header>
+
+    <p>A CPU is a machine that does one thing over and over: <b>fetch an instruction from memory, decode it, execute it</b>, then move on to the next. Modern CPUs do this billions of times a second, on several cores, with many clever tricks layered on top. The basic cycle hasn't changed since the 1940s.</p>
+
+    <h3>The main parts</h3>
+    <ul>
+      <li><b>Registers</b>: a handful of tiny, extremely fast storage slots inside the CPU. Most operations work on registers.</li>
+      <li><b>The program counter (PC)</b>: a register holding the memory address of the next instruction.</li>
+      <li><b>The ALU</b> (arithmetic logic unit): the circuit that adds, subtracts, compares and does bitwise operations.</li>
+      <li><b>The control unit</b>: decodes each instruction and coordinates everything else.</li>
+    </ul>
+
+    <h3>The instruction cycle</h3>
+    <ol>
+      <li><b>Fetch</b>: read the instruction at the address in the PC, and advance the PC.</li>
+      <li><b>Decode</b>: work out what the instruction means: which operation, and which registers or memory addresses it uses.</li>
+      <li><b>Execute</b>: do it. Load a value, add two registers, store a result, or jump by writing a new address into the PC.</li>
+    </ol>
+    <p>Jumps are what make programs interesting. A conditional jump ("if A is zero, go to address 10") is the machine-level form of every <code>if</code>, <code>while</code> and <code>for</code> you've ever written. Step through the loop program below and watch it.</p>
+
+    <div data-widget="cpu"></div>
+
+    <p>Notice that instructions and data sit in the same memory. This is the <b>von Neumann architecture</b>, and it's why a program can be loaded like any other data. It's also why some security bugs work: if an attacker can get the CPU to jump to bytes they control, those bytes run as instructions.</p>
+
+    <h3>The memory hierarchy</h3>
+    <p>The CPU is far faster than main memory, so computers use layers of storage, each bigger and slower than the last:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Level</th><th>Typical size</th><th>Rough access time</th></tr></thead>
+      <tbody>
+        <tr><td>Registers</td><td>bytes</td><td>under 1 ns</td></tr>
+        <tr><td>L1 / L2 / L3 cache</td><td>KB to tens of MB</td><td>1–40 ns</td></tr>
+        <tr><td>RAM (main memory)</td><td>GB</td><td>~100 ns</td></tr>
+        <tr><td>SSD</td><td>hundreds of GB to TB</td><td>~100 µs (1,000× RAM)</td></tr>
+        <tr><td>Network (same data center)</td><td>unlimited</td><td>~0.5 ms</td></tr>
+      </tbody>
+    </table></div>
+    <p>Caches work because programs show <b>locality</b>: they tend to reuse recently used data (temporal locality) and to use data near what they just used (spatial locality). When the CPU reads memory, it pulls in a whole <i>cache line</i> (usually 64 bytes). That's why looping through an array in order is much faster than jumping around a linked list scattered across memory, even when Big-O says they're the same.</p>
+
+    <div class="check" data-id="w1-c11" data-answer="1">
+      <p class="check-q">In the toy CPU's multiply program, which kind of instruction makes the loop possible?</p>
+      <ol class="check-o"><li>ADD</li><li>A jump that changes the program counter, here JUMP and JUMP_IF_ZERO</li><li>STORE_A</li><li>HALT</li></ol>
+      <div class="check-why">Without jumps the PC only moves forward, so each instruction runs once. JUMP goes back to repeat the loop body, and JUMP_IF_ZERO leaves the loop when the counter reaches zero. That's a while loop in machine form.</div>
+    </div>
+    <div class="check" data-id="w1-c12" data-answer="3">
+      <p class="check-q">Summing a 10-million-element array is noticeably faster than summing a 10-million-node linked list, even though both are O(n). Why?</p>
+      <ol class="check-o"><li>Arrays use less memory per element, which has no effect on speed</li><li>Linked lists are O(n²) to traverse</li><li>The CPU can't add numbers from linked lists</li><li>The array's elements sit next to each other, so each cache line fetched from RAM brings in many useful elements; list nodes are scattered, causing far more cache misses</li></ol>
+      <div class="check-why">Spatial locality. A cache miss costs around 100 ns, while a cache hit costs about 1 ns. Big-O counts operations; real performance also depends on memory access patterns.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=FZGugFqdr60" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/FZGugFqdr60/mqdefault.jpg" alt="" loading="lazy"><span><b>The Central Processing Unit (CPU)</b><small>Crash Course Computer Science #7</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=zltgXvg6r3k" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/zltgXvg6r3k/mqdefault.jpg" alt="" loading="lazy"><span><b>Instructions &amp; Programs</b><small>Crash Course Computer Science #8</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 1.6 ===================== -->
+  <section class="lesson" id="w1-l6">
+    <header><span class="eyebrow">Lesson 1.6 · 40 min</span><h2>From source code to running program</h2></header>
+
+    <p>CPUs only understand <b>machine code</b>: binary instructions for their specific instruction set (x86-64 on most PCs and servers, ARM on phones and Apple Silicon Macs). <b>Assembly language</b> is a human-readable version of machine code, with one line per instruction, like <code>add rax, rbx</code>. Everything you write in a higher-level language has to be turned into machine code somehow. There are three main approaches.</p>
+
+    <h3>1. Ahead-of-time compilation (C, C++, Rust, Go)</h3>
+    <p>A <b>compiler</b> translates the whole program into machine code before it runs. It parses the source, checks it (types, syntax), optimizes it, and generates instructions for the target CPU. A <b>linker</b> then combines your compiled code with library code into one executable file.</p>
+    <ul>
+      <li><b>Pros</b>: fast at run time; many errors are caught before the program ever runs; no runtime needs to be installed.</li>
+      <li><b>Cons</b>: you must recompile for each CPU type and operating system, and build times can be long.</li>
+    </ul>
+
+    <h3>2. Interpretation (classic shell scripts, early BASIC)</h3>
+    <p>An <b>interpreter</b> is a program that reads your code and carries it out directly, statement by statement. You get no separate build step and very fast edit-run cycles, but it's slower, because the interpreter re-does the work of understanding each line every time it runs.</p>
+
+    <h3>3. Bytecode and virtual machines (Python, Java, C#, JavaScript)</h3>
+    <p>Most popular languages sit in between. The source is compiled to <b>bytecode</b>, a compact instruction set for an imaginary machine, and a <b>virtual machine</b> runs that bytecode. CPython compiles your <code>.py</code> file to bytecode (cached in <code>__pycache__</code>) and then interprets it. You can see the bytecode yourself:</p>
+    <pre class="code"><code>&gt;&gt;&gt; import dis
+&gt;&gt;&gt; def add(a, b):
+...     return a + b
+&gt;&gt;&gt; dis.dis(add)
+  RESUME        0
+  LOAD_FAST     0 (a)
+  LOAD_FAST     1 (b)
+  BINARY_OP     0 (+)
+  RETURN_VALUE
+<span class="c"># Python 3.11/3.12 output; other versions differ slightly</span></code></pre>
+    <p>It looks a lot like the toy CPU from the last lesson: load, load, add, return.</p>
+    <p>Java's JVM, .NET and JavaScript engines (V8 in Chrome and Node) add a <b>just-in-time (JIT) compiler</b>. They start by interpreting, measure which code runs most often ("hot" code), and compile that part to optimized machine code while the program runs. This is why a Java service gets faster after warming up, and why modern JavaScript is surprisingly fast.</p>
+    <p>"Compiled language" and "interpreted language" are really descriptions of <i>implementations</i>, not languages. Python has a JIT implementation (PyPy), and C can be interpreted. What matters is knowing what happens to your code in the implementation you're actually using.</p>
+
+    <h3>What this means day to day</h3>
+    <ul>
+      <li>Type and syntax errors in compiled languages show up at build time. In Python and JavaScript they often show up only when that line runs, which is why tests and type checkers (mypy, TypeScript) matter more there.</li>
+      <li>A compiled binary runs only on the platform it was built for. Interpreted or bytecode programs need the runtime (Python, the JVM, Node) installed. Containers, which you'll meet in week 8, are partly a fix for this.</li>
+      <li>Performance gaps between languages are often smaller than people expect for I/O-bound programs, and larger for tight numeric loops.</li>
+    </ul>
+
+    <div class="check" data-id="w1-c13" data-answer="2">
+      <p class="check-q">You build a Go program on your Intel Linux laptop and copy the binary to an ARM-based server. It refuses to run. Why?</p>
+      <ol class="check-o"><li>Go programs need an interpreter</li><li>The server is missing Python</li><li>The binary contains x86-64 machine code, which an ARM CPU can't execute; you need to compile for the server's architecture</li><li>Binaries can't be copied between machines</li></ol>
+      <div class="check-why">Ahead-of-time compiled code targets one instruction set (and operating system). Go makes cross-compiling easy: set <code>GOARCH=arm64</code> and rebuild.</div>
+    </div>
+    <div class="check" data-id="w1-c14" data-answer="0">
+      <p class="check-q">Why does a Java web service often get faster during its first few minutes under load?</p>
+      <ol class="check-o"><li>The JIT compiler identifies frequently run code and compiles it to optimized machine code while the program runs</li><li>The garbage collector deletes the slow code</li><li>The CPU learns the program</li><li>Java source is recompiled from scratch on each request</li></ol>
+      <div class="check-why">This is JIT "warm-up". It's also why benchmarks of JIT-compiled languages need warm-up runs before measuring.</div>
+    </div>
+
+    <div class="note-box"><strong>Week 1 in one paragraph</strong><p>Everything is bits. Encodings (unsigned, two's complement, IEEE 754, UTF-8) are agreements about how to read them, and each one has edges: overflow, rounding, encoding mismatches. A CPU fetches, decodes and executes instructions from the same memory that holds data, behind a cache hierarchy that rewards locality. Compilers, interpreters and VMs are different routes from your source code to those instructions.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>bitkit: number and text encodings from scratch</h2>
+    <p>You'll build a small Python module that does by hand what Python's built-ins usually do for you: binary and hex conversion, two's complement, wrapping arithmetic, UTF-8 encoding and decoding, and pulling apart a float's bits. Building these yourself is the fastest way to make this week stick.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-01-bitkit/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-01-bitkit
+python3 -m unittest -v        <span class="c"># or: python3 -m pytest</span></code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li>All functions in <code>bitkit.py</code> implemented without the shortcuts listed in the README</li>
+      <li>All tests passing</li>
+      <li>Answers to the three short written questions at the bottom of the README</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <!-- ===================== Quiz ===================== -->
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 1 quiz</h2>
+    <p>15 questions covering all six lessons, with the same confidence ratings as the audits. Score 70% to pass. Take it after the project, without notes; the point is to find what didn't stick.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-01.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <!-- ===================== Reflection ===================== -->
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself honestly on each objective. These ratings and notes go into <code>results/REPORT.md</code>, so whoever reviews your progress can see where you feel shaky, not just your scores.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><a class="btn" href="week-02.html">Next: Week 2 →</a></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 1;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
