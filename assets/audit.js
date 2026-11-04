@@ -25,6 +25,9 @@
   const QBY = Object.fromEntries(Q.map(q => [q.id, q]));
   const byLevel = l => Q.filter(q => q.l === l);
   const need = l => Math.ceil(PASS * byLevel(l).length);
+  const SINGLE = LEVEL_IDS.length === 1;
+  const NOUN = A.noun || "audit";
+  const BACK = A.back || { href: "../index.html", label: "All audits" };
 
   const STATUS = {
     misc:  { label: "Misconception", chip: "bad",  desc: "Wrong but certain. Fix these first." },
@@ -250,7 +253,7 @@
         } else {
           cls = "open";
           chip = `<span class="chip accent">Ready</span>`;
-          btn = `<button class="btn primary" data-act="start" data-l="${l}">Start level ${l}</button>`;
+          btn = `<button class="btn primary" data-act="start" data-l="${l}">${SINGLE ? "Start quiz" : `Start level ${l}`}</button>`;
         }
       }
       const kc = Object.keys(KINDS).map(k => [k, byLevel(l).filter(q => q.k === k).length]).filter(x => x[1]);
@@ -279,15 +282,17 @@
 
     return `
     <header class="masthead">
-      <nav class="crumbs"><a href="../index.html">← All audits</a></nav>
-      <span class="eyebrow">Self-assessment · ${Q.length} questions · ${LEVEL_IDS.length} levels · ${TOPIC_ORDER.length} areas</span>
+      <nav class="crumbs"><a href="${esc(BACK.href)}">← ${esc(BACK.label)}</a></nav>
+      <span class="eyebrow">${esc(A.eyebrow || "Self-assessment")} · ${Q.length} questions${SINGLE ? "" : ` · ${LEVEL_IDS.length} levels`} · ${TOPIC_ORDER.length} areas</span>
       <h1>${esc(A.title)}</h1>
       <p class="lede">${esc(A.lede)}</p>
     </header>
     <div class="how">
       <div><strong>Pick, then rate</strong><p>Choose an answer, then lock it in as a guess, fairly sure, or certain. Confident wrong answers get flagged as misconceptions.</p></div>
       <div><strong>Skip what you don't know</strong><p>An honest skip is more useful than a lucky guess. It goes straight into your study list.</p></div>
-      <div><strong>Unlock as you go</strong><p>Score 70% (${need(first)} of ${byLevel(first).length}) on a level to open the next one. Your gap report and study plan build as you answer.</p></div>
+      ${SINGLE
+        ? `<div><strong>Pass at 70%</strong><p>Score ${need(first)} of ${byLevel(first).length} to pass. Your gap report shows what to revisit before moving on.</p></div>`
+        : `<div><strong>Unlock as you go</strong><p>Score 70% (${need(first)} of ${byLevel(first).length}) on a level to open the next one. Your gap report and study plan build as you answer.</p></div>`}
     </div>
     <section class="ladder" aria-label="Levels">${rungs}</section>
     <section class="panel">
@@ -399,8 +404,8 @@
       <span class="eyebrow">L${l} ${esc(LEVELS[l].name)}</span>
       <div class="score"><span class="big">${s.correct}/${s.total}</span><span class="chip ${passed ? "good" : "bad"}">${pct(s.pct)} · ${passed ? (last ? "Passed" : `Level ${l + 1} unlocked`) : "Below 70%"}</span></div>
       <p>${passed
-        ? (last ? "You've finished the audit. Open the gap report for your study plan." : "You've cleared this level. Your misses and guesses are already in the gap report.")
-        : `You need 70% (${need(l)} of ${s.total}) to unlock the next level. Review the explanations, then retake. Your first attempt stays in the gap report either way, so retaking won't hide what you missed.`}</p>
+        ? (last ? `You've finished the ${NOUN}. Open the gap report for your study plan.` : "You've cleared this level. Your misses and guesses are already in the gap report.")
+        : `You need 70% (${need(l)} of ${s.total}) to ${last ? "pass" : "unlock the next level"}. Review the explanations, then retake. Your first attempt stays in the gap report either way, so retaking won't hide what you missed.`}</p>
       <div class="row">${byTopic}</div>
       <div class="row">${next}<button class="btn${next ? "" : " primary"}" data-act="report">Open gap report</button><button class="btn" data-act="retake" data-l="${l}">Retake level</button></div>
     </section>
