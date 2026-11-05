@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 7: Databases and SQL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 7 of 10 · about 10 hours</span>
+    <h1>Databases and SQL</h1>
+    <p class="lede">Almost every application stores its important data in a database, and many performance problems and data bugs come from using one badly. This week covers how to model data, how to query it, why some queries take a millisecond and others a minute, what transactions actually guarantee, and when a non-relational database is the better tool.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Design a normalized relational schema with keys and constraints</li>
+      <li>Write SQL with joins, grouping, subqueries and window functions</li>
+      <li>Explain how B-tree indexes work, and read a query plan</li>
+      <li>Explain ACID, isolation levels and the anomalies each one allows</li>
+      <li>Use a database safely from code: parameters, transactions, migrations, avoiding N+1</li>
+      <li>Choose between relational, document, key-value, wide-column and graph databases</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 7.1 and 7.2 (modelling, SQL)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 7.3 and 7.4 (indexes, transactions)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 7.5 and 7.6 (databases in code, NoSQL)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: library database</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 7.1 ===================== -->
+  <section class="lesson" id="w7-l1">
+    <header><span class="eyebrow">Lesson 7.1 · 45 min</span><h2>The relational model and schema design</h2></header>
+
+    <p>A <b>relational database</b> stores data in <b>tables</b> (relations). Each table has named, typed <b>columns</b>, and each <b>row</b> is one record. The model was proposed by Edgar Codd in 1970 and still runs most of the world's business data, because it gives you a precise, general way to ask questions of data you didn't plan for.</p>
+
+    <h3>Keys and relationships</h3>
+    <ul>
+      <li>A <b>primary key</b> uniquely identifies each row. It's usually a <b>surrogate key</b> (an auto-incrementing integer or a UUID) rather than a <b>natural key</b> like an email address, because natural keys change.</li>
+      <li>A <b>foreign key</b> is a column referring to another table's primary key. The database enforces it: you can't create a loan for a book that doesn't exist.</li>
+      <li><b>One-to-many</b>: one author, many books. The foreign key goes on the "many" side (<code>books.author_id</code>).</li>
+      <li><b>Many-to-many</b>: books and genres. You need a third <b>join table</b>, <code>book_genres(book_id, genre_id)</code>, with one row per pairing.</li>
+    </ul>
+    <pre class="code"><code>CREATE TABLE authors (
+    id    INTEGER PRIMARY KEY,
+    name  TEXT NOT NULL
+);
+
+CREATE TABLE books (
+    id         INTEGER PRIMARY KEY,
+    title      TEXT NOT NULL,
+    author_id  INTEGER NOT NULL REFERENCES authors(id),
+    published  INTEGER CHECK (published &gt; 0),
+    isbn       TEXT UNIQUE
+);</code></pre>
+    <p><b>Constraints</b> such as <code>NOT NULL</code>, <code>UNIQUE</code>, <code>CHECK</code> and foreign keys are rules the database enforces for every write, from every program, forever. Validation in application code is useful too, but constraints are the last line of defense against bad data, including from bugs and from people running SQL by hand.</p>
+
+    <h3>Normalization</h3>
+    <p><b>Normalization</b> means storing each fact in exactly one place. Consider a single <code>orders</code> table that repeats the customer's name and address on every order. When a customer moves, you must update many rows, and if you miss one, the data contradicts itself. That's an <b>update anomaly</b>. The fix is to split the data: customers in one table, orders in another, linked by <code>customer_id</code>.</p>
+    <p>The formal rules (normal forms) boil down to this: every column in a table should describe the key, the whole key, and nothing but the key. In practice, aim for third normal form by default, and <b>denormalize deliberately</b> when you have a measured reason, such as storing a pre-computed count for speed, or copying the shipping address onto an order because it must record where the order <i>actually</i> went, even if the customer moves later.</p>
+
+    <div class="check" data-id="w7-c1" data-answer="2">
+      <p class="check-q">Students can enrol in many courses, and each course has many students. How do you model this?</p>
+      <ol class="check-o"><li>A <code>course_ids</code> text column on students holding a comma-separated list</li><li>A <code>student_id</code> column on courses</li><li>A join table <code>enrolments(student_id, course_id)</code> with one row per enrolment</li><li>One big table with every student and course combination</li></ol>
+      <div class="check-why">Many-to-many relationships need a join table. A comma-separated list can't be indexed, joined or constrained properly. The join table can also hold facts about the relationship itself, like the enrolment date or grade.</div>
+    </div>
+    <div class="check" data-id="w7-c2" data-answer="0">
+      <p class="check-q">Why enforce "every book has an author" with a <code>NOT NULL</code> foreign key constraint, rather than only checking it in the application?</p>
+      <ol class="check-o"><li>The database applies the rule to every write, from every program, script and person, so bad data can't get in through a path the application doesn't cover</li><li>Constraints make queries faster</li><li>Application code can't check for null</li><li>It's required by SQL</li></ol>
+      <div class="check-why">Data usually outlives the code that wrote it, and many tools write to the same database. Constraints are a guarantee; application checks are a convenience for nicer error messages.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=zsjvFFKOm3c" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/zsjvFFKOm3c/mqdefault.jpg" alt="" loading="lazy"><span><b>SQL Explained in 100 Seconds</b><small>Fireship</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=n3Ea7tMMuMM" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/n3Ea7tMMuMM/mqdefault.jpg" alt="" loading="lazy"><span><b>Database Normalization and Denormalization Explained</b><small>YouTube explainer</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 7.2 ===================== -->
+  <section class="lesson" id="w7-l2">
+    <header><span class="eyebrow">Lesson 7.2 · 55 min</span><h2>Querying with SQL</h2></header>
+
+    <p>SQL is <b>declarative</b>: you describe the result you want, and the database's <b>query planner</b> works out how to get it. A <code>SELECT</code> is written in one order but evaluated in another, which explains most beginner errors:</p>
+    <pre class="code"><code>SELECT   a.name, COUNT(*) AS books        <span class="c">-- 5. choose output columns</span>
+FROM     authors a                         <span class="c">-- 1. start from tables</span>
+JOIN     books b ON b.author_id = a.id     <span class="c">--    and join them</span>
+WHERE    b.published &gt;= 2000               <span class="c">-- 2. filter rows</span>
+GROUP BY a.name                            <span class="c">-- 3. group</span>
+HAVING   COUNT(*) &gt;= 2                     <span class="c">-- 4. filter groups</span>
+ORDER BY books DESC                        <span class="c">-- 6. sort</span>
+LIMIT    10;                               <span class="c">-- 7. take the first 10</span></code></pre>
+    <p><code>WHERE</code> filters individual rows before grouping; <code>HAVING</code> filters groups after aggregation. So <code>WHERE COUNT(*) &gt; 2</code> is an error, while <code>HAVING COUNT(*) &gt; 2</code> works.</p>
+
+    <h3>Joins</h3>
+    <p>Joins combine rows from two tables based on a condition. The type of join decides what happens to rows without a match:</p>
+
+    <div data-widget="joins"></div>
+
+    <h3>Aggregates, NULL and subqueries</h3>
+    <ul>
+      <li><code>COUNT(*)</code> counts rows; <code>COUNT(column)</code> counts non-NULL values. After a LEFT JOIN, that difference decides whether an author with no books shows 0 or 1.</li>
+      <li><b>NULL</b> means "unknown", and any comparison with it is unknown rather than true or false. Use <code>IS NULL</code>, never <code>= NULL</code>. <code>NOT IN</code> on a list containing a NULL returns nothing at all, a classic surprise.</li>
+      <li>A <b>subquery</b> is a query inside another: <code>WHERE author_id IN (SELECT id FROM authors WHERE country = 'UK')</code>. A <b>CTE</b> (<code>WITH recent AS (...) SELECT ...</code>) names a subquery, which makes long queries readable.</li>
+    </ul>
+
+    <h3>Window functions</h3>
+    <p>Aggregates collapse rows into groups; <b>window functions</b> compute across related rows while keeping every row. They make "top N per group", running totals and rankings easy:</p>
+    <pre class="code"><code>SELECT title, author_id, published,
+       ROW_NUMBER() OVER (PARTITION BY author_id ORDER BY published DESC) AS recency
+FROM books;
+<span class="c">-- recency = 1 is each author's newest book</span></code></pre>
+
+    <div class="check" data-id="w7-c3" data-answer="1">
+      <p class="check-q">You want authors with more than 5 books. Why does <code>WHERE COUNT(*) &gt; 5</code> fail?</p>
+      <ol class="check-o"><li>COUNT only works on numbers</li><li>WHERE runs before grouping, so there's no count yet; filtering on an aggregate belongs in HAVING</li><li>You need ORDER BY first</li><li>COUNT(*) counts NULLs</li></ol>
+      <div class="check-why">The logical order is FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT.</div>
+    </div>
+    <div class="check" data-id="w7-c4" data-answer="3">
+      <p class="check-q">In the join widget, which join lists every author, including those with no books?</p>
+      <ol class="check-o"><li>INNER JOIN</li><li>CROSS JOIN</li><li>Any join, as long as there's no WHERE clause</li><li>authors LEFT JOIN books</li></ol>
+      <div class="check-why">A LEFT JOIN keeps every row from the left table and fills the right side with NULLs when there's no match. A FULL OUTER JOIN would also work, but it additionally includes books with no author.</div>
+    </div>
+    <div class="check" data-id="w7-c5" data-answer="2">
+      <p class="check-q">You need each customer's three most recent orders, as separate rows. What's the cleanest tool?</p>
+      <ol class="check-o"><li>GROUP BY customer_id with LIMIT 3</li><li>A CROSS JOIN</li><li>A window function: <code>ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC)</code>, then keep rows numbered 1–3</li><li>Three separate queries per customer</li></ol>
+      <div class="check-why">LIMIT applies to the whole result, not per group. Window functions number rows within each partition without collapsing them, which is exactly "top N per group".</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 7.3 ===================== -->
+  <section class="lesson" id="w7-l3">
+    <header><span class="eyebrow">Lesson 7.3 · 45 min</span><h2>Indexes and query plans</h2></header>
+
+    <p>Without an index, finding rows means reading the whole table: a <b>full table scan</b>, O(n). An <b>index</b> is a separate sorted structure that maps column values to row locations, so the database can jump straight to matching rows, like the index at the back of a book.</p>
+
+    <h3>B-trees</h3>
+    <p>Most database indexes are <b>B-trees</b> (strictly, B+ trees). They're the disk-friendly relative of the balanced binary search trees from week 2: each node is one disk page holding hundreds of keys, so the tree is very wide and very shallow. A table with a billion rows needs only about four or five levels, so a lookup reads a handful of pages instead of a billion rows. Leaves are linked in order, so range queries (<code>BETWEEN</code>, <code>&lt;</code>, <code>ORDER BY</code>) are fast too.</p>
+
+    <div data-widget="btree"></div>
+
+    <h3>Composite indexes and their order</h3>
+    <p>An index on <code>(last_name, first_name)</code> is sorted by last name, then first name, like a phone book. It helps queries that filter on a <b>leftmost prefix</b>: <code>last_name</code> alone, or both columns. It can't help a query on <code>first_name</code> alone. Put columns you filter by equality first and range conditions last.</p>
+    <p>An index also stops working if you wrap the column in a function: <code>WHERE LOWER(email) = ?</code> can't use a plain index on <code>email</code>. Store normalized values, or create an index on the expression itself.</p>
+
+    <h3>Reading a query plan</h3>
+    <p>Every database will tell you how it plans to run a query. Use it whenever a query is slow, rather than guessing:</p>
+    <pre class="code"><code>sqlite&gt; EXPLAIN QUERY PLAN SELECT * FROM books WHERE author_id = 42;
+SCAN books                                         <span class="c">← reads every row</span>
+
+sqlite&gt; CREATE INDEX idx_books_author ON books(author_id);
+sqlite&gt; EXPLAIN QUERY PLAN SELECT * FROM books WHERE author_id = 42;
+SEARCH books USING INDEX idx_books_author (author_id=?)   <span class="c">← jumps to matching rows</span></code></pre>
+    <p>PostgreSQL's <code>EXPLAIN ANALYZE</code> goes further and runs the query, showing actual row counts and timings for each step.</p>
+
+    <h3>Indexes aren't free</h3>
+    <p>Every index must be updated on every insert, update and delete, and takes disk space. Index the columns you actually filter, join and sort by. Don't index everything, and don't bother indexing a column like <code>is_active</code> where most rows share one value, because scanning is just as fast.</p>
+
+    <div class="check" data-id="w7-c6" data-answer="1">
+      <p class="check-q">A <code>users</code> table has 50 million rows and an index on <code>email</code>. Roughly how many index pages does looking up one email read?</p>
+      <ol class="check-o"><li>About 50 million</li><li>About 4 or 5, because a B-tree with hundreds of keys per page is very shallow</li><li>About 25 million</li><li>Exactly 1</li></ol>
+      <div class="check-why">With a fan-out of a few hundred, each level multiplies capacity by a few hundred: 200⁴ is 1.6 billion. That shallowness is why indexed lookups stay fast as tables grow.</div>
+    </div>
+    <div class="check" data-id="w7-c7" data-answer="0">
+      <p class="check-q">There's an index on <code>orders(customer_id, created_at)</code>. Which query can't use it efficiently?</p>
+      <ol class="check-o"><li><code>WHERE created_at &gt; '2026-01-01'</code></li><li><code>WHERE customer_id = 7</code></li><li><code>WHERE customer_id = 7 AND created_at &gt; '2026-01-01'</code></li><li><code>WHERE customer_id = 7 ORDER BY created_at</code></li></ol>
+      <div class="check-why">The index is sorted by customer first. A filter on created_at alone doesn't match a leftmost prefix. It needs its own index on created_at.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=JWSObwhGGxY" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/JWSObwhGGxY/mqdefault.jpg" alt="" loading="lazy"><span><b>B-Trees and B+ Trees Explained: Database Indexing for Beginners</b><small>YouTube explainer</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 7.4 ===================== -->
+  <section class="lesson" id="w7-l4">
+    <header><span class="eyebrow">Lesson 7.4 · 50 min</span><h2>Transactions and isolation</h2></header>
+
+    <p>A <b>transaction</b> groups several statements so they succeed or fail as one. Moving money between accounts is two updates; you never want only one of them to happen.</p>
+    <pre class="code"><code>BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;      <span class="c">-- or ROLLBACK to undo everything since BEGIN</span></code></pre>
+
+    <h3>ACID</h3>
+    <ul>
+      <li><b>Atomicity</b>: all or nothing. If the server crashes between the two updates, the first is undone.</li>
+      <li><b>Consistency</b>: a transaction moves the database from one valid state to another; constraints hold at commit.</li>
+      <li><b>Isolation</b>: concurrent transactions don't see each other's half-finished work, to a degree set by the isolation level.</li>
+      <li><b>Durability</b>: once committed, the data survives crashes. The database writes changes to a log on disk (and calls <code>fsync</code>, from week 4) before reporting success.</li>
+    </ul>
+
+    <h3>Isolation levels and anomalies</h3>
+    <p>Perfect isolation (as if transactions ran one at a time) is expensive, so databases offer weaker levels that allow certain <b>anomalies</b>:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Level</th><th>Prevents</th><th>Still allows</th></tr></thead>
+      <tbody>
+        <tr><td>Read uncommitted</td><td>(almost nothing)</td><td>Dirty reads: seeing other transactions' uncommitted changes</td></tr>
+        <tr><td>Read committed (PostgreSQL's default)</td><td>Dirty reads</td><td>Non-repeatable reads, lost updates, write skew</td></tr>
+        <tr><td>Repeatable read / snapshot</td><td>Non-repeatable reads</td><td>Write skew (and lost updates in some databases)</td></tr>
+        <tr><td>Serializable</td><td>All of the above</td><td>Nothing, but transactions may be aborted and need retrying</td></tr>
+      </tbody>
+    </table></div>
+    <p>The anomaly that bites application code most often is the <b>lost update</b>, the database version of week 4's race condition. Two transactions read the same value, both compute a new value from it, and the second write silently overwrites the first:</p>
+
+    <div data-widget="isolation"></div>
+
+    <p>There are three standard fixes. Do the arithmetic <b>inside one atomic UPDATE</b> (<code>SET balance = balance - 30</code>). Or <b>lock the row</b> when reading it (<code>SELECT ... FOR UPDATE</code>), so the other transaction waits. Or use <b>optimistic concurrency</b>: keep a version column, update with <code>WHERE id = ? AND version = ?</code>, and retry if no row was updated. <b>Write skew</b> is subtler: two transactions each check a condition ("at least one doctor stays on call"), then update <i>different</i> rows, together breaking the rule. Only serializable isolation or explicit locking prevents it.</p>
+
+    <div class="check" data-id="w7-c8" data-answer="2">
+      <p class="check-q">A web app reads a product's stock (5), subtracts the quantity ordered in Python, and writes the result back. Under load, stock sometimes ends up higher than it should. What's the most direct fix?</p>
+      <ol class="check-o"><li>Add an index on the stock column</li><li>Use a faster server</li><li>Do it in one atomic statement: <code>UPDATE products SET stock = stock - ? WHERE id = ? AND stock &gt;= ?</code>, and check how many rows were updated</li><li>Read the stock twice</li></ol>
+      <div class="check-why">Read-modify-write in application code is a lost-update race. The atomic UPDATE reads and writes the current value under the row lock, and the <code>stock &gt;= ?</code> condition prevents overselling.</div>
+    </div>
+    <div class="check" data-id="w7-c9" data-answer="0">
+      <p class="check-q">A transaction transferring money crashes after debiting one account but before crediting the other. Which ACID property makes sure the debit doesn't stick?</p>
+      <ol class="check-o"><li>Atomicity</li><li>Consistency</li><li>Isolation</li><li>Durability</li></ol>
+      <div class="check-why">Atomicity: the transaction never committed, so the database rolls back everything it did, using its log during recovery.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=CIoyTJFn4A4" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/CIoyTJFn4A4/mqdefault.jpg" alt="" loading="lazy"><span><b>What is ACID Compliance</b><small>YouTube explainer</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 7.5 ===================== -->
+  <section class="lesson" id="w7-l5">
+    <header><span class="eyebrow">Lesson 7.5 · 40 min</span><h2>Databases in application code</h2></header>
+
+    <h3>The basics, done right</h3>
+    <pre class="code"><code>import sqlite3
+
+conn = sqlite3.connect("library.db")
+try:
+    with conn:                                         <span class="c"># one transaction: commit on success, rollback on error</span>
+        conn.execute("UPDATE books SET copies = copies - 1 WHERE id = ? AND copies &gt; 0", (book_id,))
+        conn.execute("INSERT INTO loans (book_id, member_id) VALUES (?, ?)", (book_id, member_id))
+finally:
+    conn.close()</code></pre>
+    <ul>
+      <li><b>Always use parameters</b> (<code>?</code> or <code>%s</code>), never string formatting, as you saw in week 6.</li>
+      <li><b>Group related writes in a transaction</b>, and keep transactions short: they hold locks while open.</li>
+      <li><b>Connection pools</b>: opening a database connection is expensive (TCP, TLS, authentication), so servers keep a pool of open connections and lend them out per request. A pool that's too small makes requests queue; one that's too large can overwhelm the database.</li>
+    </ul>
+
+    <h3>The N+1 problem</h3>
+    <p>ORMs (object-relational mappers, like SQLAlchemy, Django's ORM or ActiveRecord) let you work with objects instead of SQL. They're productive, but they make one mistake very easy:</p>
+    <pre class="code"><code>books = Book.objects.all()[:100]          <span class="c"># 1 query</span>
+for book in books:
+    print(book.title, book.author.name)   <span class="c"># +1 query per book to load its author → 101 queries</span></code></pre>
+    <p>Each query costs a round trip, so this gets slow as data grows. The fix is to load related data in one go: a JOIN, or <code>WHERE id IN (...)</code>, which ORMs offer as eager loading (<code>select_related</code>, <code>joinedload</code>, <code>include</code>). Watch the query count in your logs; it's the most common database performance bug in web apps.</p>
+
+    <h3>Migrations</h3>
+    <p>Your schema changes over time, and every environment (your laptop, CI, production) must go through the same changes in the same order. <b>Migrations</b> are versioned scripts, kept in Git, that apply each change (add a column, create an index) and record which ones have run. Tools include Alembic, Django migrations, Flyway and Liquibase. On a live system, make changes in backward-compatible steps: add the new column, deploy code that writes both, backfill old rows, switch reads, and only then remove the old column. Deploys and schema changes then never have to happen at the same instant.</p>
+
+    <div class="check" data-id="w7-c10" data-answer="3">
+      <p class="check-q">A page listing 50 orders makes 151 database queries. What's the most likely cause?</p>
+      <ol class="check-o"><li>The database has no primary keys</li><li>The connection pool is too small</li><li>The orders table needs normalizing</li><li>An N+1 pattern: one query for the orders, then separate queries per order for related data (like the customer and items)</li></ol>
+      <div class="check-why">1 + 50 + 50 + 50 = 151 suggests three lazy-loaded relationships. Eager loading or JOINs bring it down to a few queries.</div>
+    </div>
+    <div class="check" data-id="w7-c11" data-answer="1">
+      <p class="check-q">You need to rename a column used by a live web app with many servers. Why do it in several deploys instead of one?</p>
+      <ol class="check-o"><li>Databases can't rename columns</li><li>During a deploy, old and new code run at the same time; renaming in one step breaks whichever version expects the other name, so you add the new column, write to both, migrate reads, then drop the old one</li><li>Migrations must be run one column at a time</li><li>It's faster</li></ol>
+      <div class="check-why">This expand-and-contract approach keeps every running version of the code compatible with the schema at every moment.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 7.6 ===================== -->
+  <section class="lesson" id="w7-l6">
+    <header><span class="eyebrow">Lesson 7.6 · 40 min</span><h2>Beyond relational: choosing a database</h2></header>
+
+    <p>"NoSQL" is a loose label for databases that drop parts of the relational model, usually joins, strict schemas or multi-row transactions, in exchange for a simpler model, flexible data or easier horizontal scaling. The main families:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Type</th><th>Model</th><th>Good for</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>Key-value</td><td>A giant hash map: key → value</td><td>Caching, sessions, counters, very fast simple lookups</td><td>Redis, Memcached, DynamoDB</td></tr>
+        <tr><td>Document</td><td>JSON-like documents, nested, flexible fields</td><td>Data read as a whole object; varied or evolving shapes</td><td>MongoDB, Firestore, Couchbase</td></tr>
+        <tr><td>Wide-column</td><td>Rows partitioned by key, with many sparse columns</td><td>Huge write volumes, time series, known query patterns</td><td>Cassandra, ScyllaDB, Bigtable</td></tr>
+        <tr><td>Graph</td><td>Nodes and edges</td><td>Highly connected data: social graphs, recommendations, fraud rings</td><td>Neo4j, Neptune</td></tr>
+        <tr><td>Search</td><td>Inverted indexes over text</td><td>Full-text search, relevance ranking, log search</td><td>Elasticsearch, OpenSearch</td></tr>
+        <tr><td>Columnar / analytical</td><td>Data stored column by column</td><td>Aggregations over billions of rows (reporting, analytics)</td><td>BigQuery, Snowflake, ClickHouse, DuckDB</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>How to choose</h3>
+    <ul>
+      <li><b>Default to a relational database</b> (PostgreSQL is a strong general choice; SQLite for embedded or small apps). They handle far more scale than most products ever reach, give you transactions and constraints, and answer questions you haven't thought of yet.</li>
+      <li>Reach for another type when you have a <b>specific access pattern</b> it serves much better, such as a cache, full-text search, or analytics, often <i>alongside</i> your main database rather than instead of it.</li>
+      <li>Design NoSQL data around your <b>queries</b>, not your entities: without joins, data is often duplicated so each query reads one place. That makes reads fast and changes harder.</li>
+      <li>"Schemaless" really means the schema lives in your application code. Every reader must handle every shape of document ever written.</li>
+    </ul>
+
+    <div class="check" data-id="w7-c12" data-answer="2">
+      <p class="check-q">A team is choosing a database for a new e-commerce app with users, products, orders and payments. What's the sensible default?</p>
+      <ol class="check-o"><li>A graph database, because orders connect users and products</li><li>A key-value store, because it's fastest</li><li>A relational database such as PostgreSQL, since the data is structured and related, and payments need transactions</li><li>A separate database per table</li></ol>
+      <div class="check-why">Structured, related data with integrity requirements is exactly what relational databases are for. Add Redis for caching or a search engine for product search later, if needed.</div>
+    </div>
+    <div class="check" data-id="w7-c13" data-answer="0">
+      <p class="check-q">Why do analytics databases like BigQuery or ClickHouse store data column by column?</p>
+      <ol class="check-o"><li>Analytical queries read a few columns across huge numbers of rows; storing each column together means reading only those columns, and similar values compress very well</li><li>Columns are easier to back up</li><li>It allows foreign keys</li><li>It makes single-row updates faster</li></ol>
+      <div class="check-why"><code>SELECT AVG(price) FROM sales</code> over a billion rows only needs the price column. Row stores (good at reading and writing whole records) are better for application workloads.</div>
+    </div>
+    <div class="check" data-id="w7-c14" data-answer="3">
+      <p class="check-q">A document database stores each order with a copy of the customer's name. What's the trade-off of this duplication?</p>
+      <ol class="check-o"><li>There's no trade-off</li><li>Orders can't be queried</li><li>The database becomes relational</li><li>Reading an order needs no join (fast), but changing a customer's name means updating it in many places, or accepting that old orders show the old name</li></ol>
+      <div class="check-why">Denormalization trades write complexity for read speed. Sometimes the copy is even what you want, like an order recording the name and address at the time of purchase.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=W2Z7fbCLSTw" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/W2Z7fbCLSTw/mqdefault.jpg" alt="" loading="lazy"><span><b>7 Database Paradigms</b><small>Fireship</small></span></a>
+    </div>
+
+    <div class="note-box"><strong>Week 7 in one paragraph</strong><p>Model data as tables with keys and constraints, store each fact once, and denormalize only on purpose. SQL is declarative and evaluated FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY; join types decide what happens to unmatched rows. B-tree indexes turn scans into a few page reads, but only for queries matching a leftmost prefix, and they cost write time. Transactions give atomicity and durability; weaker isolation levels allow anomalies, and lost updates need atomic updates, row locks or version checks. In code, use parameters, short transactions, connection pools and migrations, and watch for N+1 queries. Default to a relational database and add specialized ones for specific access patterns.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Library database: queries, indexes and transactions</h2>
+    <p>Work with a library database in SQLite (built into Python). Design part of the schema with proper constraints, write a set of SQL reporting queries, add indexes and prove with <code>EXPLAIN QUERY PLAN</code> that they're used, fix an N+1 query problem (the tests count your queries), and make borrowing a book safe under concurrency.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-07-library/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-07-library
+python -m unittest -v</code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li>The schema additions, queries, indexes and functions in <code>library.py</code> and <code>queries.sql</code></li>
+      <li>All tests passing</li>
+      <li>Short answers to the questions at the bottom of the README</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 7 quiz</h2>
+    <p>15 questions covering all six lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-07.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-06.html">← Week 6</a><a class="btn" href="week-08.html">Next: Week 8 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 7;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
