@@ -1451,6 +1451,587 @@
     draw();
   };
 
+  /* ---------- Week 7 widgets ---------- */
+
+  /* SQL joins */
+  W.joins = el => {
+    const AUTHORS = [[1, "Le Guin"], [2, "Pratchett"], [3, "Jemisin"], [4, "Chiang"]];
+    const BOOKS = [[10, "Earthsea", 1], [11, "The Dispossessed", 1], [12, "Mort", 2], [13, "The Fifth Season", 3], [14, "Anonymous Pamphlet", null]];
+    let kind = "inner";
+    const body = widgetShell(el, "Join two tables");
+    const run = () => {
+      const rows = [];
+      const matchedBooks = new Set();
+      if (kind === "cross") {
+        AUTHORS.forEach(a => BOOKS.forEach(b => rows.push([a[1], b[1]])));
+        return rows;
+      }
+      AUTHORS.forEach(a => {
+        const bs = BOOKS.filter(b => b[2] === a[0]);
+        bs.forEach(b => { matchedBooks.add(b[0]); rows.push([a[1], b[1]]); });
+        if (!bs.length && (kind === "left" || kind === "full")) rows.push([a[1], null]);
+      });
+      if (kind === "full") BOOKS.filter(b => !matchedBooks.has(b[0])).forEach(b => rows.push([null, b[1]]));
+      return rows;
+    };
+    const SQL = {
+      inner: "SELECT a.name, b.title\nFROM authors a\nJOIN books b ON b.author_id = a.id;",
+      left: "SELECT a.name, b.title\nFROM authors a\nLEFT JOIN books b ON b.author_id = a.id;",
+      full: "SELECT a.name, b.title\nFROM authors a\nFULL OUTER JOIN books b ON b.author_id = a.id;",
+      cross: "SELECT a.name, b.title\nFROM authors a\nCROSS JOIN books b;     -- every pairing"
+    };
+    const NOTE = {
+      inner: "Only rows with a match on both sides. Chiang (no books) and the pamphlet (no author) disappear.",
+      left: "Every author, matched where possible. Chiang appears with NULL for the title. The pamphlet still doesn't appear, because it isn't in the left table.",
+      full: "Everything from both sides, with NULLs filling the gaps. Useful for finding mismatches between two data sets.",
+      cross: "Every author paired with every book: 4 × 5 = 20 rows. Forgetting a join condition does this by accident, which can explode result sizes."
+    };
+    const tbl = (head, rows) => `<table class="wg-table"><thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td class="${c === null ? "nullc" : ""}">${c === null ? "NULL" : esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    const draw = () => {
+      const rows = run();
+      body.innerHTML = `
+        <div class="seg" role="radiogroup" aria-label="Join type">
+          ${[["inner", "INNER JOIN"], ["left", "LEFT JOIN"], ["full", "FULL OUTER JOIN"], ["cross", "CROSS JOIN"]].map(([k, l]) => `<button type="button" role="radio" aria-checked="${k === kind}" class="${k === kind ? "on" : ""}" data-k="${k}">${l}</button>`).join("")}
+        </div>
+        <div class="join-in">
+          <div class="table-wrap"><b class="small">authors</b>${tbl(["id", "name"], AUTHORS)}</div>
+          <div class="table-wrap"><b class="small">books</b>${tbl(["id", "title", "author_id"], BOOKS)}</div>
+        </div>
+        <pre class="wg-log">${esc(SQL[kind])}</pre>
+        <div class="table-wrap"><b class="small">Result: ${rows.length} rows</b>${tbl(["name", "title"], rows)}</div>
+        <p class="wg-note">${NOTE[kind]}</p>`;
+      $$("[data-k]", body).forEach(b => b.addEventListener("click", () => { kind = b.dataset.k; draw(); }));
+    };
+    draw();
+  };
+
+  /* B-tree index vs full scan */
+  W.btree = el => {
+    const TREE = { keys: [40, 80], kids: [
+      { keys: [10, 25], kids: [[3, 7], [12, 18, 21], [28, 33, 37]] },
+      { keys: [55, 68], kids: [[42, 47, 51], [58, 63], [70, 74, 77]] },
+      { keys: [90], kids: [[83, 86], [93, 97, 99]] }
+    ] };
+    let target = 63, size = 6;
+    const body = widgetShell(el, "Find a row: B-tree index vs full table scan");
+    const search = () => {
+      const path = [];
+      let node = TREE, depth = 0;
+      while (node && !Array.isArray(node)) {
+        let i = node.keys.findIndex(k => target < k);
+        if (i === -1) i = node.keys.length;
+        path.push({ depth, keys: node.keys, child: i });
+        node = node.kids[i];
+        depth++;
+      }
+      return { path, leaf: node, found: node.includes(target) };
+    };
+    const draw = () => {
+      const r = search();
+      const n = 10 ** size;
+      const levels = Math.max(1, Math.ceil(Math.log(n) / Math.log(200)));
+      const leafRow = TREE.kids.map((mid, mi) => mid.kids.map((leaf, li) => {
+        const on = r.path[0].child === mi && r.path[1] && r.path[1].child === li;
+        return `<span class="bt-node leaf ${on ? "on" : ""}">${leaf.map(k => `<i class="${on && k === target ? "hit" : ""}">${k}</i>`).join("")}</span>`;
+      }).join("")).join("");
+      body.innerHTML = `
+        <div class="row wg-controls"><label class="small" for="bt-k">Find key</label><input id="bt-k" class="wg-input narrow" type="number" value="${target}"></div>
+        <div class="bt">
+          <div class="bt-level"><span class="bt-node on">${TREE.keys.map(k => `<i>${k}</i>`).join("")}</span></div>
+          <div class="bt-level">${TREE.kids.map((m, i) => `<span class="bt-node ${r.path[0].child === i ? "on" : ""}">${m.keys.map(k => `<i>${k}</i>`).join("")}</span>`).join("")}</div>
+          <div class="bt-level">${leafRow}</div>
+        </div>
+        <p class="wg-note">${r.found ? `Found ${target} after reading 3 nodes: at each node, the keys say which child to follow.` : `Read 3 nodes and reached the leaf where ${target} would be. It isn't there, so it's not in the table.`} A real index node holds hundreds of keys (one disk page), so the tree stays very shallow.</p>
+        <label class="field-label" for="bt-n">Table size: <b>${n.toLocaleString()}</b> rows</label>
+        <input id="bt-n" type="range" min="3" max="9" value="${size}" class="wg-range">
+        <div class="readout">
+          <div><span>Full table scan: rows read</span><b>${n.toLocaleString()}</b></div>
+          <div class="em"><span>B-tree lookup (about 200 keys per page): pages read</span><b>${levels + 1}</b></div>
+        </div>`;
+      $("#bt-k", body).addEventListener("change", e => { target = +e.target.value; draw(); });
+      $("#bt-n", body).addEventListener("input", e => { size = +e.target.value; draw(); $("#bt-n", body).focus(); });
+    };
+    draw();
+  };
+
+  /* Transaction isolation: lost update */
+  W.isolation = el => {
+    const PROGRAMS = {
+      naive: { label: "Read, then write (no lock)", steps: amt => [["begin", "BEGIN"], ["read", "SELECT balance → x"], ["write", `UPDATE balance = x − ${amt}`], ["commit", "COMMIT"]] },
+      atomic: { label: "Atomic UPDATE", steps: amt => [["begin", "BEGIN"], ["atomic", `UPDATE balance = balance − ${amt}`], ["commit", "COMMIT"]] },
+      locking: { label: "SELECT … FOR UPDATE", steps: amt => [["begin", "BEGIN"], ["lockread", "SELECT balance … FOR UPDATE → x"], ["write", `UPDATE balance = x − ${amt}`], ["commit", "COMMIT"]] }
+    };
+    let mode = "naive", bal, tx, lock, log;
+    const AMT = { T1: 30, T2: 50 };
+    const reset = () => { bal = 100; lock = null; tx = { T1: { pc: 0, x: null }, T2: { pc: 0, x: null } }; log = "The balance is 100. T1 withdraws 30 and T2 withdraws 50, at the same time. The right answer is 20."; };
+    const step = name => {
+      const t = tx[name], steps = PROGRAMS[mode].steps(AMT[name]);
+      if (t.pc >= steps.length) { log = `${name} has already committed.`; return; }
+      const [op] = steps[t.pc];
+      const other = name === "T1" ? "T2" : "T1";
+      if ((op === "atomic" || op === "lockread") && lock && lock !== name) { log = `${name} must wait: ${other} holds a lock on this row until it commits.`; return; }
+      if (op === "read") { t.x = bal; log = `${name} reads balance = ${bal}.`; }
+      if (op === "lockread") { lock = name; t.x = bal; log = `${name} locks the row and reads balance = ${bal}.`; }
+      if (op === "atomic") { lock = name; bal -= AMT[name]; log = `${name} locks the row and subtracts ${AMT[name]} from the current value: balance = ${bal}.`; }
+      if (op === "write") { const before = bal; bal = t.x - AMT[name]; log = `${name} writes balance = ${t.x} − ${AMT[name]} = ${bal}.` + (before !== t.x ? ` It overwrote ${before}, so the other withdrawal is lost.` : ""); }
+      if (op === "commit") { if (lock === name) lock = null; log = `${name} commits${mode !== "naive" ? " and releases its lock" : ""}.`; }
+      if (op === "begin") log = `${name} begins a transaction.`;
+      t.pc++;
+    };
+    const body = widgetShell(el, "Two transactions, one account");
+    const draw = () => {
+      const col = name => {
+        const t = tx[name], steps = PROGRAMS[mode].steps(AMT[name]);
+        return `<div class="thread"><div class="th-head"><b>${name} (−${AMT[name]})</b><span class="mono small">${t.x === null ? "" : "x = " + t.x}</span></div>
+          <ol class="th-code">${steps.map((s, i) => `<li class="${i < t.pc ? "done" : i === t.pc ? "next" : ""}"><code>${esc(s[1])}</code></li>`).join("")}</ol>
+          <button type="button" class="btn primary" data-t="${name}" ${t.pc >= steps.length ? "disabled" : ""}>Step ${name}</button></div>`;
+      };
+      const done = ["T1", "T2"].every(n => tx[n].pc >= PROGRAMS[mode].steps(AMT[n]).length);
+      body.innerHTML = `
+        <div class="row wg-controls">
+          <select id="iso-mode" class="wg-input" aria-label="Approach">${Object.entries(PROGRAMS).map(([k, p]) => `<option value="${k}" ${k === mode ? "selected" : ""}>${p.label}</option>`).join("")}</select>
+          <button type="button" class="btn" data-a="race">Interleave them</button>
+          <button type="button" class="btn ghost" data-a="reset">Reset</button>
+        </div>
+        <div class="threads">${col("T1")}<div class="shared"><span>balance</span><b>${bal}</b><small>${lock ? "row locked by " + lock : "no lock"}</small></div>${col("T2")}</div>
+        <p class="wg-note" role="status">${esc(log)}${done ? (bal === 20 ? " Final balance 20: correct." : ` Final balance ${bal}, but it should be 20.`) : ""}</p>`;
+      $("#iso-mode", body).addEventListener("change", e => { mode = e.target.value; reset(); draw(); });
+      $$("[data-t]", body).forEach(b => b.addEventListener("click", () => { step(b.dataset.t); draw(); }));
+      $$("[data-a]", body).forEach(b => b.addEventListener("click", () => {
+        reset();
+        if (b.dataset.a === "race") {
+          ["T1", "T2", "T1", "T2", "T1", "T2", "T1", "T2", "T2", "T2"].forEach(step);
+          log = mode === "naive" ? "Both read 100 before either wrote, so the last write wins and one withdrawal vanishes." : "Same interleaving attempt, but T2 had to wait for T1's lock, so both withdrawals count.";
+        }
+        draw();
+      }));
+    };
+    reset();
+    draw();
+  };
+
+  /* ---------- Week 8 widgets ---------- */
+
+  /* Git graph */
+  W.gitgraph = el => {
+    let commits, branches, head, n, note;
+    const reset = () => {
+      commits = [{ id: "c1", lane: 0, parents: [] }, { id: "c2", lane: 0, parents: ["c1"] }];
+      branches = { main: "c2" }; head = "main"; n = 3;
+      note = "You're on main. Try: create a branch, commit on it, switch back, commit on main, then merge or rebase.";
+    };
+    const byId = id => commits.find(c => c.id === id);
+    const ancestors = id => { const s = new Set(), st = [id]; while (st.length) { const c = st.pop(); if (c && !s.has(c)) { s.add(c); st.push(...byId(c).parents); } } return s; };
+    const laneOf = b => b === "main" ? 0 : 1;
+    const act = a => {
+      if (a === "commit") {
+        const id = "c" + n++;
+        commits.push({ id, lane: laneOf(head), parents: [branches[head]] });
+        branches[head] = id;
+        note = `New commit ${id} on ${head}. A commit is a snapshot plus a pointer to its parent; the branch label just moves forward.`;
+      }
+      if (a === "branch") {
+        if (branches.feature) { note = "The feature branch already exists."; return; }
+        branches.feature = branches.main; head = "feature";
+        note = "Created and switched to feature. A branch is just a movable label pointing at a commit: no files were copied.";
+      }
+      if (a === "switch") {
+        if (!branches.feature) { note = "Create a branch first."; return; }
+        head = head === "main" ? "feature" : "main";
+        note = `Switched to ${head}. Your working files now match the commit it points to.`;
+      }
+      if (a === "merge") {
+        if (!branches.feature) { note = "Create a branch first."; return; }
+        const m = branches.main, f = branches.feature;
+        if (ancestors(m).has(f)) { note = "main already contains everything on feature. Nothing to merge."; return; }
+        if (ancestors(f).has(m)) { branches.main = f; head = "main"; note = "Fast-forward: main hadn't moved, so its label simply moved up to feature's commit. No merge commit needed."; return; }
+        const id = "c" + n++;
+        commits.push({ id, lane: 0, parents: [m, f], merge: true });
+        branches.main = id; head = "main";
+        note = `Merge commit ${id} has two parents, joining both histories. Nothing was rewritten.`;
+      }
+      if (a === "rebase") {
+        if (!branches.feature) { note = "Create a branch first."; return; }
+        const mainSet = ancestors(branches.main);
+        const own = [...ancestors(branches.feature)].filter(id => !mainSet.has(id)).map(byId).sort((x, y) => +x.id.slice(1).replace("′", "") - +y.id.slice(1).replace("′", ""));
+        if (!own.length) { note = "feature has no commits of its own to rebase."; return; }
+        let base = branches.main;
+        own.forEach(c => { c.orphan = true; const id = c.id + "′"; commits.push({ id, lane: 1, parents: [base] }); base = id; });
+        branches.feature = base; head = "feature";
+        note = `Rebased: feature's ${own.length} commit${own.length > 1 ? "s were" : " was"} replayed on top of main as new commits (marked ′). The originals (faded) are no longer on any branch. History is linear, but the commits are new, so never rebase commits others have already pulled.`;
+      }
+    };
+    const body = widgetShell(el, "Branch, merge and rebase");
+    const draw = () => {
+      const X = i => 30 + i * 46, Y = l => 30 + l * 46;
+      const pos = Object.fromEntries(commits.map((c, i) => [c.id, [X(i), Y(c.lane)]]));
+      const edges = commits.flatMap(c => c.parents.map(p => {
+        const [x1, y1] = pos[p], [x2, y2] = pos[c.id];
+        return `<path class="ge ${c.orphan ? "orph" : ""}" d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}"/>`;
+      })).join("");
+      const nodes = commits.map(c => { const [x, y] = pos[c.id]; return `<g class="gn ${c.orphan ? "orph" : ""} ${c.lane ? "f" : "m"}"><circle cx="${x}" cy="${y}" r="11"/><text x="${x}" y="${y + 28}" text-anchor="middle">${c.id}</text></g>`; }).join("");
+      const labels = Object.entries(branches).map(([b, id], i) => { const [x, y] = pos[id]; return `<text class="gl ${b === head ? "head" : ""}" x="${x}" y="${y - 18 - (b === "feature" && branches.main === id ? 12 : 0)}" text-anchor="middle">${b}${b === head ? " (HEAD)" : ""}</text>`; }).join("");
+      const w = X(commits.length) + 40;
+      body.innerHTML = `
+        <div class="row wg-controls">
+          <button type="button" class="btn primary" data-a="commit">Commit on ${head}</button>
+          <button type="button" class="btn" data-a="branch">Create branch "feature"</button>
+          <button type="button" class="btn" data-a="switch">Switch branch</button>
+          <button type="button" class="btn" data-a="merge">Merge feature into main</button>
+          <button type="button" class="btn" data-a="rebase">Rebase feature onto main</button>
+          <button type="button" class="btn ghost" data-a="reset">Reset</button>
+        </div>
+        <div class="table-wrap"><svg class="ggraph" width="${w}" height="120" viewBox="0 0 ${w} 120" role="img" aria-label="Commit graph">${edges}${nodes}${labels}</svg></div>
+        <p class="wg-note" role="status">${esc(note)}</p>`;
+      $$("[data-a]", body).forEach(b => b.addEventListener("click", () => { if (b.dataset.a === "reset") reset(); else act(b.dataset.a); draw(); }));
+    };
+    reset();
+    draw();
+  };
+
+  /* Canary release */
+  W.canary = el => {
+    const STAGES = [1, 5, 25, 50, 100];
+    const BASE = 0.2, RPM = 10000;
+    let errRate = 4, stage = -1, log = [], rolledBack = false;
+    const body = widgetShell(el, "Roll out a release gradually");
+    const noise = i => 1 + 0.25 * Math.sin(i * 12.9898 + errRate * 7.13);
+    const advance = () => {
+      if (rolledBack || stage >= STAGES.length - 1) return;
+      stage++;
+      const pct = STAGES[stage];
+      const canaryReqs = RPM * 10 * pct / 100;
+      const observed = +(errRate * noise(stage)).toFixed(2);
+      const failed = Math.round(canaryReqs * observed / 100);
+      const bad = observed > Math.max(1, BASE * 3);
+      log.push({ pct, observed, failed, bad });
+      if (bad) rolledBack = true;
+    };
+    const draw = () => {
+      const totalFailed = log.reduce((s, x) => s + x.failed, 0);
+      const bigBang = Math.round(RPM * 10 * errRate / 100);
+      body.innerHTML = `
+        <label class="field-label" for="cn-e">The new version's real error rate: <b>${errRate}%</b> (the old version: ${BASE}%)</label>
+        <input id="cn-e" type="range" min="0" max="10" step="0.5" value="${errRate}" class="wg-range">
+        <div class="row wg-controls">
+          <button type="button" class="btn primary" data-a="go" ${rolledBack || stage >= STAGES.length - 1 ? "disabled" : ""}>${stage < 0 ? "Start canary at 1%" : "Next stage"}</button>
+          <button type="button" class="btn ghost" data-a="reset">Reset</button>
+        </div>
+        <div class="stages">${STAGES.map((p, i) => { const r = log[i]; return `<div class="stage ${r ? (r.bad ? "bad" : "ok") : ""}"><b>${p}%</b><small>${r ? r.observed + "% errors" : "not yet"}</small></div>`; }).join("")}</div>
+        <div class="readout">
+          <div class="em"><span>Failed requests during this rollout (10 min per stage)</span><b>${totalFailed.toLocaleString()}</b></div>
+          <div><span>If you'd shipped to 100% at once (10 min)</span><b>${bigBang.toLocaleString()}</b></div>
+        </div>
+        <p class="wg-note">${rolledBack ? `Automatic rollback at ${log[log.length - 1].pct}%: the canary's error rate (${log[log.length - 1].observed}%) breached the gate (over 3× the old version's rate and above 1%). Only the users in the canary saw the problem.` : stage >= STAGES.length - 1 ? "Fully rolled out. Every stage passed the error-rate gate." : "Each stage sends a slice of real traffic to the new version for 10 minutes and compares its error rate with the old version before going further."}</p>`;
+      $("#cn-e", body).addEventListener("input", e => { errRate = +e.target.value; stage = -1; log = []; rolledBack = false; draw(); $("#cn-e", body).focus(); });
+      $$("[data-a]", body).forEach(b => b.addEventListener("click", () => { if (b.dataset.a === "go") advance(); else { stage = -1; log = []; rolledBack = false; } draw(); }));
+    };
+    draw();
+  };
+
+  /* Mutation testing */
+  W.mutation = el => {
+    const CODE = `def shipping_cost(weight_kg, express):
+    if weight_kg <= 0:
+        raise ValueError("weight must be positive")
+    if weight_kg >= 20:
+        return 0                    # free shipping for heavy orders
+    cost = 5 + 2 * weight_kg
+    if express:
+        cost = cost * 2
+    return cost`;
+    const orig = (w, e) => { if (w <= 0) return "error"; if (w >= 20) return 0; let c = 5 + 2 * w; if (e) c *= 2; return c; };
+    const MUTANTS = [
+      ["<code>&gt;= 20</code> → <code>&gt; 20</code>", (w, e) => { if (w <= 0) return "error"; if (w > 20) return 0; let c = 5 + 2 * w; if (e) c *= 2; return c; }],
+      ["<code>5 + 2 *</code> → <code>5 - 2 *</code>", (w, e) => { if (w <= 0) return "error"; if (w >= 20) return 0; let c = 5 - 2 * w; if (e) c *= 2; return c; }],
+      ["<code>cost * 2</code> → <code>cost + 2</code>", (w, e) => { if (w <= 0) return "error"; if (w >= 20) return 0; let c = 5 + 2 * w; if (e) c += 2; return c; }],
+      ["<code>if express</code> → <code>if not express</code>", (w, e) => { if (w <= 0) return "error"; if (w >= 20) return 0; let c = 5 + 2 * w; if (!e) c *= 2; return c; }],
+      ["<code>&lt;= 0</code> → <code>&lt; 0</code>", (w, e) => { if (w < 0) return "error"; if (w >= 20) return 0; let c = 5 + 2 * w; if (e) c *= 2; return c; }],
+      ["<code>return 0</code> → <code>return 1</code>", (w, e) => { if (w <= 0) return "error"; if (w >= 20) return 1; let c = 5 + 2 * w; if (e) c *= 2; return c; }]
+    ];
+    const TESTS = [
+      ["2 kg, standard → 9", 2, false, [1, 2, 4, 6, 7, 9]],
+      ["1 kg, express → 14", 1, true, [1, 2, 4, 6, 7, 8, 9]],
+      ["25 kg → free", 25, false, [1, 2, 4, 5]],
+      ["exactly 20 kg → free", 20, false, [1, 2, 4, 5]],
+      ["0 kg → error", 0, false, [1, 2, 3]],
+      ["3 kg, standard → 11", 3, false, [1, 2, 4, 6, 7, 9]]
+    ];
+    let on = [true, false, true, false, false, false];
+    const body = widgetShell(el, "Do your tests actually catch bugs?");
+    const draw = () => {
+      const active = TESTS.filter((_, i) => on[i]);
+      const lines = new Set(active.flatMap(t => t[3]));
+      const coverage = Math.round(lines.size / 9 * 100);
+      const killed = MUTANTS.map(([, fn]) => active.some(([, w, e]) => fn(w, e) !== orig(w, e)));
+      const score = Math.round(killed.filter(Boolean).length / MUTANTS.length * 100);
+      body.innerHTML = `
+        <pre class="wg-log">${esc(CODE)}</pre>
+        <div class="mt-cols">
+          <div><b class="small">Your tests</b>${TESTS.map((t, i) => `<label class="mt-row"><input type="checkbox" data-i="${i}" ${on[i] ? "checked" : ""}> ${esc(t[0])}</label>`).join("")}</div>
+          <div><b class="small">Mutants (deliberate bugs)</b>${MUTANTS.map((m, i) => `<div class="mt-row"><span class="chip ${killed[i] ? "good" : "bad"}">${killed[i] ? "killed" : "survived"}</span> ${m[0]}</div>`).join("")}</div>
+        </div>
+        <div class="readout">
+          <div><span>Line coverage</span><b>${coverage}%</b></div>
+          <div class="em"><span>Mutation score (bugs caught)</span><b>${score}%</b></div>
+        </div>
+        <p class="wg-note">${coverage === 100 && score < 100 ? "100% line coverage, yet some bugs survive: every line ran, but no test checked the result closely enough. Boundary values (exactly 20 kg, exactly 0 kg) are where tests usually miss." : "A mutant is killed when at least one test fails on the buggy version. Tick tests to see which bugs they catch. Coverage says what ran; the mutation score says what was actually checked."}</p>`;
+      $$("[data-i]", body).forEach(c => c.addEventListener("change", () => { on[+c.dataset.i] = c.checked; draw(); }));
+    };
+    draw();
+  };
+
+  /* ---------- Week 9 widgets ---------- */
+
+  const fnv = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; };
+
+  /* Consistent hashing */
+  W.hashring = el => {
+    let servers = 4, vnodes = true;
+    const KEYS = Array.from({ length: 600 }, (_, i) => "user:" + i);
+    const ringFor = (count, v) => {
+      const pts = [];
+      for (let s = 0; s < count; s++) for (let r = 0; r < (v ? 50 : 1); r++) pts.push([fnv(`server-${s}#${r}`), s]);
+      return pts.sort((a, b) => a[0] - b[0]);
+    };
+    const lookup = (ring, key) => { const h = fnv(key); const p = ring.find(x => x[0] >= h) || ring[0]; return p[1]; };
+    const body = widgetShell(el, "Add a server: which keys move?");
+    const draw = () => {
+      const r1 = ringFor(servers, vnodes), r2 = ringFor(servers + 1, vnodes);
+      const ringMoved = KEYS.filter(k => lookup(r1, k) !== lookup(r2, k)).length;
+      const modMoved = KEYS.filter(k => fnv(k) % servers !== fnv(k) % (servers + 1)).length;
+      const load = Array(servers).fill(0); KEYS.forEach(k => load[lookup(r1, k)]++);
+      const max = Math.max(...load);
+      const ideal = KEYS.length / servers;
+      const cx = 90, cy = 90, R = 70;
+      const dots = r1.map(([h, s]) => { const a = h / 2 ** 32 * 2 * Math.PI - Math.PI / 2; return `<circle class="rs s${s % 6}" cx="${(cx + R * Math.cos(a)).toFixed(1)}" cy="${(cy + R * Math.sin(a)).toFixed(1)}" r="${vnodes ? 3 : 7}"/>`; }).join("");
+      body.innerHTML = `
+        <div class="row wg-controls">
+          <label class="small" for="hr-n">Servers <b>${servers}</b></label>
+          <input id="hr-n" type="range" min="2" max="8" value="${servers}" class="wg-range" style="width:140px">
+          <label class="small"><input type="checkbox" id="hr-v" ${vnodes ? "checked" : ""}> Virtual nodes (50 per server)</label>
+        </div>
+        <div class="hr-wrap">
+          <svg viewBox="0 0 180 180" width="180" height="180" class="ring" role="img" aria-label="Hash ring"><circle cx="90" cy="90" r="70" class="ring-c"/>${dots}</svg>
+          <div class="hr-bars">${load.map((l, i) => `<div class="hr-bar"><span class="mono small">server ${i}</span><span class="hb"><i class="s${i % 6}" style="width:${(l / max * 100).toFixed(0)}%"></i></span><span class="mono small">${l}</span></div>`).join("")}</div>
+        </div>
+        <div class="readout">
+          <div><span>Keys that move with hash % N (${servers} → ${servers + 1})</span><b>${Math.round(modMoved / KEYS.length * 100)}%</b></div>
+          <div class="em"><span>Keys that move with consistent hashing</span><b>${Math.round(ringMoved / KEYS.length * 100)}%</b></div>
+          <div><span>Busiest server vs ideal</span><b>${(max / ideal).toFixed(2)}×</b></div>
+        </div>
+        <p class="wg-note">With modulo, changing the number of servers sends almost every key somewhere new: a cache would lose nearly all its hits at once. On a ring, a new server only takes keys from its neighbors, about 1/${servers + 1} of them. Without virtual nodes, the load is uneven because a few points split the ring badly.</p>`;
+      $("#hr-n", body).addEventListener("input", e => { servers = +e.target.value; draw(); $("#hr-n", body).focus(); });
+      $("#hr-v", body).addEventListener("change", e => { vnodes = e.target.checked; draw(); });
+    };
+    draw();
+  };
+
+  /* Cache simulator */
+  W.cachesim = el => {
+    let capacity = 100, skew = 1.0;
+    const ITEMS = 1000, REQS = 20000;
+    const body = widgetShell(el, "How big should the cache be?");
+    const simulate = () => {
+      const weights = Array.from({ length: ITEMS }, (_, i) => 1 / Math.pow(i + 1, skew));
+      const total = weights.reduce((a, b) => a + b, 0);
+      const cum = []; let acc = 0; weights.forEach(w => { acc += w / total; cum.push(acc); });
+      let seed = 12345; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+      const cache = new Map(); let hits = 0;
+      for (let r = 0; r < REQS; r++) {
+        const u = rnd(); let lo = 0, hi = ITEMS - 1;
+        while (lo < hi) { const m = (lo + hi) >> 1; if (cum[m] < u) lo = m + 1; else hi = m; }
+        if (cache.has(lo)) { hits++; cache.delete(lo); cache.set(lo, 1); }
+        else if (capacity > 0) { cache.set(lo, 1); if (cache.size > capacity) cache.delete(cache.keys().next().value); }
+      }
+      return hits / REQS;
+    };
+    const draw = () => {
+      const hit = simulate();
+      const lat = hit * 1 + (1 - hit) * 20;
+      body.innerHTML = `
+        <label class="field-label" for="cs-c">Cache size: <b>${capacity}</b> of ${ITEMS} items (${(capacity / ITEMS * 100).toFixed(0)}%)</label>
+        <input id="cs-c" type="range" min="0" max="1000" step="10" value="${capacity}" class="wg-range">
+        <label class="field-label" for="cs-s">How concentrated is traffic on popular items? <b>${skew < 0.5 ? "evenly spread" : skew < 1.05 ? "typical" : "very concentrated"}</b></label>
+        <input id="cs-s" type="range" min="0" max="1.6" step="0.1" value="${skew}" class="wg-range">
+        <div class="readout">
+          <div class="em"><span>Hit rate (LRU)</span><b>${(hit * 100).toFixed(1)}%</b></div>
+          <div><span>Database queries per 1,000 requests</span><b>${Math.round((1 - hit) * 1000)}</b></div>
+          <div><span>Average latency (hit 1 ms, miss 20 ms)</span><b>${lat.toFixed(1)} ms</b></div>
+        </div>
+        <p class="wg-note">${skew >= 0.8 ? "Real traffic is usually skewed: a small share of items gets most requests, so a cache holding 10% of items can serve most reads. Notice the diminishing returns as the cache grows." : "With evenly spread traffic, the hit rate is roughly the fraction of items cached, so caching helps far less. Know your access pattern before sizing a cache."}</p>`;
+      $("#cs-c", body).addEventListener("input", e => { capacity = +e.target.value; draw(); $("#cs-c", body).focus(); });
+      $("#cs-s", body).addEventListener("input", e => { skew = +e.target.value; draw(); $("#cs-s", body).focus(); });
+    };
+    draw();
+  };
+
+  /* Circuit breaker */
+  W.breaker = el => {
+    const THRESHOLD = 3, COOLDOWN = 30;
+    let state, failures, openedAt, now, healthy, log;
+    const reset = () => { state = "closed"; failures = 0; openedAt = null; now = 0; healthy = true; log = []; };
+    const send = () => {
+      if (state === "open") {
+        if (now - openedAt >= COOLDOWN) { state = "half-open"; log.unshift(`t=${now}s: cooldown over → HALF-OPEN; letting one trial request through.`); }
+        else { log.unshift(`t=${now}s: OPEN → failed fast without calling the dependency (${COOLDOWN - (now - openedAt)}s of cooldown left).`); return; }
+      }
+      if (healthy) {
+        log.unshift(`t=${now}s: request succeeded.` + (state === "half-open" ? " Trial worked → CLOSED." : ""));
+        state = "closed"; failures = 0;
+      } else {
+        failures++;
+        if (state === "half-open") { state = "open"; openedAt = now; log.unshift(`t=${now}s: trial request failed → back to OPEN for ${COOLDOWN}s.`); }
+        else if (failures >= THRESHOLD) { state = "open"; openedAt = now; log.unshift(`t=${now}s: request timed out (failure ${failures}/${THRESHOLD}) → OPEN. Stop calling the dependency for ${COOLDOWN}s.`); }
+        else log.unshift(`t=${now}s: request timed out (failure ${failures}/${THRESHOLD}).`);
+      }
+    };
+    const body = widgetShell(el, "A circuit breaker in action");
+    const draw = () => {
+      body.innerHTML = `
+        <div class="row wg-controls">
+          <button type="button" class="btn primary" data-a="send">Send request</button>
+          <button type="button" class="btn" data-a="wait">Wait 10 seconds</button>
+          <label class="small"><input type="checkbox" id="cb-h" ${healthy ? "checked" : ""}> Dependency is healthy</label>
+          <button type="button" class="btn ghost" data-a="reset">Reset</button>
+        </div>
+        <div class="cb-states">${["closed", "open", "half-open"].map(s => `<span class="cb-state ${s === state ? "on " + s : ""}">${s.toUpperCase()}</span>`).join('<span class="muted">→</span>')}</div>
+        <div class="readout"><div><span>Time</span><b>${now}s</b></div><div><span>Consecutive failures</span><b>${failures}</b></div></div>
+        <pre class="wg-log" role="status">${esc(log.slice(0, 7).join("\n") || "Untick \"healthy\" and send a few requests.")}</pre>
+        <p class="wg-note">While OPEN, callers get an instant error instead of waiting for a timeout, and the struggling dependency gets breathing room to recover instead of being hammered by retries.</p>`;
+      $("#cb-h", body).addEventListener("change", e => { healthy = e.target.checked; draw(); });
+      $$("[data-a]", body).forEach(b => b.addEventListener("click", () => {
+        const a = b.dataset.a;
+        if (a === "send") send();
+        if (a === "wait") now += 10;
+        if (a === "reset") reset();
+        draw();
+      }));
+    };
+    reset();
+    draw();
+  };
+
+  /* ---------- Week 10 widgets ---------- */
+
+  /* Error budget */
+  W.budget = el => {
+    const SLOS = [99, 99.5, 99.9, 99.95, 99.99];
+    let slo = 2, used = 20, reqs = 50;
+    const body = widgetShell(el, "Error budget calculator");
+    const fmtMin = m => m >= 60 ? `${Math.floor(m / 60)} h ${Math.round(m % 60)} min` : m >= 1 ? `${m.toFixed(1)} min` : `${(m * 60).toFixed(0)} s`;
+    const draw = () => {
+      const target = SLOS[slo];
+      const budgetMin = 30 * 24 * 60 * (1 - target / 100);
+      const allowedFailures = reqs * 1e6 * (1 - target / 100);
+      const left = budgetMin - used;
+      const pct = Math.max(0, left / budgetMin * 100);
+      body.innerHTML = `
+        <div class="seg" role="radiogroup" aria-label="SLO">${SLOS.map((s, i) => `<button type="button" role="radio" aria-checked="${i === slo}" class="${i === slo ? "on" : ""}" data-s="${i}">${s}%</button>`).join("")}</div>
+        <label class="field-label" for="eb-u">Downtime so far this month: <b>${used} min</b></label>
+        <input id="eb-u" type="range" min="0" max="500" step="1" value="${used}" class="wg-range">
+        <div class="eb-bar" aria-hidden="true"><i class="${pct < 25 ? "low" : ""}" style="width:${pct.toFixed(1)}%"></i></div>
+        <div class="readout">
+          <div class="em"><span>Error budget (30 days)</span><b>${fmtMin(budgetMin)}</b></div>
+          <div><span>Remaining</span><b>${left >= 0 ? fmtMin(left) : "overspent by " + fmtMin(-left)}</b></div>
+          <div><span>Failed requests allowed (of ${reqs}M / month)</span><b>${Math.round(allowedFailures).toLocaleString()}</b></div>
+        </div>
+        <p class="wg-note">${left < 0 ? "Budget exhausted. A typical policy: freeze risky launches and spend engineering time on reliability until the service is back within its SLO." : pct < 25 ? "Budget nearly spent: slow down risky changes and prioritize reliability work." : "Budget available: the team can keep shipping at full speed. Unused budget is permission to take reasonable risks, not a target to hit."} Each extra nine cuts the budget tenfold.</p>`;
+      $$("[data-s]", body).forEach(b => b.addEventListener("click", () => { slo = +b.dataset.s; draw(); }));
+      $("#eb-u", body).addEventListener("input", e => { used = +e.target.value; draw(); $("#eb-u", body).focus(); });
+    };
+    draw();
+  };
+
+  /* Build vs buy */
+  W.tco = el => {
+    let devs = 2, months = 4, salary = 150, maint = 25, vendor = 3, years = 5;
+    const body = widgetShell(el, "Build or buy? Total cost over time");
+    const draw = () => {
+      const buildFirst = devs * salary * months / 12;
+      const buildYear = buildFirst * maint / 100;
+      const buyYear = vendor * 12;
+      const pts = [];
+      for (let y = 0; y <= years; y++) pts.push([y, buildFirst + buildYear * y, buyYear * y + (y === 0 ? 0 : 0)]);
+      const maxV = Math.max(...pts.map(p => Math.max(p[1], p[2]))) * 1.1 || 1;
+      const W2 = 320, H = 160, P = 30;
+      const sx = y => P + y / years * (W2 - P - 10), sy = v => H - P + 10 - v / maxV * (H - P);
+      const line = i => pts.map((p, k) => `${k ? "L" : "M"}${sx(p[0]).toFixed(1)},${sy(p[i]).toFixed(1)}`).join(" ");
+      let breakEven = null;
+      if (buyYear > buildYear) breakEven = buildFirst / (buyYear - buildYear);
+      body.innerHTML = `
+        <div class="tco-in">
+          <label>Engineers to build <input class="wg-input narrow" type="number" min="1" max="20" data-k="devs" value="${devs}"></label>
+          <label>Months to build <input class="wg-input narrow" type="number" min="1" max="36" data-k="months" value="${months}"></label>
+          <label>Cost per engineer ($k/yr, loaded) <input class="wg-input narrow" type="number" min="20" max="500" data-k="salary" value="${salary}"></label>
+          <label>Upkeep (% of build cost/yr) <input class="wg-input narrow" type="number" min="0" max="100" data-k="maint" value="${maint}"></label>
+          <label>Vendor price ($k/month) <input class="wg-input narrow" type="number" min="0" max="200" step="0.5" data-k="vendor" value="${vendor}"></label>
+        </div>
+        <div class="table-wrap"><svg viewBox="0 0 ${W2} ${H}" width="${W2}" height="${H}" class="tco-chart" role="img" aria-label="Cumulative cost">
+          <line x1="${P}" y1="${H - P + 10}" x2="${W2 - 10}" y2="${H - P + 10}" class="axis"/>
+          ${pts.map(p => `<text x="${sx(p[0])}" y="${H - 4}" text-anchor="middle" class="tick">yr ${p[0]}</text>`).join("")}
+          <path d="${line(1)}" class="l-build"/><path d="${line(2)}" class="l-buy"/>
+        </svg></div>
+        <div class="flegend"><span><i class="lg-build"></i>build (cumulative)</span><span><i class="lg-buy"></i>buy (cumulative)</span></div>
+        <div class="readout">
+          <div><span>Build: up front, then per year</span><b>$${Math.round(buildFirst)}k + $${Math.round(buildYear)}k/yr</b></div>
+          <div><span>Buy: per year</span><b>$${Math.round(buyYear)}k/yr</b></div>
+          <div class="em"><span>Building pays off after</span><b>${breakEven === null ? "never" : breakEven > years ? `${breakEven.toFixed(1)} yrs (beyond ${years})` : breakEven.toFixed(1) + " years"}</b></div>
+        </div>
+        <p class="wg-note">This leaves out the biggest cost of building: the opportunity cost of not spending those engineer-months on your actual product. Buy what isn't your differentiator, unless scale, control or cost clearly favor building.</p>`;
+      $$("[data-k]", body).forEach(inp => inp.addEventListener("change", e => {
+        const v = Math.max(0, +e.target.value || 0);
+        ({ devs: () => devs = v, months: () => months = v, salary: () => salary = v, maint: () => maint = v, vendor: () => vendor = v })[e.target.dataset.k]();
+        draw();
+      }));
+    };
+    draw();
+  };
+
+  /* One request through the stack */
+  W.trace = el => {
+    let warm = false, cacheHit = false, shown = 0;
+    const steps = () => [
+      { name: "Browser cache and URL parsing", ms: 1, wk: 6, note: "The browser checks whether it already has a fresh copy (Cache-Control) before going to the network." },
+      { name: "DNS lookup", ms: warm ? 0 : 25, wk: 5, note: warm ? "Answer already cached (within its TTL)." : "Recursive resolver walks root → .com → the domain's nameserver, or answers from cache." },
+      { name: "TCP handshake", ms: warm ? 0 : 20, wk: 5, note: warm ? "Reusing an open connection (keep-alive)." : "SYN, SYN-ACK, ACK: one round trip." },
+      { name: "TLS handshake", ms: warm ? 0 : 20, wk: 6, note: warm ? "Session already established." : "Key exchange and certificate check: one more round trip in TLS 1.3." },
+      { name: "HTTP request reaches the load balancer", ms: 10, wk: 9, note: "The load balancer picks a healthy app server (round robin or least connections)." },
+      { name: "App server handles it", ms: 2, wk: 4, note: "A worker thread or async task in the server process parses the request and runs your code." },
+      { name: cacheHit ? "Cache hit" : "Cache miss", ms: 1, wk: 9, note: cacheHit ? "The result is in Redis or memory: skip the database." : "Not in the cache, so go to the database (cache-aside)." },
+      ...(cacheHit ? [] : [
+        { name: "Database query via an index", ms: 4, wk: 7, note: "The B-tree index finds the row in a few page reads; most pages are already in the database's memory." },
+        { name: "Disk read for a cold page", ms: 0.1, wk: 4, note: "An SSD read for the one page not cached in RAM (about 100 µs)." }
+      ]),
+      { name: "Logs, metrics and a trace span recorded", ms: 0.2, wk: 8, note: "Latency, status code and a trace ID, so this request can be found and measured later." },
+      { name: "Response travels back", ms: 10, wk: 5, note: "Half a round trip back through the load balancer and the internet." },
+      { name: "Browser parses and renders", ms: 30, wk: 6, note: "Parse HTML, fetch CSS and JavaScript (often over the same connection), lay out and paint." }
+    ];
+    const body = widgetShell(el, "Follow one request through everything you've learned");
+    const draw = () => {
+      const s = steps();
+      const total = s.reduce((a, x) => a + x.ms, 0);
+      const elapsed = s.slice(0, shown).reduce((a, x) => a + x.ms, 0);
+      body.innerHTML = `
+        <div class="row wg-controls">
+          <button type="button" class="btn primary" data-a="next" ${shown >= s.length ? "disabled" : ""}>Next step</button>
+          <button type="button" class="btn" data-a="all">Show all</button>
+          <label class="small"><input type="checkbox" id="tr-warm" ${warm ? "checked" : ""}> Repeat visit (warm connection)</label>
+          <label class="small"><input type="checkbox" id="tr-hit" ${cacheHit ? "checked" : ""}> Cache hit</label>
+        </div>
+        <ol class="trace">${s.map((x, i) => `<li class="${i < shown ? "done" : ""}"><span class="tr-name"><b>${esc(x.name)}</b><small>${i < shown ? esc(x.note) : ""}</small></span><span class="mono small">${x.ms ? x.ms + " ms" : "0 ms"}</span><a class="chip" href="week-${String(x.wk).padStart(2, "0")}.html">week ${x.wk}</a></li>`).join("")}</ol>
+        <div class="readout">
+          <div class="em"><span>Elapsed so far</span><b>${elapsed.toFixed(1)} ms</b></div>
+          <div><span>Total for this request</span><b>${total.toFixed(1)} ms</b></div>
+        </div>
+        <p class="wg-note">Most of the time goes on network round trips and rendering, not your code. That's why connection reuse, caching and CDNs (which shorten round trips) matter so much.</p>`;
+      $("#tr-warm", body).addEventListener("change", e => { warm = e.target.checked; draw(); });
+      $("#tr-hit", body).addEventListener("change", e => { cacheHit = e.target.checked; shown = Math.min(shown, steps().length); draw(); });
+      $$("[data-a]", body).forEach(b => b.addEventListener("click", () => { shown = b.dataset.a === "all" ? steps().length : Math.min(shown + 1, steps().length); draw(); }));
+    };
+    draw();
+  };
+
   function setupWidgets() {
     $$("[data-widget]").forEach(el => {
       const fn = W[el.dataset.widget];

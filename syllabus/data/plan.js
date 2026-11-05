@@ -153,13 +153,105 @@ window.SYLLABUS = {
       quiz: "week-06-quiz",
       quizQuestions: 15
     },
-    { n: 7, slug: "week-07", status: "planned", title: "Databases and SQL",
-      summary: "Relational modelling, SQL from joins to aggregates, indexes and query plans, transactions and isolation, NoSQL trade-offs." },
-    { n: 8, slug: "week-08", status: "planned", title: "Software engineering practice",
-      summary: "Git workflows, testing strategy, CI/CD, containers, cloud basics, observability, and working in a team." },
-    { n: 9, slug: "week-09", status: "planned", title: "System design and distributed systems",
-      summary: "Scaling, caching, load balancing, queues, replication and sharding, consistency, idempotency, and designing for failure." },
-    { n: 10, slug: "week-10", status: "planned", title: "The business of software, and review",
-      summary: "How software companies work: roles, SLOs, incidents, technical debt, cost, build vs buy. Then a review week targeting your weakest areas." }
+    {
+      n: 7, slug: "week-07", status: "ready",
+      title: "Databases and SQL",
+      summary: "Relational modelling, SQL from joins to aggregates, indexes and query plans, transactions and isolation, databases in application code, and NoSQL trade-offs.",
+      objectives: [
+        { id: "w7-o1", text: "Design a normalized relational schema with keys and constraints" },
+        { id: "w7-o2", text: "Write SQL with joins, grouping, subqueries and window functions" },
+        { id: "w7-o3", text: "Explain how B-tree indexes work, and read a query plan" },
+        { id: "w7-o4", text: "Explain ACID, isolation levels and the anomalies each one allows" },
+        { id: "w7-o5", text: "Use a database safely from code: parameters, transactions, migrations, avoiding N+1" },
+        { id: "w7-o6", text: "Choose between relational, document, key-value, wide-column and graph databases" }
+      ],
+      lessons: [
+        { id: "w7-l1", title: "The relational model and schema design", minutes: 45 },
+        { id: "w7-l2", title: "Querying with SQL", minutes: 55 },
+        { id: "w7-l3", title: "Indexes and query plans", minutes: 45 },
+        { id: "w7-l4", title: "Transactions and isolation", minutes: 50 },
+        { id: "w7-l5", title: "Databases in application code", minutes: 40 },
+        { id: "w7-l6", title: "Beyond relational: choosing a database", minutes: 40 }
+      ],
+      checkpoints: 14,
+      project: { title: "Library database: queries, indexes and transactions", path: "syllabus/projects/week-07-library" },
+      quiz: "week-07-quiz",
+      quizQuestions: 15
+    },
+    {
+      n: 8, slug: "week-08", status: "ready",
+      title: "Software engineering practice",
+      summary: "Git in depth, testing strategy, code review and refactoring, CI/CD and safe releases, containers and the cloud, and observability.",
+      objectives: [
+        { id: "w8-o1", text: "Use Git confidently: commits, branches, merging, rebasing and recovering from mistakes" },
+        { id: "w8-o2", text: "Design a test suite: what to test at which level, test doubles, and judging test quality" },
+        { id: "w8-o3", text: "Write readable code, refactor safely, and give and receive useful code review" },
+        { id: "w8-o4", text: "Explain CI/CD pipelines and choose a safe release strategy" },
+        { id: "w8-o5", text: "Explain containers, images and orchestration, and the main cloud service models" },
+        { id: "w8-o6", text: "Instrument a service with logs, metrics and traces, and respond to incidents" }
+      ],
+      lessons: [
+        { id: "w8-l1", title: "Git in depth", minutes: 45 },
+        { id: "w8-l2", title: "Testing strategy", minutes: 50 },
+        { id: "w8-l3", title: "Code quality, review and refactoring", minutes: 40 },
+        { id: "w8-l4", title: "CI/CD and releasing safely", minutes: 45 },
+        { id: "w8-l5", title: "Containers and the cloud", minutes: 50 },
+        { id: "w8-l6", title: "Observability and incidents", minutes: 45 }
+      ],
+      checkpoints: 14,
+      project: { title: "Ship it: tests that catch bugs, and production-ready helpers", path: "syllabus/projects/week-08-shipit" },
+      quiz: "week-08-quiz",
+      quizQuestions: 15
+    },
+    {
+      n: 9, slug: "week-09", status: "ready",
+      title: "System design and distributed systems",
+      summary: "Scaling, load balancing, caching, queues, replication and sharding, consistency and failure handling, and designing a system end to end.",
+      objectives: [
+        { id: "w9-o1", text: "Scale a web application horizontally and estimate capacity with back-of-envelope numbers" },
+        { id: "w9-o2", text: "Design a caching layer and handle invalidation, eviction and stampedes" },
+        { id: "w9-o3", text: "Use queues for asynchronous work with at-least-once delivery and idempotent consumers" },
+        { id: "w9-o4", text: "Explain replication, partitioning and consistent hashing, and their trade-offs" },
+        { id: "w9-o5", text: "Design for failure with timeouts, retries, backoff, circuit breakers and rate limits" },
+        { id: "w9-o6", text: "Work through a system design from requirements to bottlenecks" }
+      ],
+      lessons: [
+        { id: "w9-l1", title: "Scaling a web application", minutes: 45 },
+        { id: "w9-l2", title: "Caching", minutes: 45 },
+        { id: "w9-l3", title: "Queues and asynchronous work", minutes: 40 },
+        { id: "w9-l4", title: "Replication and partitioning", minutes: 50 },
+        { id: "w9-l5", title: "Consistency, failure and resilience", minutes: 50 },
+        { id: "w9-l6", title: "Designing a system end to end", minutes: 45 }
+      ],
+      checkpoints: 14,
+      project: { title: "Distributed systems toolkit", path: "syllabus/projects/week-09-distkit" },
+      quiz: "week-09-quiz",
+      quizQuestions: 15
+    },
+    {
+      n: 10, slug: "week-10", status: "ready",
+      title: "The business of software, and review",
+      summary: "How software teams plan and ship, reliability as a business decision, technical debt and architecture choices, metrics and cost, privacy and licensing, then a review of the whole syllabus.",
+      objectives: [
+        { id: "w10-o1", text: "Explain how product teams plan and deliver work, and the roles involved" },
+        { id: "w10-o2", text: "Use SLOs and error budgets to balance reliability against speed, and run an incident review" },
+        { id: "w10-o3", text: "Reason about technical debt, build-versus-buy and architecture decisions, and record them" },
+        { id: "w10-o4", text: "Measure delivery with DORA metrics, avoid misleading metrics, and reason about cloud cost" },
+        { id: "w10-o5", text: "Apply privacy, compliance and open-source licensing basics" },
+        { id: "w10-o6", text: "Trace one request through every layer covered in this syllabus" }
+      ],
+      lessons: [
+        { id: "w10-l1", title: "How software teams work", minutes: 40 },
+        { id: "w10-l2", title: "Reliability as a business decision", minutes: 45 },
+        { id: "w10-l3", title: "Technical debt and architecture decisions", minutes: 45 },
+        { id: "w10-l4", title: "Measuring engineering and the cost of software", minutes: 40 },
+        { id: "w10-l5", title: "Privacy, compliance and licensing", minutes: 35 },
+        { id: "w10-l6", title: "Review: one request through the whole stack", minutes: 50 }
+      ],
+      checkpoints: 14,
+      project: { title: "Capstone: a production-style URL shortener", path: "syllabus/projects/week-10-capstone" },
+      quiz: "week-10-quiz",
+      quizQuestions: 15
+    }
   ]
 };
