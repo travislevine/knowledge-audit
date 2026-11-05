@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 9: System design and distributed systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 9 of 10 · about 10 hours</span>
+    <h1>System design and distributed systems</h1>
+    <p class="lede">This week puts everything together: how to take an application that runs on one machine and make it serve millions of users reliably. Once work is spread across many machines, new problems appear: networks fail, machines disagree, and the same message arrives twice. You'll learn the standard building blocks and the trade-offs behind them, then use them to design a system from scratch.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Scale a web application horizontally and estimate capacity with back-of-envelope numbers</li>
+      <li>Design a caching layer and handle invalidation, eviction and stampedes</li>
+      <li>Use queues for asynchronous work with at-least-once delivery and idempotent consumers</li>
+      <li>Explain replication, partitioning and consistent hashing, and their trade-offs</li>
+      <li>Design for failure with timeouts, retries, backoff, circuit breakers and rate limits</li>
+      <li>Work through a system design from requirements to bottlenecks</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 9.1 and 9.2 (scaling, caching)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 9.3 and 9.4 (queues, replication and partitioning)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 9.5 and 9.6 (failure handling, designing a system)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: distributed systems toolkit</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 9.1 ===================== -->
+  <section class="lesson" id="w9-l1">
+    <header><span class="eyebrow">Lesson 9.1 · 45 min</span><h2>Scaling a web application</h2></header>
+
+    <p>A typical small web app is one server running the code and the database. When traffic grows, you have two options:</p>
+    <ul>
+      <li><b>Scale vertically</b> (scale up): a bigger machine with more CPU and RAM. It's simple, needs no code changes, and goes surprisingly far, but it has a ceiling, gets expensive, and remains a single point of failure.</li>
+      <li><b>Scale horizontally</b> (scale out): more machines sharing the load. It has no hard ceiling and survives machine failures, but the application has to be designed for it.</li>
+    </ul>
+
+    <h3>Stateless servers behind a load balancer</h3>
+    <p>Horizontal scaling works when application servers are <b>stateless</b>: any server can handle any request, because nothing about a user lives only in one server's memory. Sessions go in a shared store (Redis or the database) or a signed token; uploaded files go in object storage like S3, not the local disk. Then a <b>load balancer</b> spreads requests across servers using round robin, least connections, or hashing on a key. It runs <b>health checks</b> and stops sending traffic to servers that fail them, so servers can be added, removed and replaced at any time. That's what makes autoscaling and the rolling deploys from week 8 possible.</p>
+    <p>The usual growth path is: separate the database onto its own machine; add more stateless app servers behind a load balancer; add caching (lesson 9.2); move slow work to background workers (9.3); add database read replicas (9.4); and only much later, shard the database. Put a <b>CDN</b> in front to serve static files and cached pages from locations near users.</p>
+
+    <h3>Back-of-envelope estimates</h3>
+    <p>Rough numbers tell you which parts of a design actually matter. Useful facts:</p>
+    <ul>
+      <li>A day has about 86,400 seconds, call it 10⁵. So 1 million requests a day is only about 12 per second on average; plan for peaks of 2–10× that.</li>
+      <li>One well-written app server handles hundreds to a few thousand simple requests per second; one PostgreSQL server handles thousands of simple queries per second.</li>
+      <li>Latency (week 1): memory ~100 ns, SSD ~100 µs, same-datacenter round trip ~0.5 ms, cross-continent round trip ~100 ms.</li>
+      <li>Storage: 1 million users × 1 KB each is only 1 GB. 1 million photos × 2 MB each is 2 TB.</li>
+    </ul>
+    <pre class="code"><code>Example: 10 million daily users, each loading 20 pages a day
+  200 million requests/day ÷ 10⁵ s ≈ 2,000 requests/s average, ~10,000/s at peak
+  At ~1,000 req/s per server → ~10 app servers at peak, plus headroom for failures
+  If 90% of reads hit the cache, the database sees ~1,000 queries/s: one primary copes</code></pre>
+
+    <div class="check" data-id="w9-c1" data-answer="2">
+      <p class="check-q">You add a second app server behind a load balancer, and users start getting logged out at random. What's the most likely cause?</p>
+      <ol class="check-o"><li>The load balancer is broken</li><li>The database is overloaded</li><li>Sessions are stored in each server's memory, so a request routed to the other server doesn't find the user's session</li><li>Cookies don't work with two servers</li></ol>
+      <div class="check-why">Servers must be stateless for horizontal scaling. Put sessions in a shared store (or use signed tokens). Sticky sessions are a stopgap that breaks when a server dies.</div>
+    </div>
+    <div class="check" data-id="w9-c2" data-answer="0">
+      <p class="check-q">A service gets 5 million requests per day. Roughly what's the average request rate?</p>
+      <ol class="check-o"><li>About 60 per second</li><li>About 5,000 per second</li><li>About 600 per second</li><li>About 6 per second</li></ol>
+      <div class="check-why">5,000,000 ÷ 86,400 ≈ 58. Daily numbers sound huge, but per second they're often modest. Peaks matter more than the average, though.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 9.2 ===================== -->
+  <section class="lesson" id="w9-l2">
+    <header><span class="eyebrow">Lesson 9.2 · 45 min</span><h2>Caching</h2></header>
+
+    <p>A cache keeps copies of expensive-to-get data somewhere faster. Caches exist at every level: the CPU (week 1), the OS page cache (week 4), the browser and CDN (HTTP caching, week 6), and application caches such as Redis or Memcached in front of a database.</p>
+
+    <h3>Cache-aside</h3>
+    <p>The most common pattern in applications:</p>
+    <pre class="code"><code>def get_product(product_id):
+    key = f"product:{product_id}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached                                  <span class="c"># hit: about 1 ms</span>
+    product = db.query("SELECT ... WHERE id = ?", product_id)   <span class="c"># miss: maybe 20 ms</span>
+    cache.set(key, product, ttl=300)                   <span class="c"># keep it for 5 minutes</span>
+    return product</code></pre>
+    <p>Whether a cache helps depends on the <b>hit rate</b>, and that depends on how traffic is distributed. Real traffic is usually skewed: a small set of popular items gets most requests. Explore it:</p>
+
+    <div data-widget="cachesim"></div>
+
+    <h3>The hard part: invalidation</h3>
+    <p>"There are only two hard things in computer science: cache invalidation and naming things." When the underlying data changes, cached copies become <b>stale</b>. The main options:</p>
+    <ul>
+      <li><b>TTL (time to live)</b>: entries expire after a while. Simple, and bounds how stale data can get. The right TTL depends on how much staleness the feature can tolerate.</li>
+      <li><b>Invalidate on write</b>: delete the cache entry whenever the data is updated. Delete rather than update it, which avoids races where an older value overwrites a newer one.</li>
+      <li><b>Write-through</b>: write to the cache and the database together.</li>
+    </ul>
+    <p>When the cache is full, an <b>eviction policy</b> chooses what to drop. LRU (least recently used, from weeks 2 and 4) is the usual choice.</p>
+
+    <h3>Failure modes</h3>
+    <ul>
+      <li><b>Cache stampede</b>: a popular entry expires, and thousands of requests miss at the same moment and all hit the database. Fixes: let one request rebuild the value while the others wait for it (single-flight, or "request coalescing"), refresh popular entries before they expire, and add random jitter to TTLs.</li>
+      <li><b>Cold cache</b>: after a restart or deploy the cache is empty, and the database briefly takes the full load. Make sure the database can survive that.</li>
+      <li><b>Caching errors or empty results</b> by mistake, or caching private data under a shared key, which can show one user's data to another.</li>
+    </ul>
+
+    <div class="check" data-id="w9-c3" data-answer="3">
+      <p class="check-q">The cache entry for the home page expires at 12:00:00, and 5,000 requests arrive in the next second. The database falls over. What happened, and what's a fix?</p>
+      <ol class="check-o"><li>The cache was too small; buy more memory</li><li>The TTL was too long</li><li>A DNS failure</li><li>A cache stampede: every request missed at once and queried the database. Let only one request recompute the value while the others wait (single-flight), or refresh it before it expires</li></ol>
+      <div class="check-why">You'll build single-flight loading in this week's project. Random jitter on TTLs also stops many keys expiring at the same moment.</div>
+    </div>
+    <div class="check" data-id="w9-c4" data-answer="1">
+      <p class="check-q">When a product's price changes, why do many systems <i>delete</i> its cache entry rather than writing the new price into the cache?</p>
+      <ol class="check-o"><li>Deleting is faster than writing</li><li>Deleting avoids races where two concurrent updates write to the cache in the wrong order and leave a stale value there indefinitely; the next read simply reloads the current value from the database</li><li>Caches can't be updated</li><li>To save memory</li></ol>
+      <div class="check-why">Delete-on-write plus a TTL as a safety net is a simple, robust default.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=zw7VwIlkPPc" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/zw7VwIlkPPc/mqdefault.jpg" alt="" loading="lazy"><span><b>Caching in distributed systems: A friendly introduction</b><small>YouTube explainer</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 9.3 ===================== -->
+  <section class="lesson" id="w9-l3">
+    <header><span class="eyebrow">Lesson 9.3 · 40 min</span><h2>Queues and asynchronous work</h2></header>
+
+    <p>Not everything has to happen while the user waits. When someone places an order, you must charge the card and save the order now, but the confirmation email, the warehouse notification and the analytics update can happen a few seconds later. Put those jobs on a <b>message queue</b>, respond to the user immediately, and let <b>worker</b> processes handle them in the background.</p>
+
+    <h3>What queues give you</h3>
+    <ul>
+      <li><b>Faster responses</b>: the request only does the essential work.</li>
+      <li><b>Decoupling</b>: if the email service is down, orders still succeed; messages wait in the queue until it recovers.</li>
+      <li><b>Smoothing spikes</b>: a sudden burst of jobs queues up and is processed at a steady rate, like the bounded queue from week 4, at the scale of whole systems.</li>
+      <li><b>Independent scaling</b>: add more workers when the queue grows.</li>
+    </ul>
+    <p>Two common shapes: a <b>work queue</b>, where each message is processed by one worker (RabbitMQ, SQS), and <b>publish/subscribe</b>, where an event like "OrderPlaced" is delivered to every interested service (Kafka, SNS, Google Pub/Sub). Kafka also keeps an ordered, replayable log of events.</p>
+
+    <h3>Delivery guarantees and idempotency</h3>
+    <p>A worker takes a message, processes it, then <b>acknowledges</b> it. If the worker crashes before acknowledging, the queue delivers the message again. That gives <b>at-least-once delivery</b>: messages are never lost, but they can arrive more than once. ("Exactly-once" delivery isn't achievable in general over a network; systems that claim it really mean at-least-once plus deduplication.)</p>
+    <p>So consumers must be <b>idempotent</b>: processing a message twice must have the same effect as processing it once. Common techniques: give each message a unique ID and record IDs you've already processed (in the same transaction as the work), use upserts instead of inserts, and make operations set values rather than add to them. Messages that keep failing go to a <b>dead-letter queue</b> for inspection, so one bad message doesn't block everything else.</p>
+
+    <div class="check" data-id="w9-c5" data-answer="2">
+      <p class="check-q">A queue delivers "send welcome email to user 42". The worker sends the email, then crashes before acknowledging the message. What happens next, and what should the worker do about it?</p>
+      <ol class="check-o"><li>The message is lost; nothing to do</li><li>The queue deletes it automatically after sending</li><li>The message is redelivered (at-least-once), so the worker should record processed message IDs and skip duplicates, otherwise the user gets two emails</li><li>The queue sends it to every worker</li></ol>
+      <div class="check-why">Assume duplicates will happen and design consumers to be idempotent. You'll build a deduplicating consumer in the project.</div>
+    </div>
+    <div class="check" data-id="w9-c6" data-answer="0">
+      <p class="check-q">Which work should move to a background queue during checkout?</p>
+      <ol class="check-o"><li>Sending the confirmation email and updating recommendation data</li><li>Checking that the item is in stock</li><li>Charging the card</li><li>Saving the order</li></ol>
+      <div class="check-why">Anything the user needs an answer about before the page responds stays synchronous. Anything that can happen a few seconds later, and can be retried, belongs on a queue.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 9.4 ===================== -->
+  <section class="lesson" id="w9-l4">
+    <header><span class="eyebrow">Lesson 9.4 · 50 min</span><h2>Replication and partitioning</h2></header>
+
+    <h3>Replication: copies of the same data</h3>
+    <p>Keeping copies of the data on several machines gives you <b>fault tolerance</b> (lose a machine, keep the data) and more <b>read capacity</b>. The common setup is <b>leader–follower</b>: all writes go to the leader (primary), which streams changes to followers (replicas) that serve reads. If the leader dies, a follower is promoted.</p>
+    <p>Replication is usually <b>asynchronous</b>: the leader doesn't wait for followers before confirming a write. That's fast, but followers lag slightly behind, from milliseconds to seconds under load. That <b>replication lag</b> causes real bugs: a user updates their profile, the next page reads from a follower that hasn't caught up, and their change seems to have vanished. Fixes include reading your own recent writes from the leader (<b>read-your-writes</b> consistency), or routing a user to the same replica each time. Synchronous replication avoids lag but makes every write wait for the slowest replica.</p>
+
+    <h3>Partitioning (sharding): splitting the data</h3>
+    <p>When one machine can't hold all the data or handle all the writes, split the data into <b>partitions</b> (shards), each on different machines. The key decision is the <b>partition key</b>:</p>
+    <ul>
+      <li><b>Range partitioning</b> (A–F on shard 1, G–M on shard 2…) keeps ranges together for range queries, but creates <b>hotspots</b> when keys are uneven. Partitioning by timestamp sends all of today's writes to one shard.</li>
+      <li><b>Hash partitioning</b> spreads keys evenly, but range queries must ask every shard.</li>
+    </ul>
+    <p>Choose a key that spreads load evenly <i>and</i> keeps data that's queried together on the same shard, such as <code>user_id</code> for per-user data. Queries that span shards, and transactions across shards, become slow or impossible, which is why sharding is a last resort.</p>
+
+    <h3>Consistent hashing</h3>
+    <p>The naive way to pick a shard is <code>hash(key) % N</code>. But change N by adding a server, and almost every key maps somewhere new. For a cache that means nearly every request misses at once. <b>Consistent hashing</b> places servers and keys on a ring; each key belongs to the next server clockwise. Adding a server only moves the keys between it and its neighbor. <b>Virtual nodes</b> (many points per server) even out the load.</p>
+
+    <div data-widget="hashring"></div>
+
+    <div class="check" data-id="w9-c7" data-answer="1">
+      <p class="check-q">A user changes their display name, the page reloads, and the old name is still shown. A second reload shows the new name. What's the most likely cause?</p>
+      <ol class="check-o"><li>The browser cache is broken</li><li>Replication lag: the write went to the leader, but the reload read from a follower that hadn't caught up yet</li><li>The database lost the write</li><li>A deadlock</li></ol>
+      <div class="check-why">Read-your-writes consistency (reading a user's own recent changes from the leader) fixes exactly this.</div>
+    </div>
+    <div class="check" data-id="w9-c8" data-answer="3">
+      <p class="check-q">An events table is sharded by <code>created_at</code> month. Why do writes overwhelm one machine while the others sit idle?</p>
+      <ol class="check-o"><li>The shards are too small</li><li>Hash partitioning is always uneven</li><li>The machines have different hardware</li><li>All new events have current timestamps, so every write goes to the shard holding the current month: a hotspot</li></ol>
+      <div class="check-why">Partition on a key that spreads writes (like a hash of user or device ID). Time-based partitioning suits archiving, not spreading write load.</div>
+    </div>
+    <div class="check" data-id="w9-c9" data-answer="0">
+      <p class="check-q">A cache cluster grows from 10 to 11 servers. Roughly what fraction of keys move with consistent hashing, compared with <code>hash % N</code>?</p>
+      <ol class="check-o"><li>About 1/11 with consistent hashing; about 90% with hash % N</li><li>About half either way</li><li>None with consistent hashing; all with hash % N</li><li>About 1/11 either way</li></ol>
+      <div class="check-why">Changing N in a modulo remaps almost every key. On a ring, the new server only takes its share from its neighbors.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=UF9Iqmg94tk" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/UF9Iqmg94tk/mqdefault.jpg" alt="" loading="lazy"><span><b>Consistent Hashing</b><small>ByteByteGo</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 9.5 ===================== -->
+  <section class="lesson" id="w9-l5">
+    <header><span class="eyebrow">Lesson 9.5 · 50 min</span><h2>Consistency, failure and resilience</h2></header>
+
+    <h3>CAP and its practical cousin</h3>
+    <p>The <b>CAP theorem</b> says that during a <b>network partition</b> (some machines can't reach others), a replicated system must choose: stay <b>consistent</b> by refusing some requests, or stay <b>available</b> by answering with possibly stale or conflicting data. Partitions happen, so the real choice is what to do when one does. A bank balance should refuse rather than risk overspending; a "likes" counter should keep accepting likes and reconcile later. <b>PACELC</b> adds the everyday trade-off: <i>else</i>, when there's no partition, you trade <b>latency</b> against <b>consistency</b>, because waiting for replicas to agree takes time. <b>Eventual consistency</b> means replicas converge if writes stop; it's fine for many features, but you have to design for the moments in between.</p>
+
+    <h3>Everything fails, so plan for it</h3>
+    <p>In a distributed system, a remote call can succeed, fail, or <b>time out</b>, and a timeout doesn't tell you whether the work happened. The standard toolkit:</p>
+    <ul>
+      <li><b>Timeouts on every network call.</b> Without them, a slow dependency ties up your threads until you run out (week 4), and your service fails too.</li>
+      <li><b>Retries with exponential backoff and jitter</b>: wait 100 ms, then 200, 400…, randomized so thousands of clients don't retry in sync. Retry only errors that are likely temporary, and cap the number of attempts. Naive immediate retries multiply load on a struggling service: a <b>retry storm</b>.</li>
+      <li><b>Idempotency keys</b>: retries are only safe if repeating the request is harmless. The client sends a unique key with each logical request, and the server stores the result for that key, returning it on a retry instead of charging the card twice.</li>
+      <li><b>Circuit breakers</b>: after repeated failures, stop calling the dependency for a while and fail fast, giving it time to recover.</li>
+      <li><b>Rate limiting</b>: cap how many requests each client can make (for example a <b>token bucket</b>: tokens refill at a steady rate and each request spends one), to protect the service from overload and abuse.</li>
+      <li><b>Graceful degradation</b>: if recommendations are down, show the page without them rather than failing it.</li>
+    </ul>
+
+    <div data-widget="breaker"></div>
+
+    <h3>Operations that span services</h3>
+    <p>Database transactions don't stretch across services. If an order needs a payment service and an inventory service, use a <b>saga</b>: a sequence of local steps, each with a <b>compensating action</b> (refund the payment if reserving stock fails). To reliably publish an event when you change your database, use the <b>outbox pattern</b>: write the event to an outbox table in the same transaction as the change, and have a separate process publish it. Otherwise a crash between "save" and "publish" loses the event.</p>
+
+    <div class="check" data-id="w9-c10" data-answer="2">
+      <p class="check-q">A payment API call times out. Why can't the client simply retry?</p>
+      <ol class="check-o"><li>Timeouts are permanent errors</li><li>Retrying is always forbidden</li><li>A timeout doesn't say whether the payment went through; a retry could charge twice unless the request carries an idempotency key the server uses to detect the repeat</li><li>The card would be declined</li></ol>
+      <div class="check-why">Unknown outcomes are the norm in distributed systems. Idempotency keys make retries safe, which is why payment APIs require them.</div>
+    </div>
+    <div class="check" data-id="w9-c11" data-answer="1">
+      <p class="check-q">A database slows down. Thousands of clients each retry failed requests immediately, three times. What happens?</p>
+      <ol class="check-o"><li>The retries help the database recover</li><li>Load on the struggling database multiplies (a retry storm), making the outage worse; use exponential backoff with jitter, limited retries and a circuit breaker</li><li>Nothing changes</li><li>The requests are queued safely</li></ol>
+      <div class="check-why">Retries are load. Back off, spread retries out with jitter, and stop calling a dependency that's clearly down.</div>
+    </div>
+    <div class="check" data-id="w9-c12" data-answer="3">
+      <p class="check-q">During a network partition between two data centers, which feature should usually keep serving requests (choosing availability), accepting that data may briefly disagree?</p>
+      <ol class="check-o"><li>Withdrawing money from a bank account</li><li>Booking the last seat on a flight</li><li>Issuing unique usernames</li><li>Showing and counting "likes" on posts</li></ol>
+      <div class="check-why">A briefly wrong like count harms nobody and can be reconciled. The other three must never double-book or double-spend, so they should prefer consistency.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=gkg-FAEXIkY" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/gkg-FAEXIkY/mqdefault.jpg" alt="" loading="lazy"><span><b>Friendly Intro To the CAP Theorem</b><small>YouTube explainer</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 9.6 ===================== -->
+  <section class="lesson" id="w9-l6">
+    <header><span class="eyebrow">Lesson 9.6 · 45 min</span><h2>Designing a system end to end</h2></header>
+
+    <p>System design is a structured conversation about trade-offs, not a search for one right answer. A reliable approach:</p>
+    <ol>
+      <li><b>Clarify requirements.</b> What must it do (functional)? How fast, how big, how available, how consistent (non-functional)? What's out of scope?</li>
+      <li><b>Estimate</b> traffic, storage and read/write ratios (lesson 9.1). This tells you what's actually hard.</li>
+      <li><b>Define the API</b> and the <b>data model</b>.</li>
+      <li><b>Sketch the high-level design</b>: clients, load balancer, services, databases, caches, queues.</li>
+      <li><b>Go deep on the hardest parts</b>, the bottlenecks your estimates revealed.</li>
+      <li><b>Discuss failures and trade-offs</b>: what breaks, what happens then, and what you'd do differently at 10× scale.</li>
+    </ol>
+
+    <h3>Worked example: a URL shortener</h3>
+    <p><b>Requirements</b>: create a short link for a long URL; redirect when someone visits it; links don't expire; redirects must be very fast and highly available; optional click counts.</p>
+    <p><b>Estimates</b>: 1 million new links a day (about 12 per second) and 100 million redirects a day (about 1,200 per second average, perhaps 10,000 at peak). Reads outnumber writes 100 to 1. Over 5 years: about 2 billion links × ~500 bytes ≈ 1 TB.</p>
+    <p><b>API</b>: <code>POST /links {url}</code> returns <code>{code}</code>; <code>GET /{code}</code> returns <code>301</code> or <code>302</code> with a <code>Location</code> header.</p>
+    <p><b>Short codes</b>: encode a unique ID in <b>base62</b> (a–z, A–Z, 0–9). Seven characters give 62⁷ ≈ 3.5 trillion codes, far more than needed. IDs can come from a database sequence, or from ranges handed out to each server so they never collide. Random codes are an alternative, but then you must check for collisions.</p>
+    <p><b>Design</b>: stateless app servers behind a load balancer; a database table <code>links(code PRIMARY KEY, url, created_at)</code>; a cache in front for redirects, since popular links get most traffic, so the hit rate will be very high; rate limiting on link creation to stop abuse; and click counts recorded <b>asynchronously</b> through a queue, so counting never slows a redirect.</p>
+    <p><b>Trade-offs to discuss</b>: 301 (permanent, so browsers cache it, which is fast but means you won't see repeat clicks) vs 302 (temporary, so every click comes to you); one database vs sharding by code once the data or write rate outgrows one machine; and what happens if the cache cluster fails (the database must survive the miss traffic). You'll build a small version of this as the week 10 capstone.</p>
+
+    <div class="check" data-id="w9-c13" data-answer="0">
+      <p class="check-q">In a system design discussion, why estimate traffic and storage before choosing components?</p>
+      <ol class="check-o"><li>The numbers show what's actually hard (here, a read-heavy load that caching handles), and stop you over-engineering parts that one server can handle</li><li>Interviewers require it, but it doesn't affect the design</li><li>To decide the programming language</li><li>Estimates are only needed for billing</li></ol>
+      <div class="check-why">12 writes per second needs no sharding; 10,000 reads per second at peak needs a cache. Estimates turn vague worries into specific decisions.</div>
+    </div>
+    <div class="check" data-id="w9-c14" data-answer="2">
+      <p class="check-q">How many distinct 7-character codes are possible using base62 (a–z, A–Z, 0–9)?</p>
+      <ol class="check-o"><li>About 62 × 7 = 434</li><li>About 10 million</li><li>About 3.5 trillion (62⁷)</li><li>About 7⁶²</li></ol>
+      <div class="check-why">Each position has 62 options: 62⁷ ≈ 3.52 × 10¹². It's the same "n positions with k options = kⁿ" reasoning as bits in week 1.</div>
+    </div>
+
+    <div class="note-box"><strong>Week 9 in one paragraph</strong><p>Scale out with stateless servers behind load balancers, and estimate first so you only solve the problems you have. Caches multiply capacity when traffic is skewed, but need invalidation, eviction and stampede protection. Queues move non-urgent work off the request path; delivery is at-least-once, so consumers must be idempotent. Replicate for availability and read capacity (and handle lag), and partition for size and write throughput (and choose keys that avoid hotspots); consistent hashing limits reshuffling. Everything fails: use timeouts, retries with backoff and jitter, idempotency keys, circuit breakers and rate limits. Design systems by moving from requirements to estimates to API, data model, components, bottlenecks and failures.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Distributed systems toolkit</h2>
+    <p>Build five building blocks from this week, each as a small, well-tested Python class: a consistent hash ring with virtual nodes; a TTL plus LRU cache with single-flight loading that prevents stampedes (tested with real threads); a token-bucket rate limiter; a circuit breaker; and an idempotent message consumer that handles redelivered and duplicate messages. Everything takes an injected clock, so the tests are instant and deterministic.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-09-distkit/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-09-distkit
+python -m unittest -v</code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li>All five classes implemented in <code>distkit.py</code></li>
+      <li>All tests passing</li>
+      <li>A short design write-up in the README (one of the prompts)</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 9 quiz</h2>
+    <p>15 questions covering all six lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-09.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-08.html">← Week 8</a><a class="btn" href="week-10.html">Next: Week 10 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 9;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
