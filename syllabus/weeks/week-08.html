@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 8: Software engineering practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 8 of 10 · about 10 hours</span>
+    <h1>Software engineering practice</h1>
+    <p class="lede">Writing code that works on your machine is the start. Professional software is changed by many people, tested automatically, shipped many times a week, and watched in production. This week covers the practices that make that possible: Git beyond the basics, testing that actually catches bugs, code review, CI/CD, containers and the cloud, and observability.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Use Git confidently: commits, branches, merging, rebasing and recovering from mistakes</li>
+      <li>Design a test suite: what to test at which level, test doubles, and judging test quality</li>
+      <li>Write readable code, refactor safely, and give and receive useful code review</li>
+      <li>Explain CI/CD pipelines and choose a safe release strategy</li>
+      <li>Explain containers, images and orchestration, and the main cloud service models</li>
+      <li>Instrument a service with logs, metrics and traces, and respond to incidents</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 8.1 and 8.2 (Git, testing)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 8.3 and 8.4 (code quality, CI/CD)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 8.5 and 8.6 (containers and cloud, observability)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: ship it</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 8.1 ===================== -->
+  <section class="lesson" id="w8-l1">
+    <header><span class="eyebrow">Lesson 8.1 · 45 min</span><h2>Git in depth</h2></header>
+
+    <p>Git makes much more sense once you know its model. A <b>commit</b> is a snapshot of the whole project (not a diff), plus metadata and a pointer to its <b>parent</b> commit(s). Commits are identified by a hash of their contents, so they can never change; "editing" history really creates new commits. A <b>branch</b> is just a label pointing at a commit, and <b>HEAD</b> says which branch you're on. Committing moves the current branch's label forward.</p>
+    <p>Three places matter day to day: the <b>working directory</b> (your files), the <b>staging area</b> (what <code>git add</code> has queued for the next commit), and the <b>repository</b> (committed history).</p>
+
+    <div data-widget="gitgraph"></div>
+
+    <h3>Merge vs rebase</h3>
+    <ul>
+      <li><b>Merge</b> joins two lines of history with a merge commit that has two parents. Nothing is rewritten, and the history shows what really happened. If the target branch hasn't moved, Git simply <b>fast-forwards</b> its label.</li>
+      <li><b>Rebase</b> replays your commits on top of another branch as new commits, giving a straight-line history. Because it creates new commits, <b>never rebase commits that others have already pulled</b>: their copies would diverge from yours.</li>
+    </ul>
+    <p>A common team workflow: short-lived feature branches, rebased or merged onto the latest <code>main</code>, opened as a pull request, reviewed, and merged once CI passes.</p>
+
+    <h3>Conflicts and recovery</h3>
+    <p>A <b>conflict</b> happens when two branches change the same lines. Git marks them with <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>; you edit the file to the correct result, <code>git add</code> it, and continue. Small, frequent merges keep conflicts small.</p>
+    <p>Git rarely loses committed work. Useful commands when things go wrong:</p>
+    <pre class="code"><code>git restore file.py              <span class="c"># discard uncommitted changes to a file</span>
+git commit --amend               <span class="c"># fix the last commit (only if not yet pushed)</span>
+git revert &lt;commit&gt;              <span class="c"># new commit that undoes an old one: safe on shared branches</span>
+git reset --soft HEAD~1          <span class="c"># undo the last commit, keep its changes staged</span>
+git reflog                       <span class="c"># everywhere HEAD has been: find "lost" commits after a bad reset or rebase</span>
+git bisect start                 <span class="c"># binary-search history for the commit that introduced a bug (week 3)</span></code></pre>
+    <p>Good commits are <b>small and focused</b>, with messages that say <i>why</i>: "Fix rounding in invoice totals for multi-currency orders", not "fix stuff". Future you, running <code>git blame</code> on a confusing line, will be grateful. And never commit secrets: Git history keeps them forever.</p>
+
+    <div class="check" data-id="w8-c1" data-answer="1">
+      <p class="check-q">You rebased your feature branch, which a teammate had already pulled and built on. What problem have you created?</p>
+      <ol class="check-o"><li>None; rebase only changes commit messages</li><li>Rebase created new commits replacing the old ones; your teammate's work is based on commits that no longer exist on your branch, so their history now diverges and needs untangling</li><li>The branch was deleted</li><li>Git will refuse to push</li></ol>
+      <div class="check-why">Rebasing rewrites history. Do it freely on local or private branches; on shared branches, merge instead (or coordinate a force-push carefully).</div>
+    </div>
+    <div class="check" data-id="w8-c2" data-answer="3">
+      <p class="check-q">A bad commit was merged into <code>main</code>, which everyone pulls from. What's the safe way to undo it?</p>
+      <ol class="check-o"><li><code>git reset --hard</code> to before the commit, then force-push</li><li>Delete the main branch</li><li>Edit the files back by hand without committing</li><li><code>git revert &lt;commit&gt;</code>, which adds a new commit undoing it without rewriting shared history</li></ol>
+      <div class="check-why">Reverting keeps history intact for everyone. Resetting and force-pushing shared branches breaks other people's clones.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=hwP7WQkmECE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/hwP7WQkmECE/mqdefault.jpg" alt="" loading="lazy"><span><b>Git Explained in 100 Seconds</b><small>Fireship</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 8.2 ===================== -->
+  <section class="lesson" id="w8-l2">
+    <header><span class="eyebrow">Lesson 8.2 · 50 min</span><h2>Testing strategy</h2></header>
+
+    <p>Tests let you change code with confidence. A good suite catches real bugs, runs fast, fails clearly, and doesn't break every time you refactor.</p>
+
+    <h3>The testing pyramid</h3>
+    <ul>
+      <li><b>Unit tests</b> (many): one function or class, in isolation, in milliseconds. They pinpoint failures exactly.</li>
+      <li><b>Integration tests</b> (some): several components together, often with a real database or message queue. They catch wiring and configuration bugs that unit tests can't.</li>
+      <li><b>End-to-end tests</b> (few): the whole system through its real interface, like a browser clicking through checkout. They give the most confidence per test, but they're slow and tend to be <b>flaky</b> (failing intermittently for reasons unrelated to the code).</li>
+    </ul>
+    <p>The shape is a guideline, not a law. Some teams prefer more integration tests (the "testing trophy"), because those test behavior users care about and survive refactoring better.</p>
+
+    <h3>Writing good tests</h3>
+    <ul>
+      <li>Follow <b>Arrange, Act, Assert</b>: set up, do one thing, check the outcome.</li>
+      <li>Test <b>behavior</b> through public interfaces, not implementation details, so refactoring doesn't break tests.</li>
+      <li>Concentrate on <b>edge cases</b>: empty input, zero, negative numbers, boundaries (exactly at a limit), Unicode, very large inputs, errors from dependencies.</li>
+      <li>Make tests <b>deterministic</b>: inject clocks, random seeds and sleeps instead of using the real ones, and never depend on test order or the network.</li>
+    </ul>
+
+    <h3>Test doubles</h3>
+    <p>To test code that talks to slow or unpredictable things (payment gateways, email, the clock), replace them with stand-ins. A <b>stub</b> returns canned answers; a <b>fake</b> is a working lightweight version (like an in-memory database); a <b>mock</b> also records how it was called so you can assert on it. Python's <code>unittest.mock</code> does all three. Design for it with <b>dependency injection</b>: pass the clock or the client in as a parameter, rather than reaching for a global, and testing becomes easy. Over-mocking has a cost, though: a test that mocks everything checks your mocks, not your system.</p>
+
+    <h3>How good are your tests?</h3>
+    <p><b>Code coverage</b> tells you which lines ran during tests. That's useful for finding untested code, but it says nothing about whether the tests checked the results. <b>Mutation testing</b> measures that directly: it makes small deliberate bugs (mutants) in your code and checks whether any test fails. A surviving mutant shows a gap in your tests. Try it:</p>
+
+    <div data-widget="mutation"></div>
+
+    <p><b>Test-driven development</b> (TDD) writes a failing test first, then the code to pass it, then refactors. Even if you don't follow it strictly, writing a test that reproduces a bug <i>before</i> fixing it is a great habit: it proves the fix works and stops the bug coming back.</p>
+
+    <div class="check" data-id="w8-c3" data-answer="0">
+      <p class="check-q">A function's tests have 100% line coverage, yet a bug at an exact boundary (an order of exactly £50 should get free shipping) reaches production. How can that be?</p>
+      <ol class="check-o"><li>Coverage only shows that lines ran, not that the tests checked the right results; no test used exactly £50, so the boundary was never verified</li><li>Coverage tools are inaccurate</li><li>100% coverage guarantees correctness, so the bug must be elsewhere</li><li>The tests were too fast</li></ol>
+      <div class="check-why">Boundary values are the classic gap. Mutation testing would flag it: changing <code>&gt;=</code> to <code>&gt;</code> would survive.</div>
+    </div>
+    <div class="check" data-id="w8-c4" data-answer="2">
+      <p class="check-q">A test for "token expires after 1 hour" calls <code>time.sleep(3600)</code>. What's the better design?</p>
+      <ol class="check-o"><li>Run the test overnight</li><li>Sleep for a shorter time and hope</li><li>Inject the clock: the code takes a "now" function, and the test passes a fake clock it can move forward instantly</li><li>Skip the test</li></ol>
+      <div class="check-why">Injecting time, randomness and I/O makes tests fast and deterministic. You'll do exactly this in the project.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 8.3 ===================== -->
+  <section class="lesson" id="w8-l3">
+    <header><span class="eyebrow">Lesson 8.3 · 40 min</span><h2>Code quality, review and refactoring</h2></header>
+
+    <p>Code is read far more often than it's written, usually by someone without your context, including you in six months. Quality mostly means <b>easy to understand and safe to change</b>.</p>
+
+    <h3>Readable code</h3>
+    <ul>
+      <li><b>Names</b> that say what something is or does: <code>overdue_loans</code>, not <code>data2</code>. If a name needs a comment to explain it, choose a better name.</li>
+      <li><b>Small functions that do one thing</b>, at one level of abstraction.</li>
+      <li><b>Comments explain why</b>, not what: the reason for a surprising choice, a link to the bug it works around.</li>
+      <li><b>Handle errors deliberately</b>: don't catch every exception and carry on silently. Fail loudly with a clear message, or handle the specific case.</li>
+      <li><b>Avoid premature abstraction.</b> Duplication is cheaper than the wrong abstraction; wait until you see a pattern three times.</li>
+    </ul>
+
+    <h3>Tools that catch problems for you</h3>
+    <p><b>Formatters</b> (Black, Prettier) end style debates. <b>Linters</b> (Ruff, ESLint) catch unused variables, likely bugs and risky patterns. <b>Type checkers</b> (mypy, TypeScript) catch whole classes of errors before the code runs (week 1). Run them automatically in CI and in your editor, so reviews can focus on things only humans can judge.</p>
+
+    <h3>Refactoring</h3>
+    <p><b>Refactoring</b> means changing code's structure without changing its behavior: renaming, extracting functions, simplifying conditionals. Do it in small steps, with tests passing after each one, and keep refactoring commits separate from behavior changes, so reviewers can verify each easily. If code has no tests, add tests that pin down its current behavior <i>before</i> refactoring it.</p>
+
+    <h3>Code review</h3>
+    <p>Review catches bugs, spreads knowledge and keeps the codebase consistent. As an author: keep pull requests <b>small</b> (a few hundred lines at most), explain what and why in the description, and review your own diff first. As a reviewer, check in priority order: is it <b>correct</b> (edge cases, errors, concurrency, security)? Is it the <b>right approach</b>? Is it <b>tested</b>? Is it <b>clear</b>? Only then think about nitpicks, and label them as optional. Comment on the code, not the person, and ask questions ("What happens if this list is empty?") rather than issuing commands.</p>
+
+    <div class="check" data-id="w8-c5" data-answer="1">
+      <p class="check-q">A pull request changes 2,400 lines across 40 files, mixing a refactor with a new feature. What's the best feedback?</p>
+      <ol class="check-o"><li>Approve it quickly, since it's too big to review properly</li><li>Ask for it to be split: the refactor (no behavior change) first, then the feature, each small enough to review carefully</li><li>Review only the first file</li><li>Rewrite it yourself</li></ol>
+      <div class="check-why">Review quality drops sharply with size. Small, single-purpose PRs get real scrutiny, and they're easier to revert if something goes wrong.</div>
+    </div>
+    <div class="check" data-id="w8-c6" data-answer="3">
+      <p class="check-q">You need to restructure a tangled 300-line function that has no tests. What should you do first?</p>
+      <ol class="check-o"><li>Rewrite it from scratch</li><li>Refactor it in one large commit</li><li>Add comments explaining each line</li><li>Write tests that capture its current behavior (including odd cases), then refactor in small steps, running them each time</li></ol>
+      <div class="check-why">Characterization tests make refactoring safe. Without them you can't tell whether you changed behavior.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 8.4 ===================== -->
+  <section class="lesson" id="w8-l4">
+    <header><span class="eyebrow">Lesson 8.4 · 45 min</span><h2>CI/CD and releasing safely</h2></header>
+
+    <h3>Continuous integration</h3>
+    <p><b>Continuous integration</b> means everyone merges small changes into the main branch frequently, and every change is automatically built and tested. A <b>CI pipeline</b> (GitHub Actions, GitLab CI, Jenkins) runs on each push or pull request:</p>
+    <pre class="code"><code># .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - run: ruff check .             <span class="c"># lint</span>
+      - run: python -m pytest         <span class="c"># test</span></code></pre>
+    <p>Rules that make CI valuable: keep it <b>fast</b> (under ten minutes), keep <code>main</code> always green, fix or quarantine flaky tests quickly (people stop trusting a suite that cries wolf), and build an artifact <b>once</b> and promote that same artifact through every environment.</p>
+
+    <h3>Continuous delivery and deployment</h3>
+    <p><b>Continuous delivery</b> means every change that passes the pipeline <i>could</i> be released with one click. <b>Continuous deployment</b> goes further and releases it automatically. Frequent small releases are <i>safer</i> than rare big ones: each one changes less, so problems are smaller, easier to find, and easier to roll back.</p>
+
+    <h3>Release strategies</h3>
+    <ul>
+      <li><b>Rolling</b>: replace servers a few at a time.</li>
+      <li><b>Blue-green</b>: run the new version alongside the old one, then switch all traffic at once. Rolling back is instant (switch back), but you need double the capacity during the switch.</li>
+      <li><b>Canary</b>: send a small percentage of traffic to the new version, compare its error rates and latency with the old one, and only then widen it.</li>
+      <li><b>Feature flags</b>: deploy code switched off, then turn features on for some users at runtime. This separates <i>deploying</i> code from <i>releasing</i> a feature, and it makes rollback a configuration change.</li>
+    </ul>
+
+    <div data-widget="canary"></div>
+
+    <p>Whatever the strategy, have a <b>tested rollback</b> path and use it first when a release causes problems. Investigate after users are safe.</p>
+
+    <div class="check" data-id="w8-c7" data-answer="2">
+      <p class="check-q">Why do teams that deploy many times a day often have <i>fewer</i> production incidents than teams that deploy monthly?</p>
+      <ol class="check-o"><li>They write less code</li><li>They skip testing</li><li>Each deploy is small, so it's less likely to break things, faster to diagnose when it does, and easy to roll back; monthly releases bundle many risky changes together</li><li>Daily deploys are only possible for small apps</li></ol>
+      <div class="check-why">This is one of the main findings of the DORA research (week 10): speed and stability improve together when releases are small and automated.</div>
+    </div>
+    <div class="check" data-id="w8-c8" data-answer="0">
+      <p class="check-q">What's the main advantage of feature flags?</p>
+      <ol class="check-o"><li>Code can be deployed switched off, then enabled for some or all users at runtime, so releasing and rolling back a feature doesn't need a new deploy</li><li>They make code run faster</li><li>They replace testing</li><li>They remove the need for code review</li></ol>
+      <div class="check-why">The cost: flags are technical debt. Old flags must be removed, or the code fills with branches nobody understands.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=scEDHsr3APg" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/scEDHsr3APg/mqdefault.jpg" alt="" loading="lazy"><span><b>DevOps CI/CD Explained in 100 Seconds</b><small>Fireship</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=AWVTKBUnoIg" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/AWVTKBUnoIg/mqdefault.jpg" alt="" loading="lazy"><span><b>Top 5 Most-Used Deployment Strategies</b><small>ByteByteGo</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 8.5 ===================== -->
+  <section class="lesson" id="w8-l5">
+    <header><span class="eyebrow">Lesson 8.5 · 50 min</span><h2>Containers and the cloud</h2></header>
+
+    <h3>Containers</h3>
+    <p>"It works on my machine" happens because programs depend on a particular OS, runtime version, libraries and configuration. A <b>container</b> packages an application with everything it needs, so it runs the same everywhere. Under the hood, a container is just a normal process (week 4) that the kernel isolates with namespaces (its own view of files, processes and the network) and limits with cgroups (CPU and memory caps). Containers share the host's kernel, which makes them much lighter than virtual machines, which each run a whole OS.</p>
+    <ul>
+      <li>An <b>image</b> is the packaged, read-only template, built from a <b>Dockerfile</b>.</li>
+      <li>A <b>container</b> is a running instance of an image. Many containers can run from one image.</li>
+      <li>A <b>registry</b> (Docker Hub, GitHub Container Registry, a cloud provider's own) stores images so servers can pull them.</li>
+    </ul>
+    <pre class="code"><code>FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt   <span class="c"># cached layer: only rebuilt when requirements change</span>
+COPY . .                                             <span class="c"># code changes often, so it comes last</span>
+USER 1000                                            <span class="c"># don't run as root (least privilege, week 6)</span>
+CMD ["python", "-m", "myapp"]</code></pre>
+    <p>Each instruction creates a cached <b>layer</b>, so order matters: put things that change rarely (dependencies) before things that change often (your code), and rebuilds take seconds. Containers should be <b>stateless</b> and disposable: keep data in databases or volumes, and configuration in environment variables, not baked into the image.</p>
+
+    <h3>Orchestration</h3>
+    <p>Running hundreds of containers across many machines needs an <b>orchestrator</b>, most often <b>Kubernetes</b>. You declare the desired state ("run 6 replicas of this image, with this much memory, behind this load balancer"), and it continuously works to make reality match: scheduling containers onto machines, restarting crashed ones, replacing failed machines, rolling out new versions and scaling with load. It uses <b>health checks</b> to decide when a container is ready for traffic and when it needs restarting.</p>
+
+    <h3>The cloud</h3>
+    <p>Cloud providers rent computing on demand. The main service models differ in how much you manage yourself:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Model</th><th>You manage</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>IaaS (infrastructure)</td><td>OS, runtime, app, scaling</td><td>EC2, Azure VMs, Compute Engine</td></tr>
+        <tr><td>Containers / PaaS (platform)</td><td>Your app or container image</td><td>Cloud Run, App Service, Heroku, managed Kubernetes</td></tr>
+        <tr><td>Serverless functions</td><td>Just the function code</td><td>AWS Lambda, Cloud Functions</td></tr>
+        <tr><td>Managed services</td><td>How you use it</td><td>Managed databases, queues, object storage (S3)</td></tr>
+      </tbody>
+    </table></div>
+    <p>Moving up the table means less operational work and faster delivery, at the cost of control, some lock-in and sometimes higher cost at scale. <b>Infrastructure as code</b> (Terraform, Pulumi, CloudFormation) defines all of this in version-controlled files, so environments are reproducible and changes get reviewed like any other code.</p>
+
+    <div class="check" data-id="w8-c9" data-answer="1">
+      <p class="check-q">A Dockerfile copies the whole project, then runs <code>pip install</code>. Every code change triggers a slow reinstall of all dependencies. What's the fix?</p>
+      <ol class="check-o"><li>Use a bigger build machine</li><li>Copy and install <code>requirements.txt</code> first, then copy the rest of the code, so the dependency layer stays cached until requirements change</li><li>Remove the dependencies</li><li>Build without Docker</li></ol>
+      <div class="check-why">Layers are cached until an earlier layer changes. Order instructions from least to most frequently changing.</div>
+    </div>
+    <div class="check" data-id="w8-c10" data-answer="2">
+      <p class="check-q">How is a container different from a virtual machine?</p>
+      <ol class="check-o"><li>Containers are always more secure</li><li>There's no difference</li><li>A container is an isolated process sharing the host's kernel; a VM runs its own full operating system on virtual hardware, so it's heavier but more strongly isolated</li><li>VMs can only run Windows</li></ol>
+      <div class="check-why">Containers start in milliseconds and pack densely; VMs give stronger isolation boundaries. Cloud platforms often run containers inside VMs to get both.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=Gjnup-PuquQ" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/Gjnup-PuquQ/mqdefault.jpg" alt="" loading="lazy"><span><b>Docker in 100 Seconds</b><small>Fireship</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=PziYflu8cB8" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/PziYflu8cB8/mqdefault.jpg" alt="" loading="lazy"><span><b>Kubernetes Explained in 100 Seconds</b><small>Fireship</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 8.6 ===================== -->
+  <section class="lesson" id="w8-l6">
+    <header><span class="eyebrow">Lesson 8.6 · 45 min</span><h2>Observability and incidents</h2></header>
+
+    <p>Once software is running in production, you need to answer "is it working?" and "why not?" without attaching a debugger. <b>Observability</b> is the ability to understand a system's internal state from what it outputs. It rests on three kinds of signal:</p>
+    <ul>
+      <li><b>Logs</b>: timestamped records of events. Make them <b>structured</b> (JSON with consistent fields such as <code>level</code>, <code>request_id</code>, <code>user_id</code>, <code>duration_ms</code>) so they can be searched and aggregated, not just read. Never log passwords, tokens or full card numbers.</li>
+      <li><b>Metrics</b>: numbers over time, cheap to store and fast to query: request rate, error rate, latency, CPU, queue depth. A popular starting set for services is <b>RED</b>: Rate, Errors, Duration.</li>
+      <li><b>Traces</b>: the path of one request through many services, with timing for each step (a span). They show where the time went in a distributed system. OpenTelemetry is the common standard for all three.</li>
+    </ul>
+
+    <h3>Measure latency with percentiles</h3>
+    <p>Averages hide pain. If 99 requests take 50 ms and one takes 5 seconds, the average is about 100 ms, which looks fine, yet that user waited 5 seconds. Track percentiles: <b>p50</b> (median, the typical experience), <b>p95</b> and <b>p99</b> (the slow tail). Your most valuable users, with the biggest carts or the most data, are often the ones in the tail.</p>
+
+    <h3>Alerting</h3>
+    <p>Alert on <b>symptoms users feel</b> (error rate up, latency up, checkouts failing), not every internal cause (one server's CPU at 90%). Every alert should be <b>actionable</b> and urgent; alerts nobody needs to act on train people to ignore alerts. The usual targets come from SLOs, covered properly in week 10.</p>
+
+    <h3>Incidents</h3>
+    <p>When something breaks: <b>mitigate first</b> (roll back, turn off a feature flag, add capacity), diagnose later. Make one person the incident commander, communicate status regularly, and keep a timeline. Afterwards, write a <b>blameless postmortem</b>: what happened, why the system allowed it, and concrete follow-up actions with owners. "An engineer ran the wrong command" is never the root cause; "the system let one command delete production data without confirmation" is.</p>
+
+    <div class="check" data-id="w8-c11" data-answer="3">
+      <p class="check-q">Average latency is 120 ms and stable, but users complain the app is sometimes painfully slow. What should you look at?</p>
+      <ol class="check-o"><li>The average over a longer period</li><li>The minimum latency</li><li>The number of servers</li><li>Tail latency percentiles (p95, p99): a small share of very slow requests barely moves the average</li></ol>
+      <div class="check-why">Averages blend fast and slow requests together. Percentiles show what the slowest users actually experience.</div>
+    </div>
+    <div class="check" data-id="w8-c12" data-answer="0">
+      <p class="check-q">An on-call engineer gets 40 alerts a night, mostly "CPU above 80% on server X" that resolve on their own. What's the problem, and the fix?</p>
+      <ol class="check-o"><li>Alert fatigue: alert on user-facing symptoms (error rate, latency against SLOs) that need action, and turn cause-based noise into dashboards</li><li>The servers need more CPU</li><li>The engineer should sleep less</li><li>Add more alerts</li></ol>
+      <div class="check-why">Noisy alerts get ignored, and then the real one gets ignored too. Every page should be urgent, actionable and tied to user impact.</div>
+    </div>
+    <div class="check" data-id="w8-c13" data-answer="2">
+      <p class="check-q">A request passes through five services and is slow. Which signal shows most directly which service added the delay?</p>
+      <ol class="check-o"><li>Each service's CPU graph</li><li>Logs from one service</li><li>A distributed trace of that request, showing a timed span for each service</li><li>The error rate</li></ol>
+      <div class="check-why">Traces follow one request across services. Metrics tell you something is slow; traces tell you where.</div>
+    </div>
+    <div class="check" data-id="w8-c14" data-answer="1">
+      <p class="check-q">After an outage caused by a bad config change, what makes a postmortem useful?</p>
+      <ol class="check-o"><li>Identifying who made the change</li><li>Explaining how the system allowed a bad change to reach production (no validation, no canary, slow rollback) and agreeing concrete fixes with owners</li><li>Keeping it private</li><li>Writing it as quickly as possible</li></ol>
+      <div class="check-why">Blameless postmortems focus on systems and processes, so people share what really happened and the same class of failure gets prevented.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=tEylFyxbDLE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/tEylFyxbDLE/mqdefault.jpg" alt="" loading="lazy"><span><b>SLIs, SLOs, SLAs, oh my!</b><small>Google Cloud Tech</small></span></a>
+    </div>
+
+    <div class="note-box"><strong>Week 8 in one paragraph</strong><p>Git stores snapshots linked by parents; branches are movable labels; merge preserves history, rebase rewrites it, so only rebase private work. Test mostly at the unit level, inject clocks and dependencies, and judge tests by the bugs they catch, not just coverage. Keep code readable, refactor in small tested steps, and keep pull requests small. CI builds and tests every change; small frequent releases with canaries, feature flags and fast rollback are safer than big ones. Containers package apps as isolated processes, orchestrators keep them running, and the cloud trades control for less operational work. In production, use structured logs, metrics with percentiles and traces, alert on user-facing symptoms, mitigate first and write blameless postmortems.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Ship it: tests that catch bugs, and production-ready helpers</h2>
+    <p>Two parts. First, write a test suite for a pricing module, and see how good it is: a checker runs your tests against the real code (they must pass) and against eight subtly broken versions (your tests must catch them). Second, build four helpers every production service needs: retries with exponential backoff and jitter, a latency tracker that reports percentiles, a percentage rollout for feature flags, and a structured JSON logger. All of them take injected clocks and randomness, so they're fully testable.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-08-shipit/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-08-shipit
+python check_my_tests.py        <span class="c"># part 1: how many mutants do your tests kill?</span>
+python -m unittest -v           <span class="c"># part 2: the helpers</span></code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li><code>test_pricing.py</code> written by you, killing at least 7 of the 8 mutants</li>
+      <li>The helpers in <code>shipit.py</code>, passing all tests</li>
+      <li>Optional: a working CI workflow file (see the README's stretch goals)</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 8 quiz</h2>
+    <p>15 questions covering all six lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-08.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-07.html">← Week 7</a><a class="btn" href="week-09.html">Next: Week 9 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 8;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
