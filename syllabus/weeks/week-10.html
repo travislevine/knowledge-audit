@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 10: The business of software, and review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 10 of 10 · about 10 hours</span>
+    <h1>The business of software, and review</h1>
+    <p class="lede">Software is built by teams, for a business, under constraints of time, money, risk and law. This last week covers the side of the job degrees often skip: how teams plan and ship, how reliability and technical debt become business decisions, how engineering is measured and what it costs, and the privacy and licensing rules you'll work within. It ends by tracing one request through everything you've learned, and a capstone project that combines it.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Explain how product teams plan and deliver work, and the roles involved</li>
+      <li>Use SLOs and error budgets to balance reliability against speed, and run an incident review</li>
+      <li>Reason about technical debt, build-versus-buy and architecture decisions, and record them</li>
+      <li>Measure delivery with DORA metrics, avoid misleading metrics, and reason about cloud cost</li>
+      <li>Apply privacy, compliance and open-source licensing basics</li>
+      <li>Trace one request through every layer covered in this syllabus</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 10.1 and 10.2 (teams, reliability)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 10.3, 10.4 and 10.5 (debt and decisions, metrics and cost, privacy and licensing)</td></tr>
+      <tr><td>Day 3</td><td>Lesson 10.6 (review), then retake the knowledge audits</td></tr>
+      <tr><td>Days 4–5</td><td>Capstone: URL shortener</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and a reflection on the whole syllabus</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 10.1 ===================== -->
+  <section class="lesson" id="w10-l1">
+    <header><span class="eyebrow">Lesson 10.1 · 40 min</span><h2>How software teams work</h2></header>
+
+    <h3>Who does what</h3>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Role</th><th>Owns</th></tr></thead>
+      <tbody>
+        <tr><td>Product manager</td><td><i>What</i> to build and <i>why</i>: customer problems, priorities, the roadmap, and measuring whether features worked</td></tr>
+        <tr><td>Engineering manager</td><td>The team's people, hiring, growth, delivery and health</td></tr>
+        <tr><td>Tech lead / staff engineer</td><td><i>How</i> it's built: technical direction, design reviews, quality, unblocking others</td></tr>
+        <tr><td>Designer</td><td>User experience: research, flows, interfaces</td></tr>
+        <tr><td>QA / test engineer</td><td>Test strategy, automation, exploratory testing</td></tr>
+        <tr><td>SRE / platform engineer</td><td>Reliability, infrastructure, deployment tooling and on-call practices</td></tr>
+      </tbody>
+    </table></div>
+    <p>As an engineer you'll work with all of them. The skills that matter: understanding the <i>problem</i> behind a request, explaining technical trade-offs in business terms ("this takes two weeks longer but halves our cloud bill"), and raising risks early.</p>
+
+    <h3>Ways of working</h3>
+    <p><b>Agile</b> is a set of values: deliver working software in small increments, get feedback early, and adapt the plan rather than following it blindly. The two common frameworks:</p>
+    <ul>
+      <li><b>Scrum</b> works in fixed <b>sprints</b> (usually two weeks): sprint planning, a short daily stand-up, a review that demos the work to stakeholders, and a retrospective on how the team can improve.</li>
+      <li><b>Kanban</b> is continuous flow: work moves across a board (to do, in progress, review, done) with <b>limits on work in progress</b>. Finishing work beats starting more work; too many parallel tasks slows everything down.</li>
+    </ul>
+    <p>Before building anything significant, teams usually write a <b>design document</b> (or RFC) describing the problem, options considered, the chosen approach and its risks, and ask for review. A day of writing can save weeks of building the wrong thing.</p>
+
+    <h3>Estimation</h3>
+    <p>Software estimates are notoriously optimistic: the planning fallacy, compounded by unknowns you can't see until you start. Better habits: break work into small pieces, estimate with <b>ranges</b> ("3 to 6 days") rather than single numbers, compare with how long similar work actually took, flag the riskiest unknowns and do them first, and update estimates as you learn. Story points measure a team's relative effort; they're useful for that team's planning, and meaningless for comparing teams.</p>
+
+    <div class="check" data-id="w10-c1" data-answer="1">
+      <p class="check-q">A product manager asks for "a dashboard showing all user data". What's the best first response from an engineer?</p>
+      <ol class="check-o"><li>Start building it immediately</li><li>Ask what decision or problem the dashboard is for and who will use it, so you build the smallest thing that solves the real need</li><li>Refuse, because dashboards are a waste of time</li><li>Estimate it at two weeks without asking anything</li></ol>
+      <div class="check-why">Requests often describe a solution. Understanding the underlying problem frequently reveals a much simpler fix, or one that matters more.</div>
+    </div>
+    <div class="check" data-id="w10-c2" data-answer="3">
+      <p class="check-q">A Kanban board shows each engineer working on four tasks at once, and nothing is finishing. What's the standard fix?</p>
+      <ol class="check-o"><li>Add more columns to the board</li><li>Hire more engineers</li><li>Switch to Scrum</li><li>Set work-in-progress limits so people finish and ship work before starting new tasks</li></ol>
+      <div class="check-why">Context switching and half-finished work deliver no value. Limiting work in progress shortens the time from starting a task to shipping it.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=2Vt7Ik8Ublw" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/2Vt7Ik8Ublw/mqdefault.jpg" alt="" loading="lazy"><span><b>Scrum in under 5 minutes</b><small>YouTube explainer</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 10.2 ===================== -->
+  <section class="lesson" id="w10-l2">
+    <header><span class="eyebrow">Lesson 10.2 · 45 min</span><h2>Reliability as a business decision</h2></header>
+
+    <p>100% reliability is impossible and, approaching it, ruinously expensive. Users can't tell 99.99% from 100% (their own Wi-Fi is less reliable than that), and every extra nine slows feature development. So reliability is a <i>target</i> chosen by the business, not an absolute.</p>
+
+    <h3>SLIs, SLOs and SLAs</h3>
+    <ul>
+      <li>A <b>service level indicator (SLI)</b> is a measurement of what users experience: the fraction of requests that succeed, or the fraction served in under 300 ms.</li>
+      <li>A <b>service level objective (SLO)</b> is the internal target for it: "99.9% of requests succeed over a rolling 30 days."</li>
+      <li>A <b>service level agreement (SLA)</b> is a contract with customers, with consequences (usually refunds or credits) if it's missed. It's set looser than the SLO, so you notice problems before they cost money.</li>
+    </ul>
+
+    <h3>Error budgets</h3>
+    <p>An SLO of 99.9% means 0.1% of requests may fail: that's the <b>error budget</b>. Over 30 days, it's about 43 minutes of full downtime. The budget turns a vague argument ("ship faster" versus "be more careful") into a shared rule: while there's budget left, ship; when it's spent, slow down and invest in reliability until it recovers.</p>
+
+    <div data-widget="budget"></div>
+
+    <h3>Incidents and on-call</h3>
+    <p>Building on week 8: during an incident, an <b>incident commander</b> coordinates, someone handles communication (status page, stakeholders), and others investigate. Mitigate first. Afterwards, the blameless postmortem records the timeline, impact, contributing causes and action items, and the action items actually get prioritized. A healthy <b>on-call</b> rotation shares the load, pages only for actionable user-facing problems, and treats a noisy pager as a bug to fix.</p>
+
+    <div class="check" data-id="w10-c3" data-answer="0">
+      <p class="check-q">A service has a 99.9% availability SLO. Halfway through the month, an outage has used 90% of the error budget. What does an error budget policy typically say?</p>
+      <ol class="check-o"><li>Slow down or pause risky releases and prioritize reliability work until the budget recovers</li><li>Keep shipping as usual, since the budget resets monthly</li><li>Lower the SLO to 99%</li><li>Stop all deploys permanently</li></ol>
+      <div class="check-why">The budget is a shared, agreed lever between product and engineering. Quietly lowering the SLO defeats its purpose.</div>
+    </div>
+    <div class="check" data-id="w10-c4" data-answer="2">
+      <p class="check-q">Why is a company's SLA (the contract) usually looser than its internal SLO?</p>
+      <ol class="check-o"><li>SLAs are only for marketing</li><li>Customers prefer lower numbers</li><li>So the team is alerted and can react when the service drops below the internal target, well before it breaches the contract and triggers penalties</li><li>SLOs are measured differently</li></ol>
+      <div class="check-why">The gap is a safety margin.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=tEylFyxbDLE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/tEylFyxbDLE/mqdefault.jpg" alt="" loading="lazy"><span><b>SLIs, SLOs, SLAs, oh my!</b><small>Google Cloud Tech</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 10.3 ===================== -->
+  <section class="lesson" id="w10-l3">
+    <header><span class="eyebrow">Lesson 10.3 · 45 min</span><h2>Technical debt and architecture decisions</h2></header>
+
+    <h3>Technical debt</h3>
+    <p><b>Technical debt</b> is the future cost of shortcuts and outdated designs: every change in that area takes longer (the "interest"), until someone pays it down. Martin Fowler's quadrant distinguishes debt that's <b>deliberate</b> or <b>inadvertent</b>, and <b>prudent</b> or <b>reckless</b>. "We'll ship with a simpler design to hit the launch, and rework it next quarter" is deliberate and prudent: a sensible business trade-off. "What's layering?" is reckless and inadvertent. Some debt is simply what you learn later: "now we know how this should have been designed."</p>
+    <p>Managing it in practice: make debt visible (write it down with its cost, e.g. "this module causes a third of our incidents"); pay it down continuously, by leaving code a bit better than you found it and reserving some capacity each cycle; and prioritize debt in the code you change most often, since debt in code nobody touches costs little.</p>
+
+    <h3>Refactor or rewrite?</h3>
+    <p>Big-bang rewrites are famously risky: the old system keeps changing, it encodes years of edge cases nobody documented, and you deliver nothing until the end. The safer approach is the <b>strangler fig</b>: put the new system beside the old one, route one feature at a time to it, and retire the old system piece by piece.</p>
+
+    <h3>Build or buy?</h3>
+    <p>Build what differentiates your product. Buy (or use open source for) what doesn't, such as authentication, payments, email delivery or monitoring, unless scale, cost or control clearly argue otherwise. Compare the <b>total cost of ownership</b>, not just the price tag:</p>
+
+    <div data-widget="tco"></div>
+
+    <h3>Architecture and organizations</h3>
+    <p><b>Conway's law</b>: organizations build systems that mirror their communication structure. Three teams building a compiler tend to produce a three-pass compiler. So team boundaries and service boundaries should be designed together. <b>Microservices</b> let independent teams deploy independently, at a real cost in operational complexity, network failures and distributed data. A well-structured <b>modular monolith</b> is usually the better start for a small team; split out services when team or scaling needs justify it.</p>
+    <p>Record significant decisions in <b>architecture decision records</b> (ADRs): short documents with the context, the decision, the alternatives considered and the consequences. They answer the question every new team member eventually asks: "why on earth did we do it this way?"</p>
+
+    <div class="check" data-id="w10-c5" data-answer="1">
+      <p class="check-q">A team wants to rewrite a 10-year-old billing system from scratch over 18 months. What's usually the safer approach?</p>
+      <ol class="check-o"><li>Rewrite it from scratch, but faster</li><li>The strangler fig: build new parts alongside the old system, route features over one at a time, and retire the old code gradually while delivering value throughout</li><li>Leave it untouched forever</li><li>Rewrite it in a new language without tests</li></ol>
+      <div class="check-why">Incremental replacement keeps the system working, reduces risk, and lets you stop at any point with value delivered.</div>
+    </div>
+    <div class="check" data-id="w10-c6" data-answer="3">
+      <p class="check-q">According to Conway's law, what happens if a company organizes engineering into separate frontend, backend and database teams?</p>
+      <ol class="check-o"><li>Each team will build better software</li><li>The architecture won't be affected</li><li>The teams will merge into one</li><li>The system will tend to split along those lines, with every feature needing coordination between all three teams</li></ol>
+      <div class="check-why">This is why many companies organize teams around business areas (search, checkout), each owning its full stack: the architecture follows the team structure.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=1MBpK_PxEnU" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/1MBpK_PxEnU/mqdefault.jpg" alt="" loading="lazy"><span><b>Types Of Technical Debt And How To Manage Them</b><small>YouTube explainer</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=ar6LAosWvPs" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/ar6LAosWvPs/mqdefault.jpg" alt="" loading="lazy"><span><b>Conway's Law</b><small>Software Architecture Ep. 2</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 10.4 ===================== -->
+  <section class="lesson" id="w10-l4">
+    <header><span class="eyebrow">Lesson 10.4 · 40 min</span><h2>Measuring engineering and the cost of software</h2></header>
+
+    <h3>DORA metrics</h3>
+    <p>Years of research by the DORA team (published in the book <i>Accelerate</i> and the annual State of DevOps reports) found four metrics that predict software delivery performance:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Metric</th><th>Measures</th><th>Kind</th></tr></thead>
+      <tbody>
+        <tr><td>Deployment frequency</td><td>How often you release to production</td><td>Speed</td></tr>
+        <tr><td>Lead time for changes</td><td>Time from commit to running in production</td><td>Speed</td></tr>
+        <tr><td>Change failure rate</td><td>Share of deploys that cause a failure in production</td><td>Stability</td></tr>
+        <tr><td>Time to restore service</td><td>How quickly you recover from a failure</td><td>Stability</td></tr>
+      </tbody>
+    </table></div>
+    <p>The key finding: speed and stability aren't a trade-off. The best teams are better at all four at once, because small, frequent, automated releases (week 8) are both faster and safer.</p>
+
+    <h3>Metrics that mislead</h3>
+    <p><b>Goodhart's law</b>: when a measure becomes a target, it ceases to be a good measure. Lines of code rewards verbosity. Story points per sprint inflate. Number of bugs closed rewards splitting bugs. Test coverage targets produce tests that check nothing (week 8). Use metrics to <i>learn</i> about a system or team, combine speed with quality measures, and never rank individuals by output counts. The metrics that matter most to the business are about <b>outcomes</b>: did the feature increase activation, retention or revenue, or reduce support tickets?</p>
+
+    <h3>What software costs</h3>
+    <p>Engineers' time is usually the biggest cost, which is why productivity and build-versus-buy decisions matter so much. Cloud bills are next. The main drivers:</p>
+    <ul>
+      <li><b>Compute</b>: servers, containers and functions, often over-provisioned "just in case". Rightsizing and autoscaling help, and committed-use discounts suit steady load.</li>
+      <li><b>Storage</b>: cheap per gigabyte, but it grows forever unless you set retention policies (old logs, backups, abandoned buckets).</li>
+      <li><b>Data transfer (egress)</b>: moving data out of a cloud, or between regions, is charged and easy to overlook.</li>
+      <li><b>Managed services</b>: convenient, sometimes priced per request in ways that surprise you at scale.</li>
+      <li><b>Logging and observability</b>: verbose logs at high traffic can cost more than the servers producing them.</li>
+    </ul>
+    <p>Track <b>unit costs</b>, such as cost per thousand requests or cost per active customer, rather than just the total. A growing bill is fine if each customer costs less to serve. Making cost visible to the teams that create it is called <b>FinOps</b>.</p>
+
+    <div class="check" data-id="w10-c7" data-answer="2">
+      <p class="check-q">A manager proposes ranking engineers by lines of code written per month. What's the main problem?</p>
+      <ol class="check-o"><li>Lines of code are hard to count</li><li>It's fair, but should be weekly</li><li>Goodhart's law: people will optimize the number (verbose code, avoiding deletions), while the best work often removes code or prevents problems; output counts don't measure value</li><li>It only works in Python</li></ol>
+      <div class="check-why">Deleting 2,000 lines of dead code is often more valuable than adding 2,000. Measure outcomes and team-level delivery (like DORA), not individual output.</div>
+    </div>
+    <div class="check" data-id="w10-c8" data-answer="0">
+      <p class="check-q">Which pair of DORA metrics measures stability rather than speed?</p>
+      <ol class="check-o"><li>Change failure rate, and time to restore service</li><li>Deployment frequency, and lead time for changes</li><li>Lines of code, and story points</li><li>Uptime, and test coverage</li></ol>
+      <div class="check-why">Two speed metrics plus two stability metrics stop a team from "improving" by trading one for the other.</div>
+    </div>
+    <div class="check" data-id="w10-c9" data-answer="1">
+      <p class="check-q">Monthly cloud spend grew 40% while customers grew 60%. Is that a problem?</p>
+      <ol class="check-o"><li>Yes, because any cost growth is bad</li><li>Probably not: cost per customer fell, so the service is getting more efficient as it grows</li><li>Yes, because cloud costs should be fixed</li><li>It's impossible to tell anything from this</li></ol>
+      <div class="check-why">Unit costs (per customer, per request) say more about efficiency than total spend.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=2rzvIL29Nz0" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/2rzvIL29Nz0/mqdefault.jpg" alt="" loading="lazy"><span><b>Measuring DevOps: The Four Keys Project</b><small>Google Cloud</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 10.5 ===================== -->
+  <section class="lesson" id="w10-l5">
+    <header><span class="eyebrow">Lesson 10.5 · 35 min</span><h2>Privacy, compliance and licensing</h2></header>
+
+    <h3>Personal data and privacy law</h3>
+    <p>Privacy laws such as the EU's <b>GDPR</b>, Australia's <b>Privacy Act 1988</b> (with its Australian Privacy Principles and the Notifiable Data Breaches scheme) and California's CCPA apply to almost any software that handles <b>personal data</b>: anything that identifies a person, directly or in combination (names, emails, IP addresses, location, device IDs). The principles that most affect engineering:</p>
+    <ul>
+      <li><b>Data minimization</b>: collect only what you need, and keep it only as long as you need it. Data you don't store can't leak.</li>
+      <li><b>Purpose limitation and lawful basis</b>: use data only for the reasons you collected it for, with consent or another legal basis.</li>
+      <li><b>Individuals' rights</b>: people can ask to see, correct or delete their data. Your system must be able to find all of a person's data, including in logs, backups, analytics and third-party tools.</li>
+      <li><b>Security and breach notification</b>: protect personal data appropriately, and notify regulators (within 72 hours under GDPR) and affected people when a serious breach occurs.</li>
+      <li><b>Privacy by design</b>: build these in from the start. Don't log personal data unnecessarily, pseudonymize where possible, and control who can access what.</li>
+    </ul>
+    <p>Penalties are serious (GDPR fines reach 4% of global annual turnover), but the bigger cost of a breach is usually lost trust.</p>
+
+    <h3>Compliance standards</h3>
+    <p>Businesses selling to other businesses are often asked to prove their security practices: <b>SOC 2</b> and <b>ISO 27001</b> audit controls like access management, change management, logging and incident response. Taking card payments brings <b>PCI DSS</b>, which is why most companies let a payment provider like Stripe handle card numbers entirely. For engineers this shows up as: changes go through review, access is granted by role and removed promptly, production actions are logged, and secrets are managed properly. These are mostly good engineering practices with paperwork attached.</p>
+
+    <h3>Open-source licenses</h3>
+    <p>Almost all software depends on open source, and every package comes with a license that says what you may do with it:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Type</th><th>Examples</th><th>In short</th></tr></thead>
+      <tbody>
+        <tr><td>Permissive</td><td>MIT, BSD, Apache 2.0</td><td>Use it anywhere, including in closed-source products; keep the copyright notice. Apache 2.0 also includes an explicit patent grant.</td></tr>
+        <tr><td>Copyleft</td><td>GPL</td><td>If you <i>distribute</i> software that includes GPL code, you must release your combined source under the GPL too.</td></tr>
+        <tr><td>Network copyleft</td><td>AGPL</td><td>Like the GPL, but also triggered by letting users interact with the software over a network, as with a web service.</td></tr>
+        <tr><td>No license</td><td>(public code with no license file)</td><td>All rights reserved by default: you may not legally reuse it.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Most companies keep a list of approved licenses and scan dependencies automatically. Check before adding a dependency, and remember that code you write for an employer usually belongs to the employer.</p>
+
+    <div class="check" data-id="w10-c10" data-answer="3">
+      <p class="check-q">A user asks you to delete all their personal data. Which places are easiest to forget?</p>
+      <ol class="check-o"><li>The main users table</li><li>The user's profile picture</li><li>Their password hash</li><li>Application logs, analytics tools, backups, caches, search indexes and third-party services the data was sent to</li></ol>
+      <div class="check-why">Personal data spreads. Data minimization, keeping it out of logs, and knowing where it flows make deletion requests (and breaches) far easier to handle.</div>
+    </div>
+    <div class="check" data-id="w10-c11" data-answer="2">
+      <p class="check-q">Your company builds a closed-source SaaS web app. A developer wants to include an AGPL-licensed library in the server code. Why would legal want to review that first?</p>
+      <ol class="check-o"><li>AGPL libraries are always insecure</li><li>AGPL code can't be used commercially at all</li><li>The AGPL's network clause can require you to offer your own source code to users who interact with the service over a network</li><li>AGPL only works on Linux</li></ol>
+      <div class="check-why">Ordinary GPL obligations are triggered by distributing software; the AGPL extends them to network use, which matters for web services. Permissive licenses like MIT or Apache 2.0 avoid the issue.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 10.6 ===================== -->
+  <section class="lesson" id="w10-l6">
+    <header><span class="eyebrow">Lesson 10.6 · 50 min</span><h2>Review: one request through the whole stack</h2></header>
+
+    <p>Everything in this syllabus is involved when someone opens a web page. Step through it, and toggle a repeat visit and a cache hit to see what changes. Each step links back to the week that covered it:</p>
+
+    <div data-widget="trace"></div>
+
+    <h3>The ten weeks in ten lines</h3>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Week</th><th>The idea to keep</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Everything is bits; encodings are agreements, and each has edges (overflow, rounding, UTF-8).</td></tr>
+        <tr><td>2</td><td>Choose data structures by the operations you need; Big-O tells you how work grows.</td></tr>
+        <tr><td>3</td><td>Sort and search to exploit order; model connections as graphs; cache overlapping subproblems.</td></tr>
+        <tr><td>4</td><td>The kernel shares the machine; shared memory needs locks; lock in a consistent order.</td></tr>
+        <tr><td>5</td><td>Layers wrap each other; TCP is a reliable byte stream, not messages; debug up the layers.</td></tr>
+        <tr><td>6</td><td>Never treat input as code or authority; use the right crypto tool; TLS secures the connection, not the app.</td></tr>
+        <tr><td>7</td><td>Model data with constraints; index for your queries; transactions and atomic updates prevent lost updates.</td></tr>
+        <tr><td>8</td><td>Small changes, tested and released often, with observability and fast rollback.</td></tr>
+        <tr><td>9</td><td>Stateless scale-out, caches and queues; assume failure: timeouts, backoff, idempotency.</td></tr>
+        <tr><td>10</td><td>Engineering serves the business: reliability, debt and cost are trade-offs to make explicitly.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Where to go next</h3>
+    <ul>
+      <li><b>Retake the knowledge audits</b> on the landing page. Use each level's Retake button: your first attempt stays saved, and <code>results/REPORT.md</code> shows the first and latest scores side by side, so you can see exactly what changed.</li>
+      <li>Revisit any week where your self-ratings or quiz misconceptions were weakest. <code>results/REPORT.md</code> lists them.</li>
+      <li>Go deeper with one book per area: <i>Designing Data-Intensive Applications</i> (databases and distributed systems), <i>Operating Systems: Three Easy Pieces</i> (free online), <i>Computer Networking: A Top-Down Approach</i>, and Google's <i>Site Reliability Engineering</i> (free online).</li>
+      <li>Build something real end to end and deploy it, with tests, CI, monitoring and a database. Nothing consolidates this material faster.</li>
+    </ul>
+
+    <div class="check" data-id="w10-c12" data-answer="1">
+      <p class="check-q">A page load takes 3 seconds for first-time visitors in another country, but 300 ms for repeat visitors. Based on the trace, what's the most likely reason?</p>
+      <ol class="check-o"><li>The database is missing an index</li><li>First visits pay for DNS, TCP and TLS round trips, each long over intercontinental distances; repeat visits reuse cached DNS and open connections. A CDN closer to users would help most</li><li>The CPU is too slow</li><li>Repeat visitors have faster computers</li></ol>
+      <div class="check-why">Round trips times distance dominate first loads. CDNs, connection reuse and HTTP/3's faster handshake target exactly this.</div>
+    </div>
+    <div class="check" data-id="w10-c13" data-answer="0">
+      <p class="check-q">A checkout request intermittently charges customers twice. Which ideas from this syllabus are most relevant to the fix?</p>
+      <ol class="check-o"><li>Idempotency keys for retried requests (week 9), and atomic or transactional writes so a retry can't apply twice (week 7)</li><li>Binary search and sorting (week 3)</li><li>UTF-8 encoding (week 1)</li><li>Subnet masks (week 5)</li></ol>
+      <div class="check-why">Double effects come from retries of operations with unknown outcomes. Make the operation idempotent, and make the database write atomic.</div>
+    </div>
+    <div class="check" data-id="w10-c14" data-answer="2">
+      <p class="check-q">After a deploy, the error rate jumps from 0.1% to 5%. Combining weeks 8, 9 and 10, what's the best sequence?</p>
+      <ol class="check-o"><li>Debug in production until you find the bug, then fix forward</li><li>Wait to see whether it settles down</li><li>Roll back (or turn off the feature flag) to restore service, communicate status, then investigate with logs and traces and write a blameless postmortem; the incident also spends error budget, which may slow further releases</li><li>Lower the SLO</li></ol>
+      <div class="check-why">Mitigate first, understand second, and learn third. The error budget makes the reliability cost visible to the whole team.</div>
+    </div>
+
+    <div class="note-box"><strong>Week 10 in one paragraph</strong><p>Software is a team sport in service of a business: understand the problem before the solution, work in small increments, and limit work in progress. Reliability targets are business choices expressed as SLOs, and error budgets balance them against speed. Technical debt, rewrites, build-versus-buy and architecture are trade-offs to make explicitly and record. Measure delivery with DORA, beware Goodhart's law, and track unit costs. Respect privacy by design, know your compliance duties, and check licenses. And when a page loads, every layer from bits to business is involved at once.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Capstone · 4–5 hours</span>
+    <h2>Capstone: a production-style URL shortener</h2>
+    <p>Build the URL shortener from lesson 9.6 as a small real service. It has an HTTP API, SQLite storage with proper constraints and indexes, base62 codes, an in-memory cache for redirects, rate limiting on link creation, input validation that blocks dangerous URLs, click counting, health and metrics endpoints, and structured logs. Then write a one-page design document and an architecture decision record, as you would at work.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-10-capstone/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-10-capstone
+python -m unittest -v
+python server.py              <span class="c"># then try http://127.0.0.1:8002</span></code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li>The service in <code>shortener.py</code>, passing all tests</li>
+      <li><code>DESIGN.md</code>: requirements, estimates, API, data model, trade-offs (template provided)</li>
+      <li>One ADR in <code>docs/adr/</code> for a decision you made</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 10 quiz</h2>
+    <p>15 questions on this week's lessons, including a few that pull together the whole syllabus. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-10.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 20 minutes</span>
+    <h2>How did this week, and the whole syllabus, go?</h2>
+    <p>Rate yourself on this week's objectives, then reflect on the ten weeks: what you understand now that you didn't before, which areas still feel weakest, and what you want to study or build next. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-09.html">← Week 9</a><a class="btn" href="../index.html">Back to the syllabus</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 10;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
