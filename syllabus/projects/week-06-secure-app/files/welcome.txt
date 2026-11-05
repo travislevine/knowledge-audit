@@ -1,0 +1,3 @@
+Welcome to MiniBank!
+
+This is a public file anyone can download.

