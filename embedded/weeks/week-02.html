@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 2: Sensors, actuators and buses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Embedded Systems and IoT</a></nav>
+    <span class="eyebrow">Week 2 of 4 · about 8 hours</span>
+    <h1>Sensors, actuators and buses</h1>
+    <p class="lede">Sensors turn the physical world into voltages and bytes, and actuators turn bytes back into motion, light and water. This week covers how analog readings work (including your soil moisture sensor), how PWM controls power, the three serial buses every embedded engineer uses, and how to filter noisy data. It ends with your first larger project: an ESP32 plant monitor.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Convert ADC readings to voltages and calibrated physical units</li>
+      <li>Use PWM to control brightness, speed and servos, and switch loads with transistors and relays</li>
+      <li>Compare UART, I2C and SPI, and read a sensor's datasheet and registers</li>
+      <li>Filter noisy readings with median and exponential moving average filters</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 2.1 and 2.2 (analog sensors and the adc; pwm and driving actuators)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 2.3 and 2.4 (uart, i2c and spi; taming noisy data)</td></tr>
+      <tr><td>Days 3–4</td><td>Mini-project, then the larger project (weeks 2–4)</td></tr>
+      <tr><td>Day 5</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 2.1 ===================== -->
+  <section class="lesson" id="w2-l1">
+    <header><span class="eyebrow">Lesson 2.1 · 40 min</span><h2>Analog sensors and the ADC</h2></header>
+<p>Many sensors output a <b>voltage</b> that varies with what they measure. An <b>analog-to-digital converter</b> (ADC) turns it into a number. An n-bit ADC divides the range 0 to its reference voltage into 2ⁿ steps:</p>
+<pre class="code"><code>voltage = raw / (2**bits - 1) × vref
+Arduino Uno: 10-bit, 5 V   → 0–1023, about 4.9 mV per step
+ESP32:       12-bit, ~3.3 V → 0–4095, about 0.8 mV per step</code></pre>
+<p>The number is only as good as the reference and the ADC. The ESP32's ADC is noticeably <b>non-linear</b> near the ends of its range, needs its <b>attenuation</b> set (<code>adc.atten(ADC.ATTN_11DB)</code>) to read up to about 3.3 V, and its ADC2 pins don't work while Wi-Fi is on. So use ADC1 pins (GPIO 32–39) for sensors.</p>
+<h3>Your soil moisture sensor</h3>
+<p><b>Resistive</b> sensors (two bare metal prongs) measure conductivity, and corrode within weeks because current flows through wet soil. <b>Capacitive</b> sensors (a black board with no exposed metal) measure the soil's dielectric and last much longer. Either way, the raw number means nothing until you <b>calibrate</b>: record the reading in air (dry) and in a glass of water (wet), then map linearly:</p>
+<pre class="code"><code>percent = (dry - raw) / (dry - wet) × 100   # clamp to 0–100</code></pre>
+<p>For capacitive sensors the reading <i>falls</i> as moisture rises, which the formula handles. Calibrate each sensor: two of the same model can differ by hundreds of counts. A tip that extends sensor life: power it from a GPIO pin only while reading.</p>
+
+    <div class="check" data-id="w2-c1" data-answer="3">
+      <p class="check-q">A 12-bit ESP32 ADC with a 3.3 V range reads 2048. Roughly what voltage is that?</p>
+      <ol class="check-o"><li>3.3 V</li><li>2.048 V</li><li>0.8 V</li><li>1.65 V</li></ol>
+      <div class="check-why">2048 / 4095 × 3.3 ≈ 1.65 V, about half the range.</div>
+    </div>
+    <div class="check" data-id="w2-c2" data-answer="0">
+      <p class="check-q">Your capacitive sensor reads 3000 in air and 1300 in water. What moisture percentage is a reading of 2150?</p>
+      <ol class="check-o"><li>50%</li><li>25%</li><li>72%</li><li>2150 is out of range</li></ol>
+      <div class="check-why">(3000 − 2150) / (3000 − 1300) = 850 / 1700 = 50%.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.2 ===================== -->
+  <section class="lesson" id="w2-l2">
+    <header><span class="eyebrow">Lesson 2.2 · 40 min</span><h2>PWM and driving actuators</h2></header>
+<p>Most MCUs can't output an arbitrary voltage, but they can switch a pin on and off very fast. <b>Pulse-width modulation</b> (PWM) varies the <b>duty cycle</b>, the fraction of each period the pin is high. To a slow device (an LED seen by your eye, a motor with inertia) it behaves like an average voltage of <code>duty × V</code>.</p>
+<div data-widget="pwm"></div>
+<p>PWM is used for LED brightness, motor speed and <b>servos</b>, which read the pulse <i>width</i> (1–2 ms every 20 ms) as an angle. In MicroPython: <code>PWM(Pin(2), freq=1000, duty_u16=32768)</code> gives 50%.</p>
+<h3>Switching real loads</h3>
+<ul>
+<li>A <b>logic-level N-channel MOSFET</b> (for example an IRLZ44N) on the low side switches DC loads like pumps and LED strips, and can be PWM'd for speed control.</li>
+<li>A <b>relay module</b> switches anything, including mains (don't, unless you're qualified), but it's slow, clicks and can't be PWM'd.</li>
+<li>Motors and relay coils are <b>inductive</b>: when switched off they produce a voltage spike. A <b>flyback diode</b> across the load (most relay modules include one) protects your transistor.</li>
+<li>Give motors and pumps their <b>own power supply</b>, sharing only ground with the board. A pump starting can sag a shared supply enough to reset the MCU (a <b>brownout</b>).</li>
+</ul>
+
+    <div class="check" data-id="w2-c3" data-answer="3">
+      <p class="check-q">A 5 V PWM signal at 25% duty cycle drives a motor. What average voltage does the motor effectively see?</p>
+      <ol class="check-o"><li>3.75 V</li><li>0.25 V</li><li>5 V</li><li>1.25 V</li></ol>
+      <div class="check-why">Average = duty × V = 0.25 × 5 = 1.25 V.</div>
+    </div>
+    <div class="check" data-id="w2-c4" data-answer="3">
+      <p class="check-q">Your ESP32 resets every time the pump turns on. What's the most likely cause?</p>
+      <ol class="check-o"><li>Wi-Fi interference</li><li>A software bug</li><li>The PWM frequency is too low</li><li>The pump's startup current sags the shared supply and the ESP32 browns out; power the pump separately and share only ground</li></ol>
+      <div class="check-why">Motors draw a large inrush current. Separate supplies and decoupling capacitors fix it.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.3 ===================== -->
+  <section class="lesson" id="w2-l3">
+    <header><span class="eyebrow">Lesson 2.3 · 45 min</span><h2>UART, I2C and SPI</h2></header>
+<p>Digital sensors and chips talk over serial buses. You'll meet three constantly:</p>
+<div class="table-wrap"><table>
+<tr><th></th><th>UART</th><th>I2C</th><th>SPI</th></tr>
+<tr><td>Wires</td><td>TX, RX (+ ground)</td><td>SDA, SCL (+ ground)</td><td>SCK, MOSI, MISO, plus one CS per device</td></tr>
+<tr><td>Devices</td><td>Two (point to point)</td><td>Many, by 7-bit address</td><td>Many, by chip-select pin</td></tr>
+<tr><td>Speed</td><td>Typically 9600–115200 baud</td><td>100 kHz–1 MHz</td><td>Up to tens of MHz</td></tr>
+<tr><td>Clock</td><td>None: both sides agree on baud rate</td><td>Shared, from controller</td><td>Shared, from controller</td></tr>
+<tr><td>Examples</td><td>GPS modules, USB serial console</td><td>Temperature sensors, small OLED screens</td><td>SD cards, fast displays, ADC chips</td></tr>
+</table></div>
+<p>UART bugs are almost always a wrong baud rate (garbage characters) or TX not crossed to RX. I2C needs <b>pull-up resistors</b> on SDA and SCL (breakout boards usually include them), and the first thing to do with a new I2C device is <b>scan</b> the bus: <code>I2C(0, scl=Pin(22), sda=Pin(21)).scan()</code> lists addresses like <code>[0x48]</code>.</p>
+<h3>Registers and datasheets</h3>
+<p>Most chips are controlled by reading and writing numbered <b>registers</b>. The datasheet tells you the address, register map and data format. For example, a TMP102 temperature sensor returns two bytes from register 0; the top 12 bits are a two's complement value in units of 0.0625 °C:</p>
+<pre class="code"><code>raw = (msb &lt;&lt; 8 | lsb) &gt;&gt; 4      # 12 bits
+if raw &amp; 0x800: raw -= 1 &lt;&lt; 12    # negative (two's complement, CS week 1)
+celsius = raw * 0.0625</code></pre>
+
+    <div class="check" data-id="w2-c5" data-answer="2">
+      <p class="check-q">You connect a GPS module over UART and see random garbage characters. What should you check first?</p>
+      <ol class="check-o"><li>The SPI clock polarity</li><li>The pull-up resistors</li><li>The baud rate on both sides</li><li>The I2C address</li></ol>
+      <div class="check-why">UART has no clock, so both ends must agree on the baud rate. A mismatch produces garbage.</div>
+    </div>
+    <div class="check" data-id="w2-c6" data-answer="0">
+      <p class="check-q">You need to connect four temperature sensors using as few pins as possible. Which bus?</p>
+      <ol class="check-o"><li>I2C, with each sensor at a different address</li><li>Four analog pins</li><li>SPI</li><li>UART</li></ol>
+      <div class="check-why">I2C shares two wires among many devices. Many sensors let you set address pins to avoid clashes.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.mischianti.org/2022/04/13/i2c-spi-and-uart-compared/" target="_blank" rel="noopener"><span><b>Reading: I2C, SPI and UART compared</b><small>Renzo Mischianti</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.4 ===================== -->
+  <section class="lesson" id="w2-l4">
+    <header><span class="eyebrow">Lesson 2.4 · 35 min</span><h2>Taming noisy data</h2></header>
+<p>Real sensor readings jump around: electrical noise, ADC quirks, a pump switching on, a loose wire. Filtering in firmware is cheap and makes everything downstream (thresholds, graphs, alerts) far more reliable.</p>
+<ul>
+<li><b>Oversampling</b>: take several readings quickly and average them. Easy, and it reduces random noise.</li>
+<li><b>Moving average</b> over the last N readings: smooth, but it lags behind real changes, and one wild reading still drags it.</li>
+<li><b>Median filter</b> over the last N (odd) readings: ignores isolated spikes completely. Excellent for glitches.</li>
+<li><b>Exponential moving average</b> (EMA): <code>avg = avg + α × (reading − avg)</code>. One variable of memory, so it's perfect for small MCUs. A small α (0.1) is smooth but slow; a large α (0.5) is responsive but noisy.</li>
+</ul>
+<p>A common combination is a median of 3–5 to kill spikes, followed by an EMA to smooth.</p>
+<p>Also <b>validate</b>: a disconnected sensor often reads 0 or the maximum. Treat readings outside the physically possible range as faults, not data. And use <b>hysteresis</b> for decisions: turn the pump on below 30% but off only above 45%, so noise near one threshold doesn't toggle it rapidly (week 4).</p>
+
+    <div class="check" data-id="w2-c7" data-answer="2">
+      <p class="check-q">Readings are steady at about 52% but occasionally jump to 0% for one sample. Which filter handles this best?</p>
+      <ol class="check-o"><li>A moving average</li><li>An EMA with α = 0.9</li><li>A median filter over 3–5 samples</li><li>No filter</li></ol>
+      <div class="check-why">The median ignores a single outlier entirely. An average would still be dragged down.</div>
+    </div>
+    <div class="check" data-id="w2-c8" data-answer="2">
+      <p class="check-q">An EMA with α = 0.1 reacts too slowly when you water the plant. What's the trade-off of raising α?</p>
+      <ol class="check-o"><li>None</li><li>It uses more memory</li><li>It responds faster but passes through more noise</li><li>It becomes a median filter</li></ol>
+      <div class="check-why">α trades smoothness for responsiveness.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Projects ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Projects · 5–7 hours</span>
+    <h2>Mini-project: sensor toolkit · Project 1: ESP32 plant monitor</h2>
+    <p><b>Mini-project</b> (<code>embedded/projects/week-02-sensors/</code>): tested on your laptop. ADC conversion, moisture calibration, median and EMA filters, and decoding a temperature sensor's registers.</p>
+<pre class="code"><code>cd embedded/projects/week-02-sensors
+python -m unittest -v</code></pre>
+<p><b>Project 1: ESP32 plant monitor</b> (<code>embedded/projects/project-1-plant-monitor/</code>, 3–4 hours). Wire your soil moisture sensor to the ESP32, calibrate it, filter readings with your toolkit, and show plant status with an LED (and optionally an I2C OLED). The README has wiring, steps and a checklist.</p>
+<ol class="deliverables">
+<li>The mini-project tests passing</li>
+<li>A working plant monitor, with your calibration values and a photo or notes in the project's <code>NOTES.md</code></li>
+</ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 2 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-02.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas on real hardware, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-01.html">← Week 1</a><a class="btn" href="week-03.html">Next: Week 3 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 2;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

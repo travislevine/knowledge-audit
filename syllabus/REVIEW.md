@@ -64,6 +64,11 @@ There's also a 4-week Thinking Skills course in `thinking/`. Its exercises
 are written answers in `thinking/exercises/week-NN.md`, and its progress
 appears in its own section of `REPORT.md`.
 
+The Embedded Systems and IoT course is in `embedded/`. Its mini-projects
+run with `python -m unittest -v` in each `embedded/projects/week-NN-*`
+folder; the hardware projects have a `NOTES.md` (and Project 3 a
+`DESIGN.md`) with my results.
+
 ## Useful kinds of feedback
 
 - **Mismatches between confidence and results.** A high self-rating but

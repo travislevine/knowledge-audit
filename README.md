@@ -49,6 +49,22 @@ video, a practice exercise written in `thinking/exercises/`, and a
 10-question quiz. Progress saves to `results/thinking.json` and appears in
 `results/REPORT.md`.
 
+## Embedded Systems and IoT course
+
+A 4-week hands-on course, about 8 hours a week, using an ESP32, an Arduino,
+a Raspberry Pi and a soil moisture sensor:
+
+1. Microcontrollers, GPIO and timing
+2. Sensors, actuators and buses
+3. IoT connectivity and MQTT
+4. Control, power and reliable devices
+
+Open `embedded/index.html`. Each week has lessons with checkpoints, a
+mini-project tested on the laptop (`embedded/projects/week-NN-*`), and a
+quiz. Three hardware projects build on each other: an ESP32 plant monitor,
+a Raspberry Pi MQTT pipeline, and an automatic watering system. Progress
+saves to `results/embedded.json`.
+
 ## How it works
 
 - Pick an answer, then lock it in as **Guessing**, **Fairly sure** or **Certain**.

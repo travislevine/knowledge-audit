@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 3: IoT connectivity and MQTT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Embedded Systems and IoT</a></nav>
+    <span class="eyebrow">Week 3 of 4 · about 8 hours</span>
+    <h1>IoT connectivity and MQTT</h1>
+    <p class="lede">A sensor becomes part of the Internet of Things when its data reaches somewhere useful. This week covers how to choose a radio, how MQTT (the standard IoT messaging protocol) works, how to get data reliably from a device to a database and dashboard, and the security basics every connected device needs. Your second project turns your Raspberry Pi into the hub for your plant monitor.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Choose between Wi-Fi, Bluetooth LE, LoRa, Zigbee and cellular for a use case</li>
+      <li>Explain MQTT: brokers, topics and wildcards, QoS, retained messages and last will</li>
+      <li>Design a device-to-dashboard pipeline that tolerates network outages</li>
+      <li>Apply security basics to devices: unique credentials, TLS and safe updates</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 3.1 and 3.2 (choosing a radio; mqtt)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 3.3 and 3.4 (from device to dashboard; fleets and security)</td></tr>
+      <tr><td>Days 3–4</td><td>Mini-project, then the larger project (weeks 2–4)</td></tr>
+      <tr><td>Day 5</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 3.1 ===================== -->
+  <section class="lesson" id="w3-l1">
+    <header><span class="eyebrow">Lesson 3.1 · 35 min</span><h2>Choosing a radio</h2></header>
+<p>Every wireless technology trades <b>range</b>, <b>data rate</b> and <b>power</b>. You can usually pick two.</p>
+<div class="table-wrap"><table>
+<tr><th>Technology</th><th>Range</th><th>Data rate</th><th>Power</th><th>Good for</th></tr>
+<tr><td>Wi-Fi</td><td>About 50 m indoors</td><td>High</td><td>High</td><td>Mains-powered devices in a building with Wi-Fi</td></tr>
+<tr><td>Bluetooth LE</td><td>About 10–50 m</td><td>Low–medium</td><td>Very low</td><td>Wearables, phone-configured gadgets</td></tr>
+<tr><td>Zigbee / Thread</td><td>About 10–100 m, mesh</td><td>Low</td><td>Very low</td><td>Smart home sensors and lights</td></tr>
+<tr><td>LoRa / LoRaWAN</td><td>2–15 km</td><td>Very low (bytes per minute)</td><td>Very low</td><td>Farms, cities, remote sensors on batteries for years</td></tr>
+<tr><td>Cellular (LTE-M, NB-IoT)</td><td>Anywhere with coverage</td><td>Low–medium</td><td>Medium</td><td>Trackers, devices with no local network</td></tr>
+</table></div>
+<p>Questions to ask: how far, how much data, how often, powered by what, what infrastructure exists, and what it costs per device per month. A soil sensor sending a few bytes every 10 minutes from a paddock is a LoRa problem; a camera is a Wi-Fi problem.</p>
+<p>Radio is usually the biggest power cost on a device. Sending less data less often, and sleeping in between, matters more than any code optimization (week 4).</p>
+
+    <div class="check" data-id="w3-c1" data-answer="3">
+      <p class="check-q">A farm wants 200 soil sensors spread over 5 km², running on batteries for years, each sending a reading every 15 minutes. Which technology fits?</p>
+      <ol class="check-o"><li>Wi-Fi</li><li>Bluetooth Classic</li><li>Ethernet</li><li>LoRaWAN</li></ol>
+      <div class="check-why">Long range, tiny payloads and years on battery are exactly LoRa's niche.</div>
+    </div>
+    <div class="check" data-id="w3-c2" data-answer="3">
+      <p class="check-q">Why is Wi-Fi a poor fit for a coin-cell-powered door sensor?</p>
+      <ol class="check-o"><li>It's too slow</li><li>It's insecure</li><li>It can't send small messages</li><li>Connecting to Wi-Fi draws a lot of power, which would drain a coin cell quickly; BLE or Zigbee use far less</li></ol>
+      <div class="check-why">Wi-Fi association and transmission draw hundreds of milliamps.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 3.2 ===================== -->
+  <section class="lesson" id="w3-l2">
+    <header><span class="eyebrow">Lesson 3.2 · 50 min</span><h2>MQTT</h2></header>
+<p><b>MQTT</b> is a lightweight <b>publish/subscribe</b> protocol over TCP. Devices don't talk to each other directly: they connect to a <b>broker</b> (like Mosquitto, which runs happily on a Pi), <b>publish</b> messages to <b>topics</b>, and <b>subscribe</b> to the topics they care about. Publishers and subscribers don't need to know about each other, which makes adding a dashboard or a logger trivial.</p>
+<p>Topics are hierarchical strings like <code>garden/bed1/soil/moisture</code>. Subscriptions can use wildcards: <code>+</code> matches exactly one level (<code>garden/+/soil/moisture</code> matches every bed) and <code>#</code> matches everything below, and must come last (<code>garden/#</code>).</p>
+<ul>
+<li><b>QoS</b> (quality of service): 0 is at most once (fire and forget), 1 is at least once (acknowledged and resent, so duplicates are possible), and 2 is exactly once (slowest). Most telemetry uses 0 or 1; commands use 1 with idempotent handling (CS week 9).</li>
+<li><b>Retained</b> messages: the broker keeps the last message on a topic and gives it to new subscribers immediately, which is ideal for current state like <code>.../status</code>.</li>
+<li><b>Last will and testament</b>: when connecting, a device registers a message the broker publishes if the device disconnects uncleanly, like <code>status = offline</code>. That's how a dashboard knows a device died.</li>
+<li><b>Keepalive</b>: the client pings periodically so the broker can detect dead connections.</li>
+</ul>
+<pre class="code"><code>mosquitto_sub -h raspberrypi.local -t 'garden/#' -v      # watch everything
+mosquitto_pub -h raspberrypi.local -t garden/bed1/cmd -m water</code></pre>
+
+    <div class="check" data-id="w3-c3" data-answer="3">
+      <p class="check-q">Which topics does the subscription garden/+/moisture match?</p>
+      <ol class="check-o"><li>garden/moisture</li><li>Everything under garden</li><li>garden/bed1/soil/moisture</li><li>garden/bed1/moisture and garden/bed2/moisture, but not garden/bed1/soil/moisture</li></ol>
+      <div class="check-why">+ matches exactly one level. Use # for any depth.</div>
+    </div>
+    <div class="check" data-id="w3-c4" data-answer="3">
+      <p class="check-q">How can a dashboard show that a sensor node has lost power?</p>
+      <ol class="check-o"><li>Poll the device every second</li><li>Use QoS 2</li><li>It can't</li><li>The device sets a last will message (like status = offline, retained) when connecting; the broker publishes it if the connection drops</li></ol>
+      <div class="check-why">Pair it with a retained status = online message published after connecting.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://dev.to/hivemq/the-mqtt-essentials-are-back-new-hivemq-video-series-1d49" target="_blank" rel="noopener"><span><b>MQTT Essentials (video series)</b><small>HiveMQ</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 3.3 ===================== -->
+  <section class="lesson" id="w3-l3">
+    <header><span class="eyebrow">Lesson 3.3 · 40 min</span><h2>From device to dashboard</h2></header>
+<p>A typical pipeline: <b>device → broker → ingestion service → time-series storage → dashboard and alerts</b>. Design choices along the way:</p>
+<ul>
+<li><b>Payload format</b>: JSON is readable and easy (<code>{"moisture": 41.5, "ts": 1793856600}</code>). Binary formats (CBOR, Protocol Buffers, or packed bytes) are smaller, which matters on LoRa, where every byte costs airtime.</li>
+<li><b>Timestamps</b>: stamp readings on the device when it has a reliable clock (sync with NTP), or on the broker side if not. Use UTC.</li>
+<li><b>Store-and-forward</b>: networks drop. A device should buffer readings while offline and send them when reconnected, with a cap so memory doesn't run out (drop the oldest). This is part of this week's mini-project.</li>
+<li><b>Storage</b>: time-series data suits SQLite for a hobby project, or InfluxDB or TimescaleDB at scale. Index by device and time, and downsample old data (keep hourly averages after a month).</li>
+<li><b>Alerts on state, not every sample</b>: alert when moisture stays below threshold for 30 minutes, and not again until it recovers. Otherwise noise produces alert storms.</li>
+<li><b>Edge vs cloud processing</b>: filter and aggregate on the device or gateway to save bandwidth; keep raw data only if you'll use it.</li>
+</ul>
+<p>The Pi is a natural <b>gateway</b>: it runs the broker, a small Python subscriber writing to SQLite, and a dashboard (Grafana, Node-RED, or a page you write), all on your local network.</p>
+
+    <div class="check" data-id="w3-c5" data-answer="2">
+      <p class="check-q">Your ESP32 loses Wi-Fi for 20 minutes every night when the router reboots. How do you avoid gaps in the data?</p>
+      <ol class="check-o"><li>Increase QoS to 2</li><li>Use a retained message</li><li>Buffer readings locally with timestamps while offline (with a size cap) and publish them after reconnecting</li><li>Send readings more often</li></ol>
+      <div class="check-why">QoS only applies to an existing connection. Store-and-forward covers outages.</div>
+    </div>
+    <div class="check" data-id="w3-c6" data-answer="3">
+      <p class="check-q">Why alert on "moisture below 25% for 30 minutes" rather than on any single reading below 25%?</p>
+      <ol class="check-o"><li>MQTT requires it</li><li>It saves storage</li><li>It's more accurate</li><li>Single readings are noisy, so per-sample alerts would fire repeatedly; requiring a sustained condition (and resetting on recovery) avoids alert storms</li></ol>
+      <div class="check-why">This is hysteresis in time. Alert on state changes, not samples.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 3.4 ===================== -->
+  <section class="lesson" id="w3-l4">
+    <header><span class="eyebrow">Lesson 3.4 · 40 min</span><h2>Fleets and security</h2></header>
+<p>IoT devices are notorious for poor security: default passwords, unencrypted protocols, no updates. The Mirai botnet in 2016 took over hundreds of thousands of cameras and routers using a list of about 60 default passwords, then used them to knock major websites offline. Basics that prevent most problems:</p>
+<ul>
+<li><b>No default or shared credentials</b>. Every device gets its own identity (username and password, or better, a client certificate), so one compromised device can be revoked without touching the rest.</li>
+<li><b>Encrypt traffic</b> with TLS (MQTT on port 8883). On a closed home network, plain MQTT is acceptable for learning, but never expose an unauthenticated broker to the internet.</li>
+<li><b>Least privilege</b>: broker access control lists so <code>bed1</code> can publish only to <code>garden/bed1/#</code>.</li>
+<li><b>Keep secrets out of source control</b>: put Wi-Fi and MQTT passwords in a separate <code>secrets.py</code> listed in <code>.gitignore</code>.</li>
+<li><b>Updates</b>: over-the-air (OTA) updates must be signed and should fall back to the previous firmware if the new one fails to boot.</li>
+<li><b>Validate commands</b>: a device receiving <code>water</code> commands should enforce its own limits (maximum run time), whatever the message says.</li>
+</ul>
+<p>Managing a <b>fleet</b> adds provisioning (giving each device its identity), monitoring (last-seen times, battery, firmware version per device) and staged rollouts of firmware (CS week 8's canaries apply to devices too).</p>
+
+    <div class="check" data-id="w3-c7" data-answer="0">
+      <p class="check-q">What made the Mirai botnet possible?</p>
+      <ol class="check-o"><li>Hundreds of thousands of devices exposed to the internet with factory-default passwords</li><li>Weak TLS</li><li>A zero-day in Linux</li><li>MQTT</li></ol>
+      <div class="check-why">Unique credentials per device and not exposing management interfaces would have stopped it.</div>
+    </div>
+    <div class="check" data-id="w3-c8" data-answer="1">
+      <p class="check-q">Your plant controller accepts MQTT commands like {"water_seconds": 600}. What should the firmware do with a request for 600 seconds?</p>
+      <ol class="check-o"><li>Ignore all commands</li><li>Enforce its own safety limit (say 30 s max) regardless of the command, and log the rejected request</li><li>Reboot</li><li>Obey it: the broker is trusted</li></ol>
+      <div class="check-why">Devices must protect themselves and the physical world. Defense in depth applies to commands too.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Projects ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Projects · 5–7 hours</span>
+    <h2>Mini-project: MQTT toolkit · Project 2: Raspberry Pi MQTT pipeline</h2>
+    <p><b>Mini-project</b> (<code>embedded/projects/week-03-mqtt/</code>): tested on your laptop. MQTT topic wildcard matching, topic validation and a store-and-forward buffer.</p>
+<pre class="code"><code>cd embedded/projects/week-03-mqtt
+python -m unittest -v</code></pre>
+<p><b>Project 2: Raspberry Pi MQTT pipeline</b> (<code>embedded/projects/project-2-mqtt-pipeline/</code>, 4–5 hours). Run Mosquitto on your Pi, have the ESP32 plant monitor publish readings with a last will, and write a Python service on the Pi that stores readings in SQLite, tracks which devices are online, and raises a dry-soil alert with hysteresis.</p>
+<ol class="deliverables">
+<li>The mini-project tests passing</li>
+<li>Readings flowing from ESP32 to SQLite, with online and offline detection working, and notes in the project's <code>NOTES.md</code></li>
+</ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 3 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-03.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas on real hardware, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-02.html">← Week 2</a><a class="btn" href="week-04.html">Next: Week 4 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 3;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

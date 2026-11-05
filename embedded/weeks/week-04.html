@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 4: Control, power and reliable devices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Embedded Systems and IoT</a></nav>
+    <span class="eyebrow">Week 4 of 4 · about 8 hours</span>
+    <h1>Control, power and reliable devices</h1>
+    <p class="lede">The final step is making a device that acts on the world by itself, safely and for a long time. This week covers control loops, power budgets and sleep, and the techniques that keep unattended devices working: watchdogs, fail-safes and testing without hardware. The capstone combines everything into an automatic watering system.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Implement on/off control with hysteresis, and explain proportional, integral and derivative control</li>
+      <li>Estimate battery life from a duty cycle, and use sleep modes to extend it</li>
+      <li>Make a device fail safe with watchdogs, timeouts, limits and sensor validation</li>
+      <li>Test firmware logic without hardware, and plan the step from prototype to product</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 4.1 and 4.2 (control loops; power and batteries)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 4.3 and 4.4 (reliability and fail-safes; testing and the road to a product)</td></tr>
+      <tr><td>Days 3–4</td><td>Mini-project, then the larger project (weeks 2–4)</td></tr>
+      <tr><td>Day 5</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 4.1 ===================== -->
+  <section class="lesson" id="w4-l1">
+    <header><span class="eyebrow">Lesson 4.1 · 45 min</span><h2>Control loops</h2></header>
+<p>A <b>closed-loop controller</b> measures something (the <b>process variable</b>), compares it to a target (the <b>setpoint</b>) and adjusts an actuator to reduce the <b>error</b>. A thermostat, cruise control and your watering system are all closed loops.</p>
+<h3>On/off control with hysteresis</h3>
+<p>The simplest controller turns the actuator fully on or off. With one threshold, noise makes it <b>chatter</b>: on, off, on, off, many times a second near the threshold, wearing out relays and pumps. <b>Hysteresis</b> uses two thresholds: start watering below 30%, stop only above 45%. Between them, keep doing whatever you were doing.</p>
+<p>Soil also has <b>delay</b>: water takes minutes to reach the sensor. If you water until the sensor reads 45%, you'll overshoot badly. Better: water in short bursts, then wait (soak) before measuring again. That's the WATERING and SOAKING states from week 1.</p>
+<h3>PID control</h3>
+<p>When the actuator can be varied (motor speed, heater power), a <b>PID</b> controller sets its output from three terms:</p>
+<ul>
+<li><b>P</b>roportional: output proportional to the error now. Larger gain responds faster, but too large oscillates. P alone usually leaves a small steady error.</li>
+<li><b>I</b>ntegral: accumulates past error, removing the steady error. Too much causes overshoot; clamp it to avoid <b>integral windup</b> when the actuator is saturated.</li>
+<li><b>D</b>erivative: reacts to how fast the error is changing, damping overshoot. Sensitive to noise, so filter first.</li>
+</ul>
+<p>Tuning is usually empirical: raise P until it oscillates, back off, add I to remove offset, add a little D if it overshoots.</p>
+
+    <div class="check" data-id="w4-c1" data-answer="2">
+      <p class="check-q">A pump turns on at 30% moisture and off at 30% moisture. Noisy readings hover around 30%. What happens, and what's the fix?</p>
+      <ol class="check-o"><li>Increase the sampling rate</li><li>Add a PID controller</li><li>The pump chatters on and off rapidly; use hysteresis (on below 30%, off above 45%)</li><li>Nothing</li></ol>
+      <div class="check-why">Two thresholds create a dead band where the state is held.</div>
+    </div>
+    <div class="check" data-id="w4-c2" data-answer="1">
+      <p class="check-q">A P-only controller holds a heater 2 °C below its setpoint indefinitely. Which term fixes that?</p>
+      <ol class="check-o"><li>Increase D</li><li>Add I (integral), which accumulates the persistent error</li><li>Remove P</li><li>Add hysteresis</li></ol>
+      <div class="check-why">Steady-state error is what the integral term removes.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://au.mathworks.com/videos/understanding-pid-control-part-1-what-is-pid-control--1527089264373.html" target="_blank" rel="noopener"><span><b>Video: What Is PID Control? (11 min)</b><small>MathWorks, Brian Douglas</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 4.2 ===================== -->
+  <section class="lesson" id="w4-l2">
+    <header><span class="eyebrow">Lesson 4.2 · 40 min</span><h2>Power and batteries</h2></header>
+<p>Battery life is a <b>power budget</b>. Average current is the time-weighted average of each mode:</p>
+<pre class="code"><code>ESP32: awake with Wi-Fi ≈ 120 mA for 5 s, then deep sleep ≈ 0.01 mA for 595 s (every 10 min)
+average ≈ (120 × 5 + 0.01 × 595) / 600 ≈ 1.01 mA
+2000 mAh battery → 2000 / 1.01 ≈ 1980 hours ≈ 82 days</code></pre>
+<p>Without sleep (always awake at about 80 mA), the same battery lasts about a day. Lessons:</p>
+<ul>
+<li><b>Sleep is everything</b>. In deep sleep an ESP32 draws microamps; it wakes on a timer (<code>machine.deepsleep(600_000)</code>) or a pin, and restarts from the top of <code>main.py</code>, so state must be saved in RTC memory or flash.</li>
+<li><b>Radio time dominates</b>. Connecting to Wi-Fi takes seconds; send batched readings, use static IPs, or use a low-power radio.</li>
+<li><b>Hidden drains</b>: development boards have power LEDs and USB-serial chips that draw milliamps permanently; sensors left powered draw current too. Measure with a multimeter in series.</li>
+<li><b>Real capacity is less</b> than the label, and falls with cold and age. Budget 70–80%.</li>
+</ul>
+<p>Solar plus a small battery makes an outdoor plant monitor maintenance-free, if the average consumption is below what the panel provides on a cloudy week.</p>
+
+    <div class="check" data-id="w4-c3" data-answer="0">
+      <p class="check-q">A device draws 50 mA for 2 seconds every minute and 0.1 mA the rest of the time. What's its average current?</p>
+      <ol class="check-o"><li>About 1.8 mA</li><li>About 0.1 mA</li><li>50 mA</li><li>25 mA</li></ol>
+      <div class="check-why">(50 × 2 + 0.1 × 58) / 60 ≈ 1.76 mA.</div>
+    </div>
+    <div class="check" data-id="w4-c4" data-answer="1">
+      <p class="check-q">An ESP32 in deep sleep should draw microamps, but your board draws 8 mA asleep. What's a likely cause?</p>
+      <ol class="check-o"><li>The battery is faulty</li><li>The development board's power LED, voltage regulator or USB-serial chip draws current regardless of the ESP32</li><li>Wi-Fi is still on</li><li>The firmware isn't sleeping</li></ol>
+      <div class="check-why">Dev boards are made for convenience, not low power. Bare modules or low-power boards fix it.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 4.3 ===================== -->
+  <section class="lesson" id="w4-l3">
+    <header><span class="eyebrow">Lesson 4.3 · 40 min</span><h2>Reliability and fail-safes</h2></header>
+<p>An unattended device must keep working, or fail harmlessly, without anyone watching. Techniques:</p>
+<ul>
+<li><b>Watchdog timer</b>: a hardware timer that resets the chip unless the firmware "feeds" it regularly (<code>wdt = WDT(timeout=8000)</code>, then <code>wdt.feed()</code> in the main loop). If the code hangs, the device reboots instead of staying stuck. Feed it only when the loop is genuinely healthy, not from a timer interrupt.</li>
+<li><b>Fail-safe defaults</b>: on boot, after a reset, or on any error, outputs go to the safe state (pump off). Relays and MOSFETs should be wired so that a dead or resetting MCU means "off".</li>
+<li><b>Hard limits independent of logic</b>: a maximum pump run time and a minimum gap between runs, enforced even if the sensor says the soil is dry. A dislodged sensor sitting in dry air would otherwise water forever.</li>
+<li><b>Validate inputs</b>: treat impossible readings (0, maximum, or a sudden jump) as faults.</li>
+<li><b>Timeouts on everything</b> that waits: network connections, sensor reads, MQTT publishes.</li>
+<li><b>Brownout detection and decoupling</b>: capacitors near the board and a supply sized for the load.</li>
+<li><b>Observability</b>: publish uptime, reset reason (<code>machine.reset_cause()</code>), free memory and last error, so you can see problems from the dashboard.</li>
+</ul>
+
+    <div class="check" data-id="w4-c5" data-answer="0">
+      <p class="check-q">Your soil sensor falls out of the pot, so it reads bone dry forever. What protects the plant and your floor?</p>
+      <ol class="check-o"><li>A maximum run time per watering, a minimum interval between waterings, and a daily maximum, enforced regardless of the sensor</li><li>The watchdog timer</li><li>Hysteresis</li><li>QoS 1</li></ol>
+      <div class="check-why">Independent limits stop a wrong input from causing unlimited action.</div>
+    </div>
+    <div class="check" data-id="w4-c6" data-answer="3">
+      <p class="check-q">Where should a watchdog be fed?</p>
+      <ol class="check-o"><li>Never: it feeds itself</li><li>Once at boot</li><li>In a timer interrupt every second</li><li>In the main loop, after it has completed its work successfully</li></ol>
+      <div class="check-why">Feeding from an interrupt would keep it happy even if the main loop hung, defeating the point.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 4.4 ===================== -->
+  <section class="lesson" id="w4-l4">
+    <header><span class="eyebrow">Lesson 4.4 · 35 min</span><h2>Testing and the road to a product</h2></header>
+<p>Hardware is slow to test: you have to wire things, wait for soil to dry, and you can't easily create a fault. So separate <b>logic</b> from <b>hardware access</b>:</p>
+<ul>
+<li>Put decisions (state machines, filters, control) in plain functions and classes that take readings and time as arguments and return actions. That's how all of this course's mini-projects work, and why they have tests.</li>
+<li>Keep a thin <b>hardware layer</b> that reads pins and drives outputs. Inject a fake clock and fake sensors in tests (as in CS weeks 8–10).</li>
+<li>Simulate what you can't easily cause: a sensor fault, a dropped network, a 49-day timer wrap.</li>
+<li>Then test on real hardware for the rest: <b>hardware-in-the-loop</b> rigs automate that in industry. Simulators like Wokwi run Arduino and ESP32 code in a browser.</li>
+</ul>
+<h3>From prototype to product</h3>
+<p>A breadboard prototype becomes a product through: a custom PCB (designed in KiCad), an enclosure rated for the environment (IP65 for outdoors), power design, regulatory certification for radios (RCM in Australia, FCC in the US, CE in Europe), manufacturing tests, a secure provisioning and update process, and support for devices in the field for years. The <b>bill of materials</b> cost is usually a fraction of the final price.</p>
+
+    <div class="check" data-id="w4-c7" data-answer="1">
+      <p class="check-q">Why write the watering decision logic as a function like decide(moisture, now) that returns an action, instead of reading pins inside it?</p>
+      <ol class="check-o"><li>It's shorter</li><li>It can be tested on a laptop with any readings and times, including faults that are hard to create physically</li><li>It uses less power</li><li>MicroPython requires it</li></ol>
+      <div class="check-why">Separating logic from hardware makes firmware testable.</div>
+    </div>
+    <div class="check" data-id="w4-c8" data-answer="3">
+      <p class="check-q">What's a major step between a working breadboard prototype and a sellable wireless product?</p>
+      <ol class="check-o"><li>Adding more sensors</li><li>Rewriting it in assembly</li><li>Switching to a Raspberry Pi</li><li>Regulatory certification for the radio, plus enclosure, PCB, manufacturing tests and update support</li></ol>
+      <div class="check-why">Certification and production engineering often take longer than the prototype.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Projects ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Projects · 5–7 hours</span>
+    <h2>Mini-project: controller logic · Project 3: automatic watering system</h2>
+    <p><b>Mini-project</b> (<code>embedded/projects/week-04-control/</code>): tested on your laptop. The watering controller's decision logic, with hysteresis, soak time, run limits and fault handling, plus a battery-life calculator.</p>
+<pre class="code"><code>cd embedded/projects/week-04-control
+python -m unittest -v</code></pre>
+<p><b>Project 3: automatic watering system</b> (<code>embedded/projects/project-3-watering-system/</code>, 5–6 hours). The capstone: the ESP32 waters a plant with a pump or valve through a relay or MOSFET using your tested controller, reports to the Pi over MQTT, accepts safe remote commands, and survives faults. A short design write-up records your decisions.</p>
+<ol class="deliverables">
+<li>The mini-project tests passing</li>
+<li>A working watering system that passes the README's fault checklist, with notes in <code>NOTES.md</code></li>
+</ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 4 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-04.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas on real hardware, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-03.html">← Week 3</a><a class="btn" href="../index.html">Back to the course</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 4;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 1: Microcontrollers, GPIO and timing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Embedded Systems and IoT</a></nav>
+    <span class="eyebrow">Week 1 of 4 · about 8 hours</span>
+    <h1>Microcontrollers, GPIO and timing</h1>
+    <p class="lede">Embedded code runs on small chips with no operating system to protect it, talks to the physical world through pins, and has to react on time. This week covers the hardware you own (Arduino, ESP32 and Raspberry Pi), the electricity you need to not destroy it, and the two patterns behind almost all firmware: non-blocking loops and state machines.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Choose between a microcontroller (Arduino, ESP32) and a single-board computer (Raspberry Pi) for a task</li>
+      <li>Wire digital inputs and outputs safely: voltage levels, pull-ups and current-limiting resistors</li>
+      <li>Write non-blocking code with timers and interrupts, and debounce a button</li>
+      <li>Design firmware as a finite state machine</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 1.1 and 1.2 (microcontrollers vs single-board computers; digital pins and basic electronics)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 1.3 and 1.4 (timing, interrupts and debouncing; state machines)</td></tr>
+      <tr><td>Days 3–4</td><td>Mini-project, then the larger project (weeks 2–4)</td></tr>
+      <tr><td>Day 5</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 1.1 ===================== -->
+  <section class="lesson" id="w1-l1">
+    <header><span class="eyebrow">Lesson 1.1 · 35 min</span><h2>Microcontrollers vs single-board computers</h2></header>
+<p>A <b>microcontroller</b> (MCU) is a whole computer on one chip: a CPU, a little flash memory for the program, a little RAM, and peripherals like timers, ADCs and serial ports. It usually runs one program with no operating system, starts in milliseconds, and uses milliwatts. A <b>single-board computer</b> (SBC) like the Raspberry Pi runs Linux, has gigabytes of RAM and networking, but takes seconds to boot, uses watts, and can't guarantee microsecond timing because the OS can pause your program at any moment.</p>
+<div class="table-wrap"><table>
+<tr><th></th><th>Arduino Uno</th><th>ESP32</th><th>Raspberry Pi 4/5</th></tr>
+<tr><td>CPU</td><td>8-bit, 16 MHz</td><td>32-bit dual core, 240 MHz</td><td>64-bit quad core, 1.5–2.4 GHz</td></tr>
+<tr><td>RAM</td><td>2 KB</td><td>about 520 KB</td><td>1–8 GB</td></tr>
+<tr><td>Logic level</td><td>5 V</td><td>3.3 V</td><td>3.3 V</td></tr>
+<tr><td>Analog input (ADC)</td><td>Yes, 10-bit</td><td>Yes, 12-bit</td><td>No</td></tr>
+<tr><td>Wireless</td><td>No</td><td>Wi-Fi and Bluetooth</td><td>Wi-Fi and Bluetooth</td></tr>
+<tr><td>Typical role</td><td>Simple, robust control</td><td>Connected sensor nodes</td><td>Gateway, broker, dashboard</td></tr>
+</table></div>
+<p>A common IoT architecture uses both: cheap, low-power MCUs at the edge reading sensors and driving actuators, and a Pi (or the cloud) collecting their data. That's exactly what your three projects build.</p>
+<p>Firmware structure is usually a <b>super loop</b>: <code>setup()</code> once, then <code>loop()</code> forever. MicroPython on the ESP32 lets you write the same thing in Python, at the cost of speed and memory.</p>
+
+    <div class="check" data-id="w1-c1" data-answer="0">
+      <p class="check-q">You need a battery-powered sensor that wakes every 10 minutes, reads soil moisture and sends it over Wi-Fi. Which board fits best?</p>
+      <ol class="check-o"><li>ESP32: it has an ADC, Wi-Fi and deep sleep measured in microamps</li><li>Arduino Uno: it's the simplest</li><li>Raspberry Pi: it has the most memory</li><li>A laptop</li></ol>
+      <div class="check-why">The Pi has no ADC and draws far too much power for batteries. The Uno has no wireless. The ESP32 was designed for this.</div>
+    </div>
+    <div class="check" data-id="w1-c2" data-answer="2">
+      <p class="check-q">Why can't a Raspberry Pi running Linux reliably generate a precise 10-microsecond pulse from a Python program?</p>
+      <ol class="check-o"><li>Its pins are 3.3 V</li><li>The Pi's clock is too slow</li><li>The operating system can pause the program at any time to run other tasks, so timing isn't guaranteed</li><li>Python can't control pins</li></ol>
+      <div class="check-why">MCUs (or the Pi's hardware peripherals like PWM) are used when timing must be exact.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.2 ===================== -->
+  <section class="lesson" id="w1-l2">
+    <header><span class="eyebrow">Lesson 1.2 · 45 min</span><h2>Digital pins and basic electronics</h2></header>
+<p>A GPIO (general-purpose input/output) pin is either an <b>output</b>, driven to HIGH (the supply voltage) or LOW (0 V), or an <b>input</b> that reads a voltage as 1 or 0. Three pieces of electronics matter immediately:</p>
+<ul>
+<li><b>Ohm's law</b>, <code>V = I × R</code>. An LED needs a <b>current-limiting resistor</b>. From a 3.3 V pin with a red LED dropping about 2 V, aiming for 10 mA: R = (3.3 − 2) / 0.010 = 130 Ω, so use the next standard value up (150 or 220 Ω). Without it, the LED and the pin can burn out.</li>
+<li><b>Current limits</b>. A pin can source only about 10–20 mA (40 mA absolute maximum on an Uno, less on an ESP32). Motors, pumps and relays need far more, so a pin drives a <b>transistor</b> or <b>relay module</b> that switches a separate supply. Week 2 covers this.</li>
+<li><b>Logic levels</b>. ESP32 and Pi pins are 3.3 V and are <b>not 5 V tolerant</b>: connecting a 5 V Arduino output or 5 V sensor directly can damage them. Use a level shifter or a voltage divider.</li>
+</ul>
+<p>An input connected to nothing is <b>floating</b>: it picks up noise and reads random values. A <b>pull-up resistor</b> (often built in: <code>Pin(14, Pin.IN, Pin.PULL_UP)</code>) holds it HIGH until a button connects it to ground, so pressed reads 0. That inverted logic confuses everyone once.</p>
+<p>Always connect the <b>grounds</b> of devices that talk to each other: voltages are only meaningful relative to a shared ground.</p>
+
+    <div class="check" data-id="w1-c3" data-answer="2">
+      <p class="check-q">You connect a button between an ESP32 input pin and ground, with no resistor and no pull-up enabled. What happens when the button isn't pressed?</p>
+      <ol class="check-o"><li>It reads 0</li><li>It reads 1</li><li>The pin floats and reads unpredictably</li><li>The ESP32 resets</li></ol>
+      <div class="check-why">Enable the internal pull-up, so the pin reads 1 when released and 0 when pressed.</div>
+    </div>
+    <div class="check" data-id="w1-c4" data-answer="1">
+      <p class="check-q">You want to drive a 12 V water pump from an Arduino. What's the right approach?</p>
+      <ol class="check-o"><li>Use two pins in parallel for more current</li><li>Use the pin to switch a relay module or a logic-level MOSFET that connects the pump to its own 12 V supply, with a flyback diode, and share grounds</li><li>Connect the pump directly to a digital pin</li><li>Power the pump from the 5 V pin</li></ol>
+      <div class="check-why">Pins switch signals, not loads. A pump draws hundreds of milliamps or more, and its coil produces voltage spikes when switched off.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.3 ===================== -->
+  <section class="lesson" id="w1-l3">
+    <header><span class="eyebrow">Lesson 1.3 · 45 min</span><h2>Timing, interrupts and debouncing</h2></header>
+<p>The worst habit in beginner firmware is <code>delay()</code> (or <code>time.sleep()</code>): while the chip waits, it can't read buttons, sensors or the network. Instead, write <b>non-blocking</b> code that checks the clock and acts when it's time:</p>
+<pre class="code"><code>last = time.ticks_ms()
+while True:
+    now = time.ticks_ms()
+    if time.ticks_diff(now, last) &gt;= 1000:   # every second, without blocking
+        last = now
+        read_sensor()
+    check_button()                           # still runs thousands of times a second</code></pre>
+<p>(<code>ticks_diff</code> handles the counter wrapping around, a classic bug when an Arduino's <code>millis()</code> overflows after 49 days.)</p>
+<p>An <b>interrupt</b> lets hardware call a function (an <b>ISR</b>, interrupt service routine) immediately when something happens, like a pin changing or a timer expiring, pausing the main loop. Keep ISRs tiny: set a flag or record a time, and do the real work in the main loop. Don't allocate memory, print or wait inside one, and mark shared variables <code>volatile</code> in C.</p>
+<p>Mechanical buttons <b>bounce</b>: for a few milliseconds after a press, the contacts make and break many times, so one press can register as five. <b>Debouncing</b> accepts a new state only after the input has been stable for, say, 20–50 ms. You can do it in software (this week's mini-project) or with a capacitor and resistor.</p>
+
+    <div class="check" data-id="w1-c5" data-answer="2">
+      <p class="check-q">A sketch reads a button, then calls delay(5000) to keep an LED on for five seconds. What's the problem?</p>
+      <ol class="check-o"><li>None</li><li>LEDs can't stay on that long</li><li>The board can't respond to anything else for five seconds; use a timestamp and check elapsed time in the loop instead</li><li>delay() uses too much power</li></ol>
+      <div class="check-why">Non-blocking timing keeps the loop responsive. It's the foundation of everything else in firmware.</div>
+    </div>
+    <div class="check" data-id="w1-c6" data-answer="3">
+      <p class="check-q">Which work belongs inside an interrupt service routine for a button?</p>
+      <ol class="check-o"><li>Debouncing with a 50 ms delay</li><li>Printing a log message</li><li>Sending an MQTT message</li><li>Recording that the pin changed and when, then returning</li></ol>
+      <div class="check-why">ISRs should be as short as possible. The main loop does the slow work.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://docs.sunfounder.com/projects/beginners-lab-kit/en/latest/videos/video24_interrupt.html" target="_blank" rel="noopener"><span><b>Video: How to Use Interrupts</b><small>SunFounder</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.4 ===================== -->
+  <section class="lesson" id="w1-l4">
+    <header><span class="eyebrow">Lesson 1.4 · 40 min</span><h2>State machines</h2></header>
+<p>Firmware that grows by adding <code>if</code> statements and flags becomes impossible to reason about. A <b>finite state machine</b> (FSM) makes behavior explicit: the device is always in exactly one <b>state</b>, and <b>events</b> (a button press, a timer, a sensor reading) cause <b>transitions</b> between states, with actions on entry or exit.</p>
+<p>A plant-watering controller might have states IDLE, WATERING, SOAKING and FAULT:</p>
+<div class="table-wrap"><table>
+<tr><th>State</th><th>Event</th><th>Next state, action</th></tr>
+<tr><td>IDLE</td><td>Soil drier than threshold</td><td>WATERING: pump on</td></tr>
+<tr><td>WATERING</td><td>Ran 10 s</td><td>SOAKING: pump off</td></tr>
+<tr><td>SOAKING</td><td>Waited 5 min</td><td>IDLE (re-check)</td></tr>
+<tr><td>Any</td><td>Sensor reading invalid</td><td>FAULT: pump off</td></tr>
+</table></div>
+<p>In code, store the state in one variable and handle each state in one branch of the loop. Benefits: every combination is visible, you can draw it, you can test it by feeding events, and impossible situations (pump on while in FAULT) can't happen by construction. Button handling (pressed, held, released, long press) is a state machine too, which is your mini-project this week.</p>
+
+    <div class="check" data-id="w1-c7" data-answer="3">
+      <p class="check-q">Why use an explicit state machine instead of a collection of boolean flags like is_watering, is_waiting and has_fault?</p>
+      <ol class="check-o"><li>Flags use more memory</li><li>It's faster</li><li>State machines need no testing</li><li>With n flags there are 2ⁿ combinations, many invalid; a single state variable allows only the states you designed, and each transition is explicit</li></ol>
+      <div class="check-why">Three flags allow eight combinations, including nonsense like watering while faulted.</div>
+    </div>
+    <div class="check" data-id="w1-c8" data-answer="0">
+      <p class="check-q">A state machine is in WATERING and the sensor suddenly returns an impossible value. What should a safe design do?</p>
+      <ol class="check-o"><li>Transition to a FAULT state that turns the pump off, from any state</li><li>Keep watering until the timer ends</li><li>Ignore the reading</li><li>Reset the board</li></ol>
+      <div class="check-why">Fail safe: when unsure, put actuators in the state that can't cause damage.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Projects ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Projects · 2 hours</span>
+    <h2>Mini-project: buttons that behave</h2>
+    <p>Write the firmware logic for a button, tested on your laptop with simulated time, then run it on a real board. <b>Where:</b> <code>embedded/projects/week-01-buttons/</code>.</p>
+<pre class="code"><code>cd embedded/projects/week-01-buttons
+python -m unittest -v</code></pre>
+<ol class="deliverables">
+<li><code>Debouncer</code>: turns a bouncy raw input into clean presses and releases.</li>
+<li><code>ButtonEvents</code>: a state machine that reports <b>click</b>, <b>long press</b> and <b>double click</b>.</li>
+<li>On hardware: copy <code>buttons.py</code> and <code>board_demo.py</code> to your ESP32 and drive an LED with the events (instructions in the README).</li>
+</ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 1 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-01.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas on real hardware, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="../index.html">← Course overview</a><a class="btn" href="week-02.html">Next: Week 2 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 1;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
