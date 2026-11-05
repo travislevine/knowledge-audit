@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 2: Evidence, statistics and probability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Thinking Skills</a></nav>
+    <span class="eyebrow">Week 2 of 4 · about 5 hours</span>
+    <h1>Evidence, statistics and probability</h1>
+    <p class="lede">Most claims you meet come with numbers attached, and most bad decisions come from misreading them. This week covers how to update beliefs on evidence, when a correlation means something, how to read a study or a chart critically, and how to compare risky options.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Use base rates and Bayes' rule to update a belief on new evidence</li>
+      <li>Explain why correlation doesn't establish causation, and name confounders, reverse causation and selection effects</li>
+      <li>Critically read a statistic or study: sample, comparison, absolute vs relative risk, p-values</li>
+      <li>Compare options using expected value, and know when variance matters more</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 2.1 and 2.2 (base rates and bayes' rule; correlation and causation)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 2.3 and 2.4 (reading studies and statistics; expected value and risk)</td></tr>
+      <tr><td>Day 3</td><td>Practice exercise</td></tr>
+      <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 2.1 ===================== -->
+  <section class="lesson" id="w2-l1">
+    <header><span class="eyebrow">Lesson 2.1 · 50 min</span><h2>Base rates and Bayes' rule</h2></header>
+<p>A test for a rare condition is 99% sensitive (it catches 99% of real cases) and 95% specific (5% of healthy people test positive anyway). One person in 1,000 has the condition. You test positive. How likely is it that you have it?</p>
+<p>Most people say about 95%. Count instead, with 100,000 people: 100 have the condition, and 99 of them test positive. Of the 99,900 healthy people, 5% (4,995) also test positive. So of 5,094 positives, only 99 are real: about <b>2%</b>.</p>
+<p>The error is <b>base rate neglect</b>: ignoring how common something is before the evidence. <b>Bayes' rule</b> formalizes the update:</p>
+<pre class="code"><code>posterior odds = prior odds × likelihood ratio
+likelihood ratio = P(evidence | true) / P(evidence | false) = 0.99 / 0.05 ≈ 20
+prior odds 1 : 999  →  posterior odds ≈ 20 : 999  ≈ 2%</code></pre>
+<p>Two practical lessons. First, always ask "how common is this to begin with?" A security alert, a failed test or a CV keyword means much less when the thing it detects is rare. Second, evidence is strong only when it's much more likely under one hypothesis than the other. Evidence that's equally likely either way (a likelihood ratio near 1) shouldn't move you at all, however vivid it is.</p>
+<p>The easiest way to get these right is <b>natural frequencies</b>: imagine 1,000 or 100,000 people and count, as above.</p>
+
+    <div class="check" data-id="w2-c1" data-answer="1">
+      <p class="check-q">An intrusion detector flags 1% of normal traffic and catches 100% of attacks. 1 in 10,000 requests is an attack. Roughly what fraction of flagged requests are attacks?</p>
+      <ol class="check-o"><li>About 10%</li><li>About 1%</li><li>About 99%</li><li>About 50%</li></ol>
+      <div class="check-why">Per million requests: 100 attacks, all flagged; 999,900 normal, of which about 10,000 are flagged. So 100 of about 10,100 flags are real, about 1%.</div>
+    </div>
+    <div class="check" data-id="w2-c2" data-answer="0">
+      <p class="check-q">Which evidence should move your belief the most?</p>
+      <ol class="check-o"><li>Evidence that's much more likely if the hypothesis is true than if it's false</li><li>Evidence you find vivid and memorable</li><li>Evidence that agrees with what you already think</li><li>Evidence from a large number of anecdotes</li></ol>
+      <div class="check-why">The likelihood ratio is what matters. Evidence that's equally likely either way is worthless however striking it seems.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=HZGCoVF3YvM" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/HZGCoVF3YvM/mqdefault.jpg" alt="" loading="lazy"><span><b>Bayes theorem, the geometry of changing beliefs</b><small>3Blue1Brown</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.2 ===================== -->
+  <section class="lesson" id="w2-l2">
+    <header><span class="eyebrow">Lesson 2.2 · 45 min</span><h2>Correlation and causation</h2></header>
+<p>Two things moving together doesn't mean one causes the other. Before accepting a causal claim, rule out the alternatives:</p>
+<ul>
+<li><b>Confounding</b>: a third factor causes both. Ice cream sales and drownings both rise in summer.</li>
+<li><b>Reverse causation</b>: the effect causes the "cause". Teams that use more monitoring have more recorded incidents, partly because monitoring finds them.</li>
+<li><b>Selection effects</b>: the data you see was filtered. <b>Survivorship bias</b> is the classic: studying successful startups to learn what makes startups succeed ignores the failed ones that did the same things.</li>
+<li><b>Chance</b>: test enough variables and some will correlate by accident.</li>
+</ul>
+<p>The gold standard for causation is a <b>randomized controlled experiment</b>, like an A/B test: random assignment means the groups differ only in the treatment, so confounders balance out. When you can't randomize, look for <b>natural experiments</b>, dose-response patterns (more exposure, more effect), a plausible mechanism, and consistency across different studies.</p>
+<p><b>Regression to the mean</b> deserves special mention. Extreme results are partly luck, so they tend to be followed by more ordinary ones. A team that has a disastrous month and then gets a new process will probably improve regardless. Without a comparison group, you can't tell whether the process helped.</p>
+
+    <div class="check" data-id="w2-c3" data-answer="3">
+      <p class="check-q">Users who enable two-factor authentication have 60% lower churn. A manager wants to force everyone to enable it to cut churn. What's the main problem?</p>
+      <ol class="check-o"><li>The sample is too small</li><li>Churn can't be measured</li><li>Two-factor is bad for security</li><li>Engaged users are more likely both to enable 2FA and to stay, so the correlation may be confounded by engagement</li></ol>
+      <div class="check-why">Engagement is a likely confounder. An experiment (prompting a random half of users) would show whether 2FA itself changes churn.</div>
+    </div>
+    <div class="check" data-id="w2-c4" data-answer="3">
+      <p class="check-q">The worst-performing support agents last quarter were given coaching, and this quarter their scores improved. Why isn't this good evidence the coaching works?</p>
+      <ol class="check-o"><li>The scores are confounded by seasonality only</li><li>Coaching never works</li><li>One quarter is enough data</li><li>Regression to the mean: extreme scores partly reflect bad luck, so they tend to improve anyway; you need a comparable uncoached group</li></ol>
+      <div class="check-why">Selecting on extreme values guarantees some regression. Compare with similar agents who weren't coached.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.3 ===================== -->
+  <section class="lesson" id="w2-l3">
+    <header><span class="eyebrow">Lesson 2.3 · 45 min</span><h2>Reading studies and statistics</h2></header>
+<p>A handful of questions catch most misleading numbers:</p>
+<ul>
+<li><b>Compared to what?</b> "Our new feature users spend 20 minutes a day in the app" means nothing without a baseline.</li>
+<li><b>Relative or absolute?</b> "Doubles your risk" might mean 1 in a million to 2 in a million. Always ask for the absolute numbers.</li>
+<li><b>Who's in the sample?</b> Volunteers, survivors and customers who replied to a survey aren't everyone.</li>
+<li><b>Mean or median?</b> A few large values drag the mean. Average salary at a company where the founder earns millions says little about a typical employee.</li>
+<li><b>How many things were tested?</b> Test 20 variables at p &lt; 0.05 and you expect one false positive by chance. Studies that report only the "significant" result are <b>p-hacking</b>, whether intentionally or not.</li>
+<li><b>How big is the effect?</b> With enough data, trivial effects become statistically significant. Significant doesn't mean important.</li>
+</ul>
+<p>A <b>p-value</b> is the probability of seeing data at least this extreme <i>if there were no real effect</i>. It is <b>not</b> the probability that the hypothesis is false, and p = 0.04 isn't meaningfully different from p = 0.06. Prefer effect sizes with <b>confidence intervals</b>, and trust findings that have been <b>replicated</b>.</p>
+<p>For charts, check the axis: a y-axis that doesn't start at zero can make a 2% change look enormous. Also check the time window, which is easy to cherry-pick.</p>
+
+    <div class="check" data-id="w2-c5" data-answer="2">
+      <p class="check-q">A headline says a supplement "cuts heart attack risk by 50%". In the study, heart attacks fell from 2 in 1,000 to 1 in 1,000. What's the absolute risk reduction?</p>
+      <ol class="check-o"><li>It can't be calculated</li><li>2%</li><li>1 in 1,000 (0.1 percentage points)</li><li>50%</li></ol>
+      <div class="check-why">The relative reduction is 50%, but the absolute reduction is 0.1 percentage points: 1,000 people take it for one to benefit.</div>
+    </div>
+    <div class="check" data-id="w2-c6" data-answer="0">
+      <p class="check-q">A study reports p = 0.03 for a new drug. What does that mean?</p>
+      <ol class="check-o"><li>If the drug had no effect, data this extreme would occur about 3% of the time</li><li>The result will replicate 97% of the time</li><li>The effect is large</li><li>There's a 97% chance the drug works</li></ol>
+      <div class="check-why">A p-value is about the data assuming no effect, not about the probability the hypothesis is true.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.4 ===================== -->
+  <section class="lesson" id="w2-l4">
+    <header><span class="eyebrow">Lesson 2.4 · 40 min</span><h2>Expected value and risk</h2></header>
+<p>When choices have uncertain outcomes, the <b>expected value</b> is the probability-weighted average: multiply each outcome by its probability and add them up.</p>
+<pre class="code"><code>Option A: certain $50,000 saving
+Option B: 30% chance of $200,000, 70% chance of $0
+EV(B) = 0.3 × 200,000 + 0.7 × 0 = $60,000</code></pre>
+<p>B has the higher expected value. Whether it's the better choice depends on <b>variance</b> and whether you can afford the bad outcome. Expected value is the right guide for decisions you make many times (pricing, A/B tests, lots of small bets), because the luck averages out. For one-off decisions with ruinous downsides, it isn't: a 1% chance of bankrupting the company isn't acceptable for a small gain. Avoid bets where you can't survive the worst case.</p>
+<p>Other useful ideas:</p>
+<ul>
+<li><b>Fat tails</b>: in some domains (outages, market moves, viral posts) extreme events are much more common than a normal distribution suggests. Plan for them.</li>
+<li><b>Asymmetric payoffs</b>: look for options with a small, capped downside and a large upside, like cheap experiments.</li>
+<li><b>Calibration</b>: when you say 70% sure, you should be right about 70% of the time. Practicing explicit probabilities (and checking them later) is the fastest way to improve judgement. Your audit quizzes measured this.</li>
+</ul>
+
+    <div class="check" data-id="w2-c7" data-answer="0">
+      <p class="check-q">A feature experiment costs $10,000. It has a 20% chance of producing $100,000 of value and an 80% chance of producing nothing. What's its expected net value?</p>
+      <ol class="check-o"><li>$10,000</li><li>$90,000</li><li>$20,000</li><li>-$10,000</li></ol>
+      <div class="check-why">EV = 0.2 × 100,000 − 10,000 = $10,000. Positive, and the downside is capped, so it's a good bet, especially if you can run many.</div>
+    </div>
+    <div class="check" data-id="w2-c8" data-answer="2">
+      <p class="check-q">When is maximizing expected value a poor guide?</p>
+      <ol class="check-o"><li>When outcomes are uncertain</li><li>For repeated small decisions</li><li>For one-off decisions where the worst outcome is ruinous and can't be recovered from</li><li>When probabilities are estimated</li></ol>
+      <div class="check-why">EV works when luck averages out over many trials. If one bad outcome ends the game, avoid that risk first.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Exercise ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Practice exercise · 60–90 minutes</span>
+    <h2>Reason with numbers</h2>
+    <p>In <code>thinking/exercises/week-02.md</code>:</p>
+<ol>
+<li><b>Bayes by counting.</b> Pick a real detector (a spam filter, a medical screen, a fraud alert or a CI test that flakes). Estimate the base rate, the hit rate and the false-positive rate, then work out what fraction of alarms are real using natural frequencies.</li>
+<li><b>Causal claim.</b> Find a news headline claiming X causes Y. List the possible confounders, the chance of reverse causation and any selection effect, and describe the experiment that would settle it.</li>
+<li><b>A decision in expected value.</b> Take a real choice you face (a job, a course, a project approach). List two or three outcomes for each option with rough probabilities and values. Compute the expected values, then say whether variance or a ruinous outcome should change your choice.</li>
+<li><b>Calibration log.</b> Write 10 predictions about the next month (work, study, news) with a probability for each. Revisit them in week 4.</li>
+</ol>
+    <p>There are no tests: thinking skills improve by applying them to real situations and checking yourself later. Be concrete, and write your answers in your own words.</p>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 2 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-02.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas in real life, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-01.html">← Week 1</a><a class="btn" href="week-03.html">Next: Week 3 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 2;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

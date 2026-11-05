@@ -34,6 +34,21 @@ in `syllabus/projects/` and run with `python -m unittest -v`.
 Progress is summarized in `results/REPORT.md`, rebuilt after every save. See
 `syllabus/REVIEW.md` for how someone else can review it.
 
+## Thinking Skills course
+
+A 4-week course, about 5 hours a week, following the areas of the Thinking
+Skills audit:
+
+1. Logic and arguments
+2. Evidence, statistics and probability
+3. Cognitive biases and judgement
+4. Problem solving and decision making
+
+Open `thinking/index.html`. Each week has four lessons with checkpoints, a
+video, a practice exercise written in `thinking/exercises/`, and a
+10-question quiz. Progress saves to `results/thinking.json` and appears in
+`results/REPORT.md`.
+
 ## How it works
 
 - Pick an answer, then lock it in as **Guessing**, **Fairly sure** or **Certain**.

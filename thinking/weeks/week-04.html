@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 4: Problem solving and decision making</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Thinking Skills</a></nav>
+    <span class="eyebrow">Week 4 of 4 · about 5 hours</span>
+    <h1>Problem solving and decision making</h1>
+    <p class="lede">The last week turns everything into method. You'll practice defining a problem before solving it, finding root causes, reasoning from first principles, structuring decisions with explicit criteria and reversibility, and thinking about the second-order effects that make well-meant changes backfire.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Define a problem precisely, and break it down into mutually exclusive, collectively exhaustive parts</li>
+      <li>Find root causes with the five whys and fault trees, and reason from first principles</li>
+      <li>Structure a decision: options, criteria, weights, reversibility and the value of more information</li>
+      <li>Think in systems: feedback loops, second-order effects, incentives and Goodhart's law</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 4.1 and 4.2 (defining and breaking down problems; root causes and first principles)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 4.3 and 4.4 (making decisions; systems, incentives and second-order effects)</td></tr>
+      <tr><td>Day 3</td><td>Practice exercise</td></tr>
+      <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 4.1 ===================== -->
+  <section class="lesson" id="w4-l1">
+    <header><span class="eyebrow">Lesson 4.1 · 40 min</span><h2>Defining and breaking down problems</h2></header>
+<p>"If I had an hour to solve a problem, I'd spend 55 minutes thinking about the problem." Whoever said it (the attribution to Einstein is doubtful), the point stands: most failed solutions solve the wrong problem.</p>
+<p>A good problem statement is specific, measurable and free of a built-in solution. "We need a new CRM" is a solution. "Sales reps spend about 6 hours a week re-entering customer data, and 15% of follow-ups are missed" is a problem, and it admits many solutions.</p>
+<p>Useful moves:</p>
+<ul>
+<li><b>Ask why it matters</b> until you reach the real goal. Users asking for "export to Excel" may really want a weekly report.</li>
+<li><b>Reframe</b>: state the problem several ways. A slow elevator can be fixed by speeding it up, or by putting mirrors in the lobby so the wait feels shorter.</li>
+<li><b>Decompose</b> into parts that are <b>MECE</b>: mutually exclusive (no overlap) and collectively exhaustive (nothing missing). "Revenue fell" splits into price × volume, and volume into new customers + retained customers. An <b>issue tree</b> keeps splitting until each branch can be tested with data.</li>
+<li><b>Work backwards</b> from the goal, or solve a smaller or simpler version first.</li>
+</ul>
+<p>Engineers know decomposition well: it's how you debug, by halving the search space (bisection) until the fault is isolated.</p>
+
+    <div class="check" data-id="w4-c1" data-answer="2">
+      <p class="check-q">Which is the best problem statement?</p>
+      <ol class="check-o"><li>We should use Kubernetes</li><li>Our architecture is bad</li><li>Our deploys take 3 hours and fail 20% of the time, so we ship features twice a month instead of daily</li><li>We need microservices</li></ol>
+      <div class="check-why">It's specific and measurable, and doesn't presuppose the solution. Microservices might be one answer; faster CI might be another.</div>
+    </div>
+    <div class="check" data-id="w4-c2" data-answer="1">
+      <p class="check-q">Profit fell 20%. Which breakdown is MECE?</p>
+      <ol class="check-o"><li>Marketing, competitors, the economy</li><li>Revenue (price × volume) and costs (fixed + variable)</li><li>Things we control, and bad luck</li><li>Sales team, product team, and customers</li></ol>
+      <div class="check-why">Profit = revenue − costs is exhaustive and non-overlapping, and each part can be split again and checked against data.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 4.2 ===================== -->
+  <section class="lesson" id="w4-l2">
+    <header><span class="eyebrow">Lesson 4.2 · 40 min</span><h2>Root causes and first principles</h2></header>
+<p>Symptoms recur until you fix causes. The <b>five whys</b> technique keeps asking why:</p>
+<pre class="code"><code>The site went down.             Why? The disk filled up.
+Why? Logs weren't rotated.       Why? Rotation config was missing on new servers.
+Why? New servers are set up by hand.
+Why? There's no automated provisioning.   → fix the process, not just the disk</code></pre>
+<p>Its weaknesses: real failures usually have <b>several contributing causes</b>, not one chain, and the chain tends to stop at "human error", which is never a root cause. Ask instead why the system made the error easy and its consequences severe. <b>Fault trees</b> and <b>fishbone diagrams</b> capture multiple branches.</p>
+<p><b>First-principles thinking</b> means reducing a problem to its fundamental truths and reasoning up from there, instead of reasoning by <b>analogy</b> ("this is how it's usually done"). The famous example: battery packs were expensive, but the raw materials cost far less than the packs, so the cost had to be in the process, which could be redesigned. In software, ask "what does this actually need to do, and what does it cost at the physical level?" A back-of-the-envelope estimate of bytes, requests and milliseconds (week 9 of the CS syllabus) is first-principles reasoning.</p>
+<p>Analogy isn't bad: it's fast and usually right. Use first principles when the stakes are high, the conventional answer seems too expensive or slow, or conditions have changed since the convention formed.</p>
+
+    <div class="check" data-id="w4-c3" data-answer="0">
+      <p class="check-q">A five-whys analysis ends with "the engineer ran the wrong command". What should you do?</p>
+      <ol class="check-o"><li>Keep asking: why was the wrong command easy to run, and why did it cause so much damage? Fix those</li><li>Blame the team lead</li><li>Accept it and retrain the engineer</li><li>Stop: human error is the root cause</li></ol>
+      <div class="check-why">Human error is a symptom of a system that allows it. Guardrails, confirmation prompts and limited permissions fix the system.</div>
+    </div>
+    <div class="check" data-id="w4-c4" data-answer="1">
+      <p class="check-q">When is first-principles thinking most worth its cost over reasoning by analogy?</p>
+      <ol class="check-o"><li>Never: analogy is always enough</li><li>When stakes are high, the conventional answer looks too costly, or the conditions behind the convention have changed</li><li>Only in physics</li><li>For every small decision</li></ol>
+      <div class="check-why">First principles is slow. Reserve it for decisions where convention may be wrong and it matters.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=NV3sBlRgzTI" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/NV3sBlRgzTI/mqdefault.jpg" alt="" loading="lazy"><span><b>The First Principles Method Explained by Elon Musk</b><small>YouTube explainer</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 4.3 ===================== -->
+  <section class="lesson" id="w4-l3">
+    <header><span class="eyebrow">Lesson 4.3 · 45 min</span><h2>Making decisions</h2></header>
+<p>A simple structure for important decisions:</p>
+<ol>
+<li><b>Frame it</b>: what exactly are you deciding, by when, and who decides?</li>
+<li><b>Widen the options</b>. "Whether or not" decisions (two options) fail far more often than decisions with several real alternatives. Ask "what else could we do?" and "what if we could do both?"</li>
+<li><b>Set criteria before scoring options</b>, and weight them. A <b>weighted decision matrix</b> forces explicit trade-offs and resists rationalizing a favorite.</li>
+<li><b>Estimate consequences</b> with ranges and probabilities, using week 2 and 3 techniques.</li>
+<li><b>Decide, record why, and set a review date.</b></li>
+</ol>
+<p>Two ideas sharpen this further. First, <b>reversibility</b>: Amazon calls reversible decisions "two-way doors" and irreversible ones "one-way doors". Make two-way-door decisions quickly, with about 70% of the information you'd like, and correct course. Spend your care on one-way doors. Second, the <b>value of information</b>: more research is worth it only if it could change the decision and the decision matters. If every plausible finding leads to the same choice, decide now.</p>
+<p>Watch for <b>opportunity cost</b>: the cost of a choice includes the best alternative you give up. And use <b>satisficing</b> (choosing the first option that meets your criteria) for low-stakes decisions, rather than maximizing.</p>
+
+    <div class="check" data-id="w4-c5" data-answer="0">
+      <p class="check-q">A team spends three weeks debating which logging library to use. It can be swapped later in a day. What's the best advice?</p>
+      <ol class="check-o"><li>It's a two-way door: pick a reasonable option quickly and revisit if needed</li><li>Build your own</li><li>Keep researching until certain</li><li>Let a vote decide after more research</li></ol>
+      <div class="check-why">Reversible, low-cost decisions deserve speed, not deliberation.</div>
+    </div>
+    <div class="check" data-id="w4-c6" data-answer="3">
+      <p class="check-q">You're considering a two-week study before choosing between two vendors. Every plausible result would still lead you to choose Vendor A. What does value-of-information reasoning say?</p>
+      <ol class="check-o"><li>Choose Vendor B to be safe</li><li>Do a four-week study instead</li><li>Do the study: more information is always better</li><li>Skip it: information that can't change the decision has no decision value</li></ol>
+      <div class="check-why">Information is valuable only to the extent that it might change what you do.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 4.4 ===================== -->
+  <section class="lesson" id="w4-l4">
+    <header><span class="eyebrow">Lesson 4.4 · 45 min</span><h2>Systems, incentives and second-order effects</h2></header>
+<p>A <b>system</b> is a set of parts whose interactions produce behavior that none produces alone. Systems thinking looks for:</p>
+<ul>
+<li><b>Feedback loops</b>. A <b>reinforcing</b> loop amplifies change: more users bring more content, which brings more users (and the same loop drives outages, when retries add load to an overloaded service). A <b>balancing</b> loop pushes toward a target: a thermostat, autoscaling, or prices rising until demand falls.</li>
+<li><b>Delays</b> between action and effect, which cause overshoot and oscillation: hiring when demand peaks, then having too many people by the time they're trained.</li>
+<li><b>Stocks and flows</b>: a backlog (stock) grows whenever the arrival rate (flow in) exceeds the completion rate (flow out), however hard people work.</li>
+</ul>
+<p><b>Second-order thinking</b> asks "and then what?" A first-order fix often triggers a reaction. Adding a lane to a road reduces traffic until more people choose to drive (induced demand). Rewarding bug counts gets more bugs filed, some deliberately trivial.</p>
+<p>That last example is <b>Goodhart's law</b>: when a measure becomes a target, it ceases to be a good measure. People optimize what's measured, not what was meant. Defenses: use several balancing metrics (speed <i>and</i> quality), keep targets close to the real goal, and watch for gaming. More broadly, <b>incentives</b> explain much behavior: "show me the incentive and I'll show you the outcome."</p>
+<p>Finally, <b>Chesterton's fence</b>: before removing a rule or a weird piece of code, find out why it was put there. Systems often contain fixes for problems you can't see.</p>
+
+    <div class="check" data-id="w4-c7" data-answer="1">
+      <p class="check-q">A support team is measured on tickets closed per day. Quality falls and reopened tickets rise. What's happening?</p>
+      <ol class="check-o"><li>The team got worse</li><li>Goodhart's law: optimizing the measured target (closures) at the expense of the real goal (solved problems); add a balancing metric like reopen rate or satisfaction</li><li>A reinforcing loop of growth</li><li>Regression to the mean</li></ol>
+      <div class="check-why">The measure became the target. Pair speed metrics with quality metrics.</div>
+    </div>
+    <div class="check" data-id="w4-c8" data-answer="3">
+      <p class="check-q">You find an odd retry delay in old code that seems pointless, and you want to delete it. What's the systems-thinking move?</p>
+      <ol class="check-o"><li>Double it</li><li>Delete it: it's pointless</li><li>Leave all old code alone forever</li><li>Chesterton's fence: find out why it's there (blame, commit history, ask) before removing it</li></ol>
+      <div class="check-why">It may protect against a reinforcing retry storm or a rate limit. Understand first, then change.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Exercise ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Practice exercise · 60–90 minutes</span>
+    <h2>Solve a real problem, end to end</h2>
+    <p>A capstone for the course. Choose one real, important decision or problem you're facing (study, career, a project or a team issue). In <code>thinking/exercises/week-04.md</code>:</p>
+<ol>
+<li><b>Define it</b> as a specific, measurable problem statement with no built-in solution. Reframe it at least two other ways.</li>
+<li><b>Break it down</b> into a MECE issue tree, two or three levels deep.</li>
+<li><b>Root causes</b>: run five whys on the most important branch, and note any branch where first-principles reasoning changes the conventional answer.</li>
+<li><b>Decide</b>: list at least three options, set and weight criteria before scoring, build a decision matrix, and label the decision a one-way or two-way door.</li>
+<li><b>Second-order effects</b>: for your chosen option, list what happens next, and next after that. Name any incentives or metrics that could be gamed.</li>
+<li><b>Premortem and review</b>: write three ways it fails, and set a date to review the decision in your decision journal.</li>
+<li><b>Calibration check</b>: score the 10 predictions from your week 2 log.</li>
+</ol>
+    <p>There are no tests: thinking skills improve by applying them to real situations and checking yourself later. Be concrete, and write your answers in your own words.</p>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 4 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-04.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas in real life, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-03.html">← Week 3</a><a class="btn" href="../index.html">Back to the course</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 4;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

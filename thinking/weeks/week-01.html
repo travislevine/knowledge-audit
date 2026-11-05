@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 1: Logic and arguments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Thinking Skills</a></nav>
+    <span class="eyebrow">Week 1 of 4 · about 5 hours</span>
+    <h1>Logic and arguments</h1>
+    <p class="lede">Every decision, design review and debate rests on arguments. This week gives you the tools to take one apart: find the claim and the reasons, check whether the reasons actually support the claim, and spot the common tricks that make weak reasoning feel strong.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Break an argument into premises and a conclusion, including unstated assumptions</li>
+      <li>Tell valid from sound arguments, and recognize the valid and invalid conditional forms</li>
+      <li>Distinguish deductive, inductive and abductive reasoning, and judge the strength of each</li>
+      <li>Name and counter the most common informal fallacies</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 1.1 and 1.2 (anatomy of an argument; validity, soundness and conditionals)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 1.3 and 1.4 (deduction, induction and abduction; fallacies and rhetorical tricks)</td></tr>
+      <tr><td>Day 3</td><td>Practice exercise</td></tr>
+      <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 1.1 ===================== -->
+  <section class="lesson" id="w1-l1">
+    <header><span class="eyebrow">Lesson 1.1 · 40 min</span><h2>Anatomy of an argument</h2></header>
+<p>An <b>argument</b> is a set of reasons (<b>premises</b>) offered in support of a claim (the <b>conclusion</b>). It isn't a quarrel: "we should move to Postgres because our data is relational and we need transactions" is an argument; "Postgres is great!" is just an assertion.</p>
+<p>To analyze one, first find the conclusion (look for "so", "therefore", "we should"), then the reasons ("because", "since", "given that"). Write them as a numbered list. This alone exposes most weak arguments, because rhetoric falls away and you can see what's actually being claimed.</p>
+<h3>Hidden premises</h3>
+<p>Real arguments skip steps. "The new hire went to a top university, so they'll be a great engineer" relies on an unstated premise: <i>graduates of top universities are great engineers</i>. Making hidden premises explicit is the most powerful move in critical thinking, because the weakest link is usually the one nobody said out loud.</p>
+<h3>Charity first</h3>
+<p>Before criticizing, restate the argument in its <b>strongest</b> form (the <b>principle of charity</b>, or "steelmanning"). If you can only defeat a weak version, you haven't defeated the argument, and the other person will rightly ignore you. A good test: could the person who made it say "yes, that's exactly what I mean, put better than I did"?</p>
+
+    <div class="check" data-id="w1-c1" data-answer="0">
+      <p class="check-q">"Our competitor shipped a mobile app last year and their revenue grew 30%, so we should build a mobile app." What's the key hidden premise?</p>
+      <ol class="check-o"><li>The app caused the competitor's growth, and would do the same for us</li><li>Our competitor is bigger than us</li><li>Mobile apps are expensive</li><li>Revenue is the most important metric</li></ol>
+      <div class="check-why">The argument only works if the app caused the growth (not a new market, pricing or sales team) and if the same cause would work for a different company. Both are unstated and both are doubtful.</div>
+    </div>
+    <div class="check" data-id="w1-c2" data-answer="2">
+      <p class="check-q">A colleague argues for rewriting a service. You disagree. What should you do first?</p>
+      <ol class="check-o"><li>Propose your own plan</li><li>Ask for data</li><li>Restate their argument in its strongest form and check they agree with your summary</li><li>Point out the weakest thing they said</li></ol>
+      <div class="check-why">Charity first. Once they agree you've understood, your objections land on the real argument, and you often find you agree on more than you thought.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.2 ===================== -->
+  <section class="lesson" id="w1-l2">
+    <header><span class="eyebrow">Lesson 1.2 · 45 min</span><h2>Validity, soundness and conditionals</h2></header>
+<p>A deductive argument is <b>valid</b> if the conclusion <i>must</i> be true whenever the premises are true. Validity is about <b>form</b>, not truth: "All fish can fly; Nemo is a fish; so Nemo can fly" is valid but false. An argument is <b>sound</b> if it's valid <i>and</i> its premises are true. Only sound arguments guarantee their conclusions.</p>
+<p>So there are two ways to attack an argument: show the form is broken (the conclusion doesn't follow), or show a premise is false.</p>
+<h3>The four conditional forms</h3>
+<p>Most everyday deduction uses "if P then Q". Two forms are valid and two are tempting mistakes:</p>
+<div class="table-wrap"><table>
+<tr><th>Form</th><th>Pattern</th><th>Valid?</th></tr>
+<tr><td>Modus ponens</td><td>If P then Q. P. So Q.</td><td>Yes</td></tr>
+<tr><td>Modus tollens</td><td>If P then Q. Not Q. So not P.</td><td>Yes</td></tr>
+<tr><td>Affirming the consequent</td><td>If P then Q. Q. So P.</td><td>No</td></tr>
+<tr><td>Denying the antecedent</td><td>If P then Q. Not P. So not Q.</td><td>No</td></tr>
+</table></div>
+<p>"If the database is down, the site errors. The site is erroring. So the database is down" affirms the consequent: many other things make the site error. Debugging is full of this mistake.</p>
+<p>Also watch for confusing a conditional with its <b>converse</b> ("if Q then P"). "If P then Q" is equivalent only to its <b>contrapositive</b>, "if not Q then not P". And "P only if Q" means "if P then Q", which trips up many people reading requirements.</p>
+
+    <div class="check" data-id="w1-c3" data-answer="2">
+      <p class="check-q">"If the tests pass, the build is deployed. The build wasn't deployed. So the tests didn't pass." Which form is this?</p>
+      <ol class="check-o"><li>Modus ponens (valid)</li><li>Affirming the consequent (invalid)</li><li>Modus tollens (valid)</li><li>Denying the antecedent (invalid)</li></ol>
+      <div class="check-why">If P then Q; not Q; so not P. That's modus tollens, and it's valid. Whether it's sound depends on whether the first premise is really true.</div>
+    </div>
+    <div class="check" data-id="w1-c4" data-answer="1">
+      <p class="check-q">Which statement is logically equivalent to "If a user is an admin, they can delete posts"?</p>
+      <ol class="check-o"><li>If a user isn't an admin, they can't delete posts</li><li>If a user can't delete posts, they aren't an admin</li><li>If a user can delete posts, they're an admin</li><li>Only admins can delete posts</li></ol>
+      <div class="check-why">Only the contrapositive is equivalent. The others are the converse or the inverse, which might be true in your system but don't follow from the statement.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=NKEhdsnKKHs" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/NKEhdsnKKHs/mqdefault.jpg" alt="" loading="lazy"><span><b>How to Argue: Philosophical Reasoning</b><small>CrashCourse</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.3 ===================== -->
+  <section class="lesson" id="w1-l3">
+    <header><span class="eyebrow">Lesson 1.3 · 40 min</span><h2>Deduction, induction and abduction</h2></header>
+<p><b>Deduction</b> moves from premises to a conclusion that must follow. It's certain, but it can't tell you anything not already contained in the premises.</p>
+<p><b>Induction</b> generalizes from observations: "every deploy on Friday this year caused an incident, so Friday deploys are risky." Its conclusion goes beyond the evidence, so it can only be <b>strong</b> or <b>weak</b>, never certain. Strength depends on sample size, how representative the sample is, and whether there's a plausible mechanism. One counterexample can't disprove a statistical generalization, but it does disprove a universal one ("all swans are white").</p>
+<p><b>Abduction</b> is <b>inference to the best explanation</b>: given an observation, pick the hypothesis that would best explain it. It's how doctors diagnose, detectives reason and engineers debug: "latency spiked right after the deploy, and only on endpoints that call the new library, so the library is the likely cause." Good explanations are simple, explain all the evidence (not just some), fit what else you know, and make testable predictions.</p>
+<p>The habit to build: when you abduce an explanation, treat it as a hypothesis and look for the observation that would prove it wrong. Then test that.</p>
+
+    <div class="check" data-id="w1-c5" data-answer="3">
+      <p class="check-q">Your service is slow. You notice the slowdown began when a new index was added, and only writes are slow. You conclude the new index is the cause. What kind of reasoning is this?</p>
+      <ol class="check-o"><li>Deduction</li><li>Circular reasoning</li><li>Induction</li><li>Abduction (inference to the best explanation)</li></ol>
+      <div class="check-why">You're choosing the hypothesis that best explains the pattern of evidence. The next step is to test it, for example by dropping the index in staging.</div>
+    </div>
+    <div class="check" data-id="w1-c6" data-answer="2">
+      <p class="check-q">"We surveyed 2,000 people who visited our website, and 80% want dark mode. So most of our users want dark mode." What's the main weakness?</p>
+      <ol class="check-o"><li>2,000 is too small</li><li>It's deductive, so it can't be wrong</li><li>Website visitors may not represent all users (e.g. app-only users)</li><li>Surveys are always wrong</li></ol>
+      <div class="check-why">Inductive strength depends on the sample representing the population. A large but biased sample is still biased.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.4 ===================== -->
+  <section class="lesson" id="w1-l4">
+    <header><span class="eyebrow">Lesson 1.4 · 45 min</span><h2>Fallacies and rhetorical tricks</h2></header>
+<p>An <b>informal fallacy</b> is a pattern of reasoning that feels persuasive but doesn't support the conclusion. Naming them is useful only if you then explain <i>why</i> the reasoning fails; "that's a fallacy!" on its own wins nothing.</p>
+<ul>
+<li><b>Straw man</b>: attacking a distorted version of the claim. "You want tests? So you think we should spend all our time on tests?"</li>
+<li><b>Ad hominem</b>: attacking the person instead of the argument. Note that questioning a source's reliability or conflicts of interest is <i>not</i> a fallacy; dismissing an argument because of who made it is.</li>
+<li><b>Appeal to authority</b>: fallacious when the authority is outside their expertise, or when experts disagree. Deferring to genuine expert consensus is reasonable.</li>
+<li><b>False dilemma</b>: presenting two options when more exist. "Either we rewrite it or we live with it forever."</li>
+<li><b>Slippery slope</b>: claiming a small step will inevitably lead to disaster without showing each link.</li>
+<li><b>Begging the question</b> (circular reasoning): the conclusion is hidden in a premise.</li>
+<li><b>Post hoc</b>: B followed A, so A caused B.</li>
+<li><b>Sunk cost</b>: continuing because of what's already been spent, rather than future costs and benefits.</li>
+<li><b>Moving the goalposts</b> and <b>no true Scotsman</b>: changing the claim when evidence contradicts it.</li>
+<li><b>Motte and bailey</b>: defending a bold claim, retreating to an obvious one when challenged, then returning to the bold one.</li>
+</ul>
+<p>Use these on your own thinking first. The fallacies you commit are much more costly than the ones you spot in others.</p>
+
+    <div class="check" data-id="w1-c7" data-answer="3">
+      <p class="check-q">"We've already spent eight months on this framework migration, so we can't stop now." Which fallacy?</p>
+      <ol class="check-o"><li>Appeal to authority</li><li>Slippery slope</li><li>Straw man</li><li>Sunk cost</li></ol>
+      <div class="check-why">The eight months are gone either way. The only question is whether the remaining cost is worth the remaining benefit.</div>
+    </div>
+    <div class="check" data-id="w1-c8" data-answer="0">
+      <p class="check-q">A senior engineer says a design is fine. You note they wrote the original design and are reviewing their own work. Is that an ad hominem?</p>
+      <ol class="check-o"><li>No: pointing out a conflict of interest is a reasonable question about reliability, as long as you still engage with the design itself</li><li>Yes: you're attacking the person</li><li>Yes: seniority should be respected</li><li>No: ad hominem only applies to insults</li></ol>
+      <div class="check-why">Questioning reliability is legitimate. It becomes ad hominem if you treat it as proof the design is wrong.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Exercise ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Practice exercise · 60–90 minutes</span>
+    <h2>Dissect a real argument</h2>
+    <p>Find a real argument: an opinion article, a design doc, a pull request discussion, or a decision at work or university. Then, in <code>thinking/exercises/week-01.md</code>:</p>
+<ol>
+<li>Write its conclusion and premises as a numbered list, including at least two hidden premises.</li>
+<li>Steelman it: write the strongest version in two or three sentences.</li>
+<li>Say whether it's deductive, inductive or abductive, and evaluate it: is it valid or strong? Which premise is weakest?</li>
+<li>Identify any fallacies, and explain in one sentence each why the reasoning fails.</li>
+<li>Write the single question you'd ask the author that would most change your confidence.</li>
+</ol>
+    <p>There are no tests: thinking skills improve by applying them to real situations and checking yourself later. Be concrete, and write your answers in your own words.</p>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 1 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-01.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas in real life, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="../index.html">← Course overview</a><a class="btn" href="week-02.html">Next: Week 2 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 1;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

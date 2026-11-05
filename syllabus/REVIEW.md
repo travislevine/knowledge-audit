@@ -60,6 +60,10 @@ also includes `DESIGN.md` and an architecture decision record in
 Tests passing is the minimum. Code quality, clarity and the written answers
 are where feedback helps most.
 
+There's also a 4-week Thinking Skills course in `thinking/`. Its exercises
+are written answers in `thinking/exercises/week-NN.md`, and its progress
+appears in its own section of `REPORT.md`.
+
 ## Useful kinds of feedback
 
 - **Mismatches between confidence and results.** A high self-rating but

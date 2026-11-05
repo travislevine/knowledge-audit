@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 3: Cognitive biases and judgement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Thinking Skills</a></nav>
+    <span class="eyebrow">Week 3 of 4 · about 5 hours</span>
+    <h1>Cognitive biases and judgement</h1>
+    <p class="lede">Knowing about biases doesn't make you immune to them; studies suggest it barely helps on its own. What helps is recognizing the situations where they strike and using processes that work around them. This week covers the biases that most affect engineers, managers and students, and the techniques that actually reduce them.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Explain fast (System 1) and slow (System 2) thinking and when each misleads</li>
+      <li>Recognize confirmation bias, anchoring, availability, framing and hindsight bias in real situations</li>
+      <li>Explain overconfidence and the planning fallacy, and estimate using reference classes</li>
+      <li>Apply debiasing techniques: premortems, considering the opposite, checklists and independent estimates</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 3.1 and 3.2 (two systems of thinking; biases that matter most)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 3.3 and 3.4 (overconfidence and the planning fallacy; debiasing that works)</td></tr>
+      <tr><td>Day 3</td><td>Practice exercise</td></tr>
+      <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 3.1 ===================== -->
+  <section class="lesson" id="w3-l1">
+    <header><span class="eyebrow">Lesson 3.1 · 35 min</span><h2>Two systems of thinking</h2></header>
+<p>Psychologists Daniel Kahneman and Amos Tversky described two modes of thought. <b>System 1</b> is fast, automatic and intuitive: it reads faces, completes "bread and…", and drives a familiar route. <b>System 2</b> is slow, effortful and deliberate: it does long division, checks an argument, or compares two job offers carefully.</p>
+<p>System 1 is usually right, which is why we rely on it. But it substitutes easy questions for hard ones. Asked "how likely is this project to succeed?", it answers "how good does this project feel?" Asked "is this candidate competent?", it answers "do I like them?" These <b>heuristics</b> are efficient shortcuts that produce predictable errors, called <b>biases</b>.</p>
+<p>Try: a bat and a ball cost $1.10 together. The bat costs $1.00 more than the ball. How much is the ball? The intuitive answer is 10 cents; the correct one is 5 cents. System 1 answers instantly, and System 2, which is lazy, often doesn't check.</p>
+<p>Expert intuition can be trusted when the environment is regular and you've had lots of practice with fast, clear feedback: chess, firefighting, an experienced engineer reading a stack trace. It's unreliable when feedback is slow or noisy, as in hiring, long-term forecasts and strategy. There, slow down and use explicit reasoning.</p>
+
+    <div class="check" data-id="w3-c1" data-answer="3">
+      <p class="check-q">When is an expert's intuition most trustworthy?</p>
+      <ol class="check-o"><li>Whenever they're confident</li><li>In novel situations they've never seen</li><li>For long-term predictions</li><li>In a regular environment where they've had lots of practice with quick, clear feedback</li></ol>
+      <div class="check-why">Intuition is pattern recognition. It needs valid patterns to learn and feedback to learn from.</div>
+    </div>
+    <div class="check" data-id="w3-c2" data-answer="3">
+      <p class="check-q">A manager is asked "will this hire succeed in the role?" and answers based on how much they enjoyed the interview. What's happening?</p>
+      <ol class="check-o"><li>Base rate reasoning</li><li>Careful System 2 reasoning</li><li>Anchoring</li><li>Attribute substitution: System 1 answers an easier question (do I like them?) in place of the hard one</li></ol>
+      <div class="check-why">Structured interviews scored against defined criteria exist precisely to counter this.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 3.2 ===================== -->
+  <section class="lesson" id="w3-l2">
+    <header><span class="eyebrow">Lesson 3.2 · 50 min</span><h2>Biases that matter most</h2></header>
+<ul>
+<li><b>Confirmation bias</b>: seeking, noticing and remembering evidence that supports what you already believe. In debugging, you test the hypothesis you like and stop when something seems to confirm it. Counter it by asking "what would I expect to see if I'm wrong?" and looking for that.</li>
+<li><b>Anchoring</b>: the first number you hear pulls your estimate toward it, even when it's irrelevant. Whoever names an estimate first in a planning meeting anchors everyone else.</li>
+<li><b>Availability</b>: judging how likely something is by how easily examples come to mind. Recent or dramatic events (last week's outage, a plane crash in the news) feel more probable than they are.</li>
+<li><b>Framing</b>: the same facts described differently produce different choices. "90% survival" and "10% mortality" are identical, yet people choose differently.</li>
+<li><b>Hindsight bias</b>: after the fact, outcomes seem to have been predictable ("I knew it"). It makes postmortems unfair and blocks learning. Judge decisions by the information available at the time, not by how they turned out.</li>
+<li><b>Fundamental attribution error</b>: explaining others' behavior by their character ("they're careless") and your own by circumstances ("I was rushed").</li>
+<li><b>Status quo and loss aversion</b>: losses feel about twice as bad as equal gains, so we overvalue what we already have and avoid change.</li>
+<li><b>Groupthink</b>: groups converge on a view and suppress doubts, especially with a strong leader who speaks first.</li>
+</ul>
+<p>A useful distinction is between a <b>bad decision</b> and a <b>bad outcome</b>. Good decisions can turn out badly through bad luck, and vice versa. Poker players call confusing the two "resulting".</p>
+
+    <div class="check" data-id="w3-c3" data-answer="3">
+      <p class="check-q">In sprint planning, the tech lead says "I think this is about three days" before anyone else estimates. Everyone then estimates two to four days. What bias is most likely at work, and what's the fix?</p>
+      <ol class="check-o"><li>Availability; use historical data</li><li>Framing; reword the task</li><li>Hindsight bias; review last sprint</li><li>Anchoring; have everyone write their estimate independently before any are revealed</li></ol>
+      <div class="check-why">Independent estimates revealed together (as in planning poker) remove the anchor and expose real disagreement.</div>
+    </div>
+    <div class="check" data-id="w3-c4" data-answer="3">
+      <p class="check-q">A risky launch went badly, and in the review people say "it was obvious this would fail". Why is this harmful?</p>
+      <ol class="check-o"><li>It's not harmful if true</li><li>It's confirmation bias</li><li>It improves future decisions</li><li>Hindsight bias makes the outcome look predictable, so people get blamed for a reasonable decision and the real lessons are missed</li></ol>
+      <div class="check-why">Ask what was known at the time, and whether the decision was reasonable given that. Blameless postmortems are built on this.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=vKA4w2O61Xo" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/vKA4w2O61Xo/mqdefault.jpg" alt="" loading="lazy"><span><b>The Most Common Cognitive Bias</b><small>Veritasium</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 3.3 ===================== -->
+  <section class="lesson" id="w3-l3">
+    <header><span class="eyebrow">Lesson 3.3 · 40 min</span><h2>Overconfidence and the planning fallacy</h2></header>
+<p><b>Overconfidence</b> is the most consistent bias in research. When people give 90% confidence intervals ("I'm 90% sure the answer is between X and Y"), the true answer typically falls inside only about half the time. Our ranges are far too narrow.</p>
+<p>The <b>planning fallacy</b> is overconfidence applied to our own plans: we underestimate time, cost and risk even when we know similar projects overran. The cause is taking the <b>inside view</b>: imagining how <i>this</i> project will go, step by step, which leaves out all the unknown problems that delayed every past project.</p>
+<p>The fix is the <b>outside view</b>, also called <b>reference class forecasting</b>:</p>
+<ol>
+<li>Find a reference class of similar past projects (your team's last 10 features, or similar migrations elsewhere).</li>
+<li>Look at how long they actually took, including the distribution of overruns.</li>
+<li>Start from that baseline, then adjust modestly for what's genuinely different about this one.</li>
+</ol>
+<p>Other habits: give ranges rather than single numbers; widen them more than feels comfortable; track your estimates against outcomes; and break work down, but remember that a breakdown lists only the tasks you can foresee. The <b>Dunning–Kruger</b> pattern, where beginners overrate themselves, is real but often overstated; the safer lesson is that everyone's confidence is a poor guide to their accuracy in an unfamiliar area.</p>
+
+    <div class="check" data-id="w3-c5" data-answer="2">
+      <p class="check-q">You're estimating a database migration. Your step-by-step plan says four weeks. Your team's last three migrations took 7, 10 and 6 weeks against estimates of 3–4. What's the best estimate approach?</p>
+      <ol class="check-o"><li>Trust the detailed plan: four weeks</li><li>Add 10% to the plan</li><li>Start from the reference class (about 6–10 weeks) and adjust for real differences</li><li>Average the plan and history: five weeks</li></ol>
+      <div class="check-why">The outside view captures the unknown problems that the inside view can't list. Begin with it.</div>
+    </div>
+    <div class="check" data-id="w3-c6" data-answer="3">
+      <p class="check-q">You give 90% confidence ranges for 10 questions and 5 contain the right answer. What does that show?</p>
+      <ol class="check-o"><li>Bad luck only</li><li>Underconfidence</li><li>Good calibration</li><li>Overconfidence: your ranges should be much wider</li></ol>
+      <div class="check-why">Well-calibrated 90% ranges contain the answer about 9 times in 10.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 3.4 ===================== -->
+  <section class="lesson" id="w3-l4">
+    <header><span class="eyebrow">Lesson 3.4 · 40 min</span><h2>Debiasing that works</h2></header>
+<p>Willpower and awareness don't remove biases. <b>Process</b> does. Techniques with good evidence or wide professional use:</p>
+<ul>
+<li><b>Premortem</b> (Gary Klein): before committing, imagine it's a year from now and the project failed. Each person writes down why. This legitimizes doubt, counters groupthink and surfaces risks people were reluctant to raise.</li>
+<li><b>Consider the opposite</b>: deliberately argue for the other conclusion, or list reasons you might be wrong. It reliably reduces overconfidence and anchoring.</li>
+<li><b>Independent judgements first</b>: collect estimates, votes or interview scores separately before discussion, then aggregate. This preserves the "wisdom of crowds", which depends on independent errors.</li>
+<li><b>Checklists and structured criteria</b>: decide criteria before seeing options (for hiring, vendor choice or code review), so you can't rationalize after.</li>
+<li><b>Red teams and devil's advocates</b>: assign someone to attack the plan. Rotate the role so it isn't personal.</li>
+<li><b>Decision journals</b>: write down what you decided, why, what you expected and how confident you were. Review later to judge your reasoning, not just outcomes.</li>
+<li><b>Cooling-off periods</b> for emotional decisions, and asking "what would I advise a friend to do?" to get distance.</li>
+</ul>
+<p>Most of these work by changing the environment, not your brain. That's why teams and organizations can debias more effectively than individuals.</p>
+
+    <div class="check" data-id="w3-c7" data-answer="0">
+      <p class="check-q">A team is about to commit to a big platform migration and the mood is enthusiastic. Which technique best surfaces hidden risks?</p>
+      <ol class="check-o"><li>Run a premortem: imagine it failed and have each person independently write down why</li><li>Let the most senior person decide</li><li>Ask whether anyone has concerns</li><li>Delay the decision indefinitely</li></ol>
+      <div class="check-why">"Any concerns?" rarely works under enthusiasm and hierarchy. A premortem makes raising risks the assignment.</div>
+    </div>
+    <div class="check" data-id="w3-c8" data-answer="1">
+      <p class="check-q">Why should interviewers score a candidate before discussing them with the panel?</p>
+      <ol class="check-o"><li>To avoid paperwork</li><li>Independent judgements prevent anchoring on the first speaker and keep errors independent, so aggregating them is more accurate</li><li>Scores don't matter</li><li>It's faster</li></ol>
+      <div class="check-why">Discussion first lets the loudest or most senior view dominate.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Exercise ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Practice exercise · 60–90 minutes</span>
+    <h2>Catch your own biases</h2>
+    <p>In <code>thinking/exercises/week-03.md</code>:</p>
+<ol>
+<li><b>Bias diary.</b> For three days, note situations where a bias from lesson 3.2 affected you or someone around you. For each: what happened, which bias, and what would have countered it.</li>
+<li><b>Calibration drill.</b> Give 90% confidence ranges for 10 facts you can look up afterwards (a city's population, a building's height, a year). Score yourself. How many ranges contained the answer?</li>
+<li><b>Reference class estimate.</b> Pick an upcoming task (an assignment, a project feature). Write your inside-view estimate, then find a reference class from your own past work and write an outside-view estimate. Record both, and the actual time later.</li>
+<li><b>Premortem.</b> Run a premortem on a real plan of yours. List at least five ways it fails, and one change each suggests.</li>
+</ol>
+    <p>There are no tests: thinking skills improve by applying them to real situations and checking yourself later. Be concrete, and write your answers in your own words.</p>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 3 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-03.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas in real life, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-02.html">← Week 2</a><a class="btn" href="week-04.html">Next: Week 4 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 3;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
