@@ -2033,6 +2033,41 @@
     draw();
   };
 
+  /* ---------- Embedded course widgets ---------- */
+
+  /* PWM duty cycle */
+  W.pwm = el => {
+    let duty = 25, volts = 3.3;
+    const body = widgetShell(el, "Pulse-width modulation");
+    const render = () => {
+      const W_ = 300, H = 60, per = 75, hi = 10, lo = 50;
+      let d = `M0 ${lo}`;
+      for (let x = 0; x < W_; x += per) {
+        const on = per * duty / 100;
+        d += on > 0 ? ` L${x} ${hi} L${x + on} ${hi} L${x + on} ${lo}` : "";
+        d += ` L${x + per} ${lo}`;
+      }
+      const avg = volts * duty / 100;
+      const avgY = lo - (lo - hi) * duty / 100;
+      body.innerHTML = `
+        <label class="small">Duty cycle: <b>${duty}%</b> <input type="range" min="0" max="100" step="5" value="${duty}" style="width:100%"></label>
+        <div class="row" style="gap:8px;margin:6px 0"><button class="btn" data-v="3.3">3.3 V (ESP32)</button><button class="btn" data-v="5">5 V (Arduino)</button></div>
+        <svg viewBox="0 0 300 64" style="width:100%;max-width:520px;height:auto" role="img" aria-label="PWM waveform">
+          <path d="${d}" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="0" x2="300" y1="${avgY}" y2="${avgY}" stroke="currentColor" stroke-dasharray="4 4" opacity=".5"/>
+        </svg>
+        <div class="readout">
+          <div><span>Average voltage</span><b>${avg.toFixed(2)} V</b></div>
+          <div><span>LED brightness</span><b><i style="display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;background:rgba(230,60,40,${(duty / 100).toFixed(2)});border:1px solid currentColor"></i> ${duty}%</b></div>
+          <div><span>MicroPython duty_u16</span><b class="mono">${Math.round(65535 * duty / 100)}</b></div>
+        </div>
+        <p class="wg-note">The pin is only ever fully on or fully off. A slow load (an LED seen by your eye, a motor with inertia) responds to the average: duty × ${volts} V. The dashed line is that average.</p>`;
+      $("input", body).oninput = e => { duty = +e.target.value; render(); };
+      body.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { volts = +b.dataset.v; render(); });
+    };
+    render();
+  };
+
   function setupWidgets() {
     $$("[data-widget]").forEach(el => {
       const fn = W[el.dataset.widget];

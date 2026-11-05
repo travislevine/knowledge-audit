@@ -21,7 +21,8 @@ PROJECT_STATUS = {
     "done": "Done",
 }
 WEEK_QUIZ = re.compile(r"^week-(\d+)-quiz$")
-THINKING_QUIZ = re.compile(r"^thinking-(\d+)-quiz$")
+EXTRA_COURSES = [("thinking", re.compile(r"^thinking-(\d+)-quiz$"), "Thinking Skills course"),
+                 ("embedded", re.compile(r"^embedded-(\d+)-quiz$"), "Embedded Systems and IoT course")]
 
 
 def load_results():
@@ -166,17 +167,17 @@ def audit_section(data):
 def build_report():
     files = load_results()
     syl = files.pop("syllabus", None)
-    thinking = files.pop("thinking", None)
-    quizzes, tquizzes = {}, {}
+    extra = []
+    for cid, pattern, title in EXTRA_COURSES:
+        cq = {int(m.group(1)): files.pop(k) for k in list(files) for m in [pattern.match(k)] if m}
+        extra.append((files.pop(cid, None), cq, title))
+    quizzes = {}
     for key in list(files):
         m = WEEK_QUIZ.match(key)
-        t = THINKING_QUIZ.match(key)
         if m:
             quizzes[int(m.group(1))] = files.pop(key)
-        elif t:
-            tquizzes[int(t.group(1))] = files.pop(key)
 
-    stamps = [d.get("updatedAt") or 0 for d in [*files.values(), *quizzes.values(), *tquizzes.values(), syl or {}, thinking or {}]]
+    stamps = [d.get("updatedAt") or 0 for d in [*files.values(), *quizzes.values(), syl or {}] + [d for c, cq, _ in extra for d in [c or {}, *cq.values()]]]
 
     out = [
         "# Progress report",
@@ -187,8 +188,9 @@ def build_report():
         "",
     ]
     out += syllabus_section(syl or {}, quizzes)
-    if thinking or tquizzes:
-        out += syllabus_section(thinking or {}, tquizzes, "Thinking Skills course")
+    for course, cq, title in extra:
+        if course or cq:
+            out += syllabus_section(course or {}, cq, title)
     out += ["## Audits", ""]
     if files:
         for data in files.values():
