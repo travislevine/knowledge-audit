@@ -22,7 +22,6 @@
   /* ---------- State ---------- */
   const SID = P.id || "syllabus";
   const LS_KEY = "knowledge-audit:" + SID;
-  const API = "/api/results/" + SID;
   const PROJECT_STATUS = [
     ["not-started", "Not started"],
     ["in-progress", "In progress"],
@@ -95,6 +94,7 @@
     if (weekN) state.activity[weekN] = state.updatedAt;
     saveLocal();
     if (store.server) pushRemote();
+    else KAStore.putLocal(SID, fileBody());
   }
   function pushRemote() {
     if (queued) return;
@@ -102,8 +102,7 @@
     writing = writing.then(async () => {
       queued = false;
       try {
-        const res = await fetch(API, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fileBody()) });
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        await KAStore.put(SID, fileBody());
         setSync("server");
       } catch (e) { setSync("error"); }
     });
@@ -114,16 +113,7 @@
     debounced[key] = setTimeout(() => persist(weekN), 700);
   }
 
-  async function fetchResult(id) {
-    if (!/^https?:$/.test(location.protocol)) return { server: false, data: null };
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 4000);
-    try {
-      const res = await fetch("/api/results/" + encodeURIComponent(id), { cache: "no-store", signal: ctrl.signal });
-      if (!res.headers.get("X-Knowledge-Audit")) return { server: false, data: null };
-      return { server: true, data: res.ok ? await res.json() : null };
-    } finally { clearTimeout(timer); }
-  }
+  function fetchResult(id) { return KAStore.fetchResult(id); }
 
   async function connect() {
     try {
@@ -146,10 +136,11 @@
 
   const SYNC = {
     connecting: ["", "Checking for the save server…"],
-    server: ["ok", `Auto-saving to results/${SID}.json`],
+    server: ["ok", `Auto-saving to results/${SID}.json`],   // replaced by KAStore.label() once known
     local: ["", "Saved in this browser. Run serve.py to save to the repo."],
     error: ["err", "Couldn't reach the save server. Progress is kept in this browser."]
   };
+  KAStore.label(SID).then(l => { SYNC.server[1] = l; if (store.mode === "server") setSync("server"); });
   function syncEl() {
     const span = document.createElement("span");
     span.className = "sync";
@@ -2250,6 +2241,11 @@
       loadIndexQuizzes();
     }
     connect();
+    // Video thumbnails come from YouTube; where they can't load (e.g. the hosted version), show the card without one.
+    $$("a.video img").forEach(img => {
+      const hide = () => { img.hidden = true; };
+      if (img.complete && !img.naturalWidth) hide(); else img.addEventListener("error", hide);
+    });
   }
   boot();
 })();

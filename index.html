@@ -84,34 +84,83 @@
     </article>
   </section>
 
-  <section class="panel">
-    <h3>Saving results</h3>
-    <p>Run the save server from the repo folder and every answer is written to <code>results/&lt;audit&gt;.json</code>, ready to commit:</p>
+  <section class="panel" id="saving">
+    <h3>Saving and moving progress</h3>
+    <p class="small"><span id="store-status">Checking where progress is saved…</span></p>
+    <p>On your computer, run the save server from the repo folder. Every answer is written to <code>results/</code> and <code>results/REPORT.md</code> is rebuilt:</p>
     <pre class="cmd">python serve.py</pre>
-    <p class="small muted">Opening the HTML files directly also works. Progress is then kept in the browser, and each audit has Export and Import buttons for moving results in and out of the repo.</p>
+    <p>To move progress between the hosted version and the repo, export everything as one file here, then import it on the other side. When both have progress for the same course or quiz, the most recently saved one wins.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn primary" id="export-all">Export all progress</button>
+      <button type="button" class="btn" id="import-all">Import progress file</button>
+    </div>
+    <p class="small muted" id="bundle-note" role="status"></p>
   </section>
 </div>
+<script src="assets/store.js"></script>
 <script>
 (function () {
   "use strict";
-  const served = /^https?:$/.test(location.protocol);
+  const note = document.getElementById("bundle-note");
+  const say = text => { note.textContent = text; };
+
   async function load(id) {
-    if (served) {
-      try {
-        const res = await fetch("/api/results/" + id, { cache: "no-store" });
-        if (res.headers.get("X-Knowledge-Audit")) return res.ok ? res.json() : null;
-      } catch (e) {}
-    }
-    try { return JSON.parse(localStorage.getItem("knowledge-audit:" + id)); } catch (e) { return null; }
+    try { return await KAStore.get(id); } catch (e) { return null; }
   }
-  document.querySelectorAll(".audit-card").forEach(async card => {
-    const data = await load(card.dataset.id);
-    const answered = data && data.first ? Object.keys(data.first).length : 0;
-    if (!answered) return;
-    const passed = data.passed ? Object.keys(data.passed).filter(k => data.passed[k]).length : 0;
-    const note = card.querySelector(".progress-note");
-    note.textContent = `${answered} of ${card.dataset.total} answered · ${passed} level${passed === 1 ? "" : "s"} passed`;
-    card.querySelector(".btn").textContent = "Continue";
+  function showAudits() {
+    document.querySelectorAll(".audit-card").forEach(async card => {
+      const data = await load(card.dataset.id);
+      const answered = data && data.first ? Object.keys(data.first).length : 0;
+      if (!answered) return;
+      const passed = data.passed ? Object.keys(data.passed).filter(k => data.passed[k]).length : 0;
+      card.querySelector(".progress-note").textContent = `${answered} of ${card.dataset.total} answered · ${passed} level${passed === 1 ? "" : "s"} passed`;
+      card.querySelector(".btn").textContent = "Continue";
+    });
+  }
+  showAudits();
+
+  KAStore.backend.then(b => {
+    document.getElementById("store-status").textContent = {
+      server: "Progress is saving to results/ in the repo (serve.py is running).",
+      hosted: "Progress is synced to your account, so it follows you across devices.",
+      local: "Progress is saved in this browser only. Run serve.py, or use the hosted version, to keep it safe."
+    }[b.kind];
+  });
+
+  document.getElementById("export-all").addEventListener("click", async () => {
+    say("Collecting progress…");
+    const bundle = await KAStore.exportBundle();
+    const n = Object.keys(bundle.files).length;
+    if (!n) return say("There's no progress to export yet.");
+    const stamp = new Date().toISOString().slice(0, 10);
+    const ok = await KAStore.download(`knowledge-audit-progress-${stamp}.json`, JSON.stringify(bundle, null, 2) + "\n");
+    say(ok ? `Exported ${n} progress file${n === 1 ? "" : "s"}. Import it with serve.py running to update the repo and REPORT.md.` : "Export cancelled.");
+  });
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.hidden = true;
+  document.body.appendChild(input);
+  document.getElementById("import-all").addEventListener("click", () => input.click());
+  input.addEventListener("change", async () => {
+    const f = input.files && input.files[0];
+    input.value = "";
+    if (!f) return;
+    let bundle;
+    try { bundle = JSON.parse(await f.text()); } catch (e) { return say(`${f.name} isn't a valid progress file.`); }
+    if (!bundle || bundle.format !== "knowledge-audit-bundle") {
+      return say(`${f.name} isn't an "Export all progress" file. Single audit results files are imported from inside that audit.`);
+    }
+    say("Importing…");
+    try {
+      const r = await KAStore.importBundle(bundle);
+      say(`Imported ${r.imported.length} file${r.imported.length === 1 ? "" : "s"}` +
+          (r.skipped.length ? `; kept ${r.skipped.length} where the progress here was already as new or newer.` : "."));
+      showAudits();
+    } catch (e) {
+      say("Import failed: " + (e && e.message ? e.message : "unknown error") + ".");
+    }
   });
 })();
 </script>

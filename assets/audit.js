@@ -44,7 +44,6 @@
 
   /* ---------- State ---------- */
   const LS_KEY = "knowledge-audit:" + A.id;
-  const API = "/api/results/" + encodeURIComponent(A.id);
   const fresh = () => ({ answers: {}, first: {}, attempts: {}, passed: {}, updatedAt: 0 });
 
   // Accepts anything that looks like saved progress (localStorage, a results
@@ -90,6 +89,7 @@
     state.updatedAt = Date.now();
     saveLocal();
     if (store.server) pushRemote();
+    else KAStore.putLocal(A.id, fileBody());
   }
   function pushRemote() {
     if (queued) return;
@@ -97,24 +97,18 @@
     writing = writing.then(async () => {
       queued = false;
       try {
-        const res = await fetch(API, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fileBody()) });
-        if (!res.ok) throw new Error("HTTP " + res.status);
+        await KAStore.put(A.id, fileBody());
         setSync("server");
       } catch (e) { setSync("error"); }
     });
   }
 
   async function connect() {
-    if (!/^https?:$/.test(location.protocol)) { setSync("local"); return; }
     try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 4000);
-      const res = await fetch(API, { cache: "no-store", signal: ctrl.signal });
-      clearTimeout(timer);
-      // Only serve.py sets this header; any other static server means "no save server".
-      if (!res.headers.get("X-Knowledge-Audit")) { setSync("local"); return; }
+      const { server, data } = await KAStore.fetchResult(A.id);
+      if (!server) { setSync("local"); return; }
       store.server = true;
-      const remote = res.ok ? normalize(await res.json()) : null;
+      const remote = normalize(data);
       if (remote && remote.updatedAt > state.updatedAt) {
         state = remote;
         saveLocal();
@@ -136,6 +130,7 @@
     local: ["", "Saved in this browser. Run serve.py to save to the repo."],
     error: ["err", "Couldn't reach the save server. Progress is kept in this browser."]
   };
+  KAStore.label(A.id).then(l => { SYNC.server[1] = l; if (store.mode === "server") setSync("server"); });
   function syncEl() {
     const span = document.createElement("span");
     span.className = "sync";
