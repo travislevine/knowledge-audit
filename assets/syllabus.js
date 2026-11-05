@@ -2068,6 +2068,91 @@
     render();
   };
 
+  /* ---------- Markets course widgets ---------- */
+
+  /* Market-cap weighted index */
+  W.capweight = el => {
+    const co = [["MegaTech A", 3500], ["MegaTech B", 3200], ["MegaTech C", 2900], ["Bank", 600], ["Retailer", 400], ["Energy", 450], ["Pharma", 500], ["Industrial", 250], ["Utility", 150], ["Small co.", 50]];
+    const ch = co.map(() => 0);
+    const body = widgetShell(el, "How a few giants move an index");
+    const render = focusI => {
+      const total = co.reduce((a, c) => a + c[1], 0);
+      const idx = co.reduce((a, c, i) => a + c[1] * ch[i] / 100, 0) / total * 100;
+      const eq = ch.reduce((a, b) => a + b, 0) / co.length;
+      const sign = x => (x > 0 ? "+" : "") + x.toFixed(2) + "%";
+      body.innerHTML = `<div class="table-wrap"><table><tr><th>Company</th><th>Market cap ($bn)</th><th>Weight</th><th>Price change</th></tr>
+        ${co.map((c, i) => `<tr><td>${c[0]}</td><td>${c[1].toLocaleString()}</td><td>${(c[1] / total * 100).toFixed(1)}%</td>
+        <td><input type="range" min="-50" max="50" step="5" value="${ch[i]}" data-i="${i}" aria-label="${c[0]} price change" style="width:100px"> <b>${ch[i] > 0 ? "+" : ""}${ch[i]}%</b></td></tr>`).join("")}</table></div>
+        <div class="readout"><div class="em"><span>Cap-weighted index</span><b>${sign(idx)}</b></div><div><span>Equal-weighted average</span><b>${sign(eq)}</b></div>
+        <div><span>Top 3 share of index</span><b>${((co[0][1] + co[1][1] + co[2][1]) / total * 100).toFixed(0)}%</b></div></div>
+        <p class="wg-note">Try moving only the three giants down 20% while every other company rises 20%. The index still falls, even though seven of ten companies went up.</p>`;
+      body.querySelectorAll("input").forEach(r => r.oninput = e => { ch[+e.target.dataset.i] = +e.target.value; render(e.target.dataset.i); });
+      if (focusI != null) body.querySelector(`[data-i="${focusI}"]`).focus();
+    };
+    render();
+  };
+
+  /* Compound growth with fees */
+  W.compound = el => {
+    const v = { start: 10000, monthly: 200, ret: 7, fee: 1.5, years: 30 };
+    const body = widgetShell(el, "Compounding and the cost of fees");
+    const grow = fee => { let b = v.start; const r = (v.ret - fee) / 100 / 12; for (let m = 0; m < v.years * 12; m++) b = b * (1 + r) + v.monthly; return b; };
+    const money = x => "$" + Math.round(x).toLocaleString();
+    const F = [["start", "Starting amount ($)", 0, 100000, 1000], ["monthly", "Added each month ($)", 0, 2000, 50], ["ret", "Return before fees (%/yr)", 0, 12, 0.5], ["fee", "Fund fee (%/yr)", 0, 3, 0.1], ["years", "Years", 1, 50, 1]];
+    const render = focusK => {
+      const cheap = grow(0.1), dear = grow(v.fee), paid = v.start + v.monthly * 12 * v.years;
+      body.innerHTML = F.map(f => `<label class="small" style="display:block">${f[1]}: <b>${v[f[0]]}</b><input type="range" min="${f[2]}" max="${f[3]}" step="${f[4]}" value="${v[f[0]]}" data-k="${f[0]}" style="width:100%"></label>`).join("") +
+        `<div class="readout"><div><span>You put in</span><b>${money(paid)}</b></div><div class="em"><span>With a 0.1% index fund</span><b>${money(cheap)}</b></div>
+        <div><span>With a ${v.fee}% fee</span><b>${money(dear)}</b></div><div><span>Lost to the higher fee</span><b>${money(cheap - dear)} (${((1 - dear / cheap) * 100).toFixed(0)}%)</b></div></div>
+        <p class="wg-note">Rule of 72: at ${v.ret}%, money doubles about every ${v.ret > 0 ? (72 / v.ret).toFixed(1) : "∞"} years. Real returns aren't smooth; this assumes a steady average.</p>`;
+      body.querySelectorAll("input").forEach(r => r.oninput = e => { v[e.target.dataset.k] = +e.target.value; render(e.target.dataset.k); });
+      if (focusK) body.querySelector(`[data-k="${focusK}"]`).focus();
+    };
+    render();
+  };
+
+  /* Bond price vs yield */
+  W.bondprice = el => {
+    let y = 5;
+    const coupon = 3;
+    const body = widgetShell(el, "Why bond prices fall when yields rise");
+    const price = (yrs, yld) => { const r = yld / 100; let p = 0; for (let t = 1; t <= yrs; t++) p += coupon * 10 / (1 + r) ** t; return p + 1000 / (1 + r) ** yrs; };
+    const render = focus => {
+      body.innerHTML = `<p class="small">You own a $1,000 bond paying a ${coupon}% coupon ($30 a year). Market yields for similar new bonds are now:</p>
+        <label class="small" style="display:block">Market yield: <b>${y.toFixed(1)}%</b><input type="range" min="0.5" max="10" step="0.5" value="${y}" style="width:100%"></label>
+        <div class="readout">${[2, 10, 30].map(n => { const p = price(n, y); return `<div class="${n === 10 ? "em" : ""}"><span>${n}-year bond's price</span><b>$${p.toFixed(0)} (${p >= 1000 ? "+" : ""}${((p / 1000 - 1) * 100).toFixed(1)}%)</b></div>`; }).join("")}</div>
+        <p class="wg-note">${y > coupon ? "New bonds pay more than yours, so buyers will only take yours at a discount." : y < coupon ? "Yours pays more than new bonds, so it's worth more than face value." : "Your coupon matches the market, so it trades at face value."} Longer bonds swing much more: this sensitivity is called duration.</p>`;
+      const input = $("input", body);
+      input.oninput = e => { y = +e.target.value; render(true); };
+      if (focus) $("input", body).focus();
+    };
+    render();
+  };
+
+  /* Crash explorer */
+  W.crashes = el => {
+    const C = [
+      ["1929", "Dow", -89, 34, 300, "Margin debt, bank failures and policy mistakes. Nominal recovery in 1954 (sooner with dividends and deflation counted)."],
+      ["1973–74", "S&P 500", -48, 21, 90, "Oil shock, high inflation and the end of the 'Nifty Fifty' growth stocks."],
+      ["1987", "Dow", -36, 2, 21, "Black Monday: −22.6% in one day, amplified by portfolio insurance. No recession followed."],
+      ["2000–02", "Nasdaq", -78, 31, 180, "Dot-com bubble: no-profit companies on extreme valuations. The S&P 500 fell 49% and recovered by 2007."],
+      ["2007–09", "S&P 500", -57, 17, 66, "Housing and credit bubble, 30:1 bank leverage, and Lehman's failure."],
+      ["2020", "S&P 500", -34, 1, 6, "COVID shock, with an immediate, massive policy response."],
+      ["2022", "S&P 500", -25, 9, 24, "Inflation and the fastest rate rises in 40 years. The Nasdaq fell about 35%."]];
+    let sel = 4;
+    const body = widgetShell(el, "Crash explorer: depth and recovery");
+    const render = () => {
+      const c = C[sel], need = (1 / (1 + c[2] / 100) - 1) * 100;
+      body.innerHTML = `<div class="row" style="gap:6px;flex-wrap:wrap">${C.map((x, i) => `<button type="button" class="btn ${i === sel ? "primary" : ""}" data-i="${i}">${x[0]}</button>`).join("")}</div>
+        <div style="margin:10px 0">${C.map((x, i) => `<div class="small" style="display:flex;align-items:center;gap:8px;margin:3px 0"><span style="width:62px;flex:none">${x[0]}</span><span style="height:12px;width:${(-x[2] * 0.7).toFixed(0)}%;background:currentColor;opacity:${i === sel ? 0.9 : 0.25};border-radius:3px"></span><span>${x[2]}%</span></div>`).join("")}</div>
+        <div class="readout"><div class="em"><span>${c[1]} peak to trough</span><b>${c[2]}%</b></div><div><span>Months falling</span><b>${c[3]}</b></div>
+        <div><span>Months to regain the peak (approx.)</span><b>${c[4]}</b></div><div><span>Gain needed to recover</span><b>+${need.toFixed(0)}%</b></div></div>
+        <p class="wg-note">${c[5]} Figures are approximate, price-only and not adjusted for inflation.</p>`;
+      body.querySelectorAll("[data-i]").forEach(b => b.onclick = () => { sel = +b.dataset.i; render(); });
+    };
+    render();
+  };
+
   function setupWidgets() {
     $$("[data-widget]").forEach(el => {
       const fn = W[el.dataset.widget];

@@ -22,7 +22,8 @@ PROJECT_STATUS = {
 }
 WEEK_QUIZ = re.compile(r"^week-(\d+)-quiz$")
 EXTRA_COURSES = [("thinking", re.compile(r"^thinking-(\d+)-quiz$"), "Thinking Skills course"),
-                 ("embedded", re.compile(r"^embedded-(\d+)-quiz$"), "Embedded Systems and IoT course")]
+                 ("embedded", re.compile(r"^embedded-(\d+)-quiz$"), "Embedded Systems and IoT course"),
+                 ("finance", re.compile(r"^finance-(\d+)-quiz$"), "Markets and Investing course")]
 
 
 def load_results():
