@@ -67,18 +67,23 @@ saves to `results/embedded.json`.
 
 ## Markets and Investing course
 
-A 5-week course, about 5 hours a week, on understanding the global stock
+A 10-week course, about 5 hours a week, on understanding the global stock
 market:
 
 1. How the stock market works
 2. Value, return and risk
-3. What moves markets
-4. Bubbles and crashes (1929, 1987, 2000, 2008, 2020, 2022)
-5. Today's market: AI, news and investing
+3. Reading a company
+4. What moves markets
+5. Beyond shares: other asset classes
+6. Bubbles and crashes (1929, 1987, 2000, 2008, 2020, 2022)
+7. Traders, funds and market players
+8. Today's market: AI, news and psychology
+9. Personal investing with ETFs (Australia)
+10. Investing legends, frauds and review
 
 Open `finance/index.html`. Each week has lessons with checkpoints and
-widgets, a video or tool, a written scenario exercise in
-`finance/exercises/`, and a 10-question quiz, followed by a 30-question
+widgets, a video or reading, a written scenario exercise in
+`finance/exercises/`, and a 10-question quiz, followed by a 50-question
 final exam. Progress saves to `results/finance.json`. It's educational, not
 financial advice.
 

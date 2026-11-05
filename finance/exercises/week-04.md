@@ -1,19 +1,19 @@
-# Week 4 exercise: Scenario exercise: live through a crash
+# Week 4 exercise: Scenario exercise: read the macro picture
 
 _Write your answers under each heading. Be concrete and use real examples._
 
-## 1. **Time travel, March 2000.** You hold $50,000 in Nasdaq tech stocks bought in 1998. Using what you know from weeks 2–3 (valuations, rates, profits), list the warning signs that were visible at the time. What would you have done, honestly?
+## 1. **Dashboard.** Look up today's values: the Fed's policy rate, US CPI inflation, the 2-year and 10-year Treasury yields (is the curve inverted?), and the VIX. Write one sentence on what each suggests.
 
 _Your answer:_
 
-## 2. **Time travel, October 2008.** Lehman has failed and your portfolio is down 40%. Write what the news and your emotions would be telling you, then what history suggests. What would have happened if you'd sold, and if you'd held for five years?
+## 2. **Fed day.** Find the most recent central bank decision and the market's reaction that day. Was the decision expected? What surprised the market, if anything?
 
 _Your answer:_
 
-## 3. **Compare two crashes** of your choice in a table: cause, trigger, role of leverage, policy response, depth, and recovery time.
+## 3. **Scenario.** Inflation suddenly rises to 6% and the central bank signals more hikes. Predict what happens to: long-term bonds, fast-growing tech stocks, banks, energy companies, and the US dollar. Explain each.
 
 _Your answer:_
 
-## 4. **Pattern spotting.** Using the five bubble ingredients, score today's market (or one popular asset) from 0–2 on each. Explain each score.
+## 4. **The machine.** After watching Ray Dalio's video, describe in five sentences where you think the major economies are in the short-term and long-term debt cycles, and why.
 
 _Your answer:_

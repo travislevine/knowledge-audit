@@ -1,19 +1,19 @@
-# Week 5 exercise: Scenario exercise: your own market view
+# Week 5 exercise: Scenario exercise: build a multi-asset view
 
 _Write your answers under each heading. Be concrete and use real examples._
 
-## 1. **AI boom check-up.** Look up today's figures: the S&amp;P 500's P/E, the share of the index in its top 10 companies, and Nvidia's latest quarterly revenue growth and P/E. Update the table in lesson 5.1 with them. What's changed?
+## 1. **Asset class table.** For shares, government bonds, corporate bonds, cash, REITs, gold, oil and Bitcoin, note: the source of return, how it behaved in 2008, 2020 and 2022 (look these up), and what kind of environment it likes.
 
 _Your answer:_
 
-## 2. **Read one earnings report.** Pick a large company's latest results. Note revenue growth, margins, EPS versus expectations, guidance, and the share price reaction. Explain the reaction.
+## 2. **Yields today.** Look up the current yield on 10-year government bonds, a term deposit rate, and a large REIT's distribution yield. Compare them with the share market's earnings yield (1 ÷ P/E).
 
 _Your answer:_
 
-## 3. **Headline audit.** Collect three financial headlines this week. For each, what's the claim, what's the evidence, and what's missing?
+## 3. **Currency.** How much has the Australian dollar moved against the US dollar over the last five years? What would that have done to an unhedged US share investment?
 
 _Your answer:_
 
-## 4. **Your principles.** Write a half-page "investment policy" for yourself: goals, time horizon, the mix you'd be comfortable with, what you'd do in a 40% crash, and rules to guard against your own biases. (For your own learning, not a recommendation.)
+## 4. **Your mix.** Using the widget, pick the mix whose worst year you could honestly sit through without selling. Explain why, and how it might change in 10 and 30 years.
 
 _Your answer:_

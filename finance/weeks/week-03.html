@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Week 3: What moves markets</title>
+<title>Week 3: Reading a company</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -14,9 +14,9 @@
 <div class="wrap syl">
   <header class="masthead">
     <nav class="crumbs"><a href="../index.html">← Markets and Investing</a></nav>
-    <span class="eyebrow">Week 3 of 5 · about 5 hours</span>
-    <h1>What moves markets</h1>
-    <p class="lede">Individual companies matter, but the biggest market swings come from a few economy-wide forces. This week explains why markets hang on every word from the US Federal Reserve, why rising interest rates can push stock prices down even when companies are doing well, how bonds work, and how debt, the business cycle and investor mood interact.</p>
+    <span class="eyebrow">Week 3 of 10 · about 5 hours</span>
+    <h1>Reading a company</h1>
+    <p class="lede">Week 2 showed that a share is worth the cash a business will produce. This week teaches you to look inside the business: read its income statement, balance sheet and cash flow statement, spot the warning signs, and judge whether it has a lasting competitive advantage. You don't need to become an accountant; a handful of numbers tell most of the story.</p>
   </header>
 
   <div id="week-progress" class="progress-card"></div>
@@ -24,15 +24,15 @@
   <section class="panel plan-panel">
     <h3>By the end of this week you can</h3>
     <ul>
-      <li>Explain how central banks set interest rates and why rates affect stock valuations</li>
-      <li>Explain inflation, its causes, and why markets fear it</li>
-      <li>Explain how bonds work, why bond prices fall when yields rise, and what the yield curve signals</li>
-      <li>Describe the business and credit cycle, and the role of sentiment and liquidity</li>
+      <li>Read an income statement: revenue, gross and operating margins, net income and EPS</li>
+      <li>Read a balance sheet: assets, liabilities, equity, and how much debt is too much</li>
+      <li>Read a cash flow statement, and spot when profits aren't turning into cash</li>
+      <li>Judge a company's competitive advantage (moat), return on capital and management</li>
     </ul>
     <h3>Suggested schedule</h3>
     <div class="table-wrap"><table class="schedule">
-      <tr><td>Day 1</td><td>Lessons 3.1 and 3.2 (central banks and interest rates; inflation)</td></tr>
-      <tr><td>Day 2</td><td>Lessons 3.3 and 3.4 (bonds and the yield curve; cycles, debt and sentiment)</td></tr>
+      <tr><td>Day 1</td><td>Lessons 3.1 and 3.2 (the income statement; the balance sheet)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 3.3 and 3.4 (the cash flow statement; moats and quality)</td></tr>
       <tr><td>Day 3</td><td>Scenario exercise</td></tr>
       <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
     </table></div>
@@ -40,106 +40,134 @@
 
   <!-- ===================== Lesson 3.1 ===================== -->
   <section class="lesson" id="w3-l1">
-    <header><span class="eyebrow">Lesson 3.1 · 45 min</span><h2>Central banks and interest rates</h2></header>
-<p><b>Central banks</b> (the US Federal Reserve, the European Central Bank, the Bank of England, the Bank of Japan) set the short-term interest rate in their economies. They raise rates to cool an overheating economy and fight inflation, and cut them to support growth in a slowdown. In a crisis, they also buy bonds (<b>quantitative easing</b>, QE) to push longer-term rates down and pump money into the financial system. Reversing it is <b>quantitative tightening</b>.</p>
-<p>Interest rates are sometimes called gravity for asset prices. Three reasons:</p>
+    <header><span class="eyebrow">Lesson 3.1 · 40 min</span><h2>The income statement</h2></header>
+<p>Every listed company publishes three statements each quarter and in its annual report (in the US, the 10-K). The <b>income statement</b> (profit and loss) shows what happened over a period:</p>
+<pre class="code"><code>Revenue (sales)                       100
+− Cost of goods sold                   −40
+= Gross profit                          60    gross margin 60%
+− Operating expenses (R&amp;D, sales, admin) −35
+= Operating income (EBIT)               25    operating margin 25%
+− Interest and tax                      −7
+= Net income                            18    net margin 18%
+÷ Shares outstanding                    → Earnings per share (EPS)</code></pre>
+<p>What to look for:</p>
 <ul>
-<li><b>Discounting</b>: a share is worth its future cash discounted to today. Higher rates mean future cash is worth less now. Companies whose profits are mostly far in the future (fast-growing tech) are hit hardest, which is why the Nasdaq fell about a third in 2022.</li>
-<li><b>Competition</b>: when cash and bonds pay 5%, investors need a better reason to own shares than when they pay 0%.</li>
-<li><b>The economy</b>: higher borrowing costs slow spending, investment and hiring, which eventually reduces profits.</li>
+<li><b>Revenue growth</b>, and whether it's from selling more or from acquisitions.</li>
+<li><b>Margins</b> and their trend. High gross margins (software 70–90%, luxury goods 60%+) suggest pricing power; supermarkets run on 25% gross and 2–4% net margins. Rising margins as revenue grows show <b>operating leverage</b>: costs grow slower than sales.</li>
+<li><b>One-offs and adjustments</b>: companies often highlight "adjusted" earnings or EBITDA (earnings before interest, tax, depreciation and amortisation). EBITDA ignores the real cost of replacing equipment; Charlie Munger suggested replacing the word with "bullshit earnings" whenever you see it.</li>
+<li><b>Share count</b>: if it rises every year, stock-based pay and new share issues are diluting you, even if net income grows.</li>
 </ul>
-<p>That's why markets react not only to rate decisions but to <b>expectations</b> of them. A rate rise that's fully expected often moves nothing; a hint that rates will stay high for longer can move markets more than the decision itself. Markets are forward-looking: prices reflect what investors expect, so what moves them is <b>surprise</b>.</p>
+<div data-widget="statements"></div>
 
     <div class="check" data-id="w3-c1" data-answer="3">
-      <p class="check-q">Why did fast-growing tech stocks fall more than the average stock when interest rates rose sharply in 2022?</p>
-      <ol class="check-o"><li>Tech companies borrow more</li><li>Tech companies pay more tax</li><li>Regulators targeted them</li><li>Their value depends more on profits far in the future, which higher discount rates shrink the most</li></ol>
-      <div class="check-why">The further away the cash flows, the more sensitive the present value is to the discount rate.</div>
+      <p class="check-q">A company's revenue grew 20% but its operating margin fell from 25% to 15%. What happened to operating income, roughly?</p>
+      <ol class="check-o"><li>Rose 20%</li><li>Stayed the same</li><li>Rose 5%</li><li>Fell about 28%: 1.2 × 15 / 25 = 0.72</li></ol>
+      <div class="check-why">Margins matter as much as growth. Revenue growth bought at the cost of profitability can shrink profits.</div>
     </div>
     <div class="check" data-id="w3-c2" data-answer="3">
-      <p class="check-q">The central bank raises rates by 0.25%, exactly as everyone expected, and the market barely moves. Why?</p>
-      <ol class="check-o"><li>The market was closed</li><li>Rates don't matter</li><li>0.25% is too small to matter</li><li>The rise was already reflected in prices; markets move on surprises and changes in expectations</li></ol>
-      <div class="check-why">Watch what's expected, not just what happens.</div>
+      <p class="check-q">Why should you be cautious when a company emphasises EBITDA rather than net income?</p>
+      <ol class="check-o"><li>It's always lower</li><li>EBITDA is illegal</li><li>It's only used by banks</li><li>It leaves out interest, tax and the cost of wearing out equipment, which are real costs, so it can make a business look more profitable than it is</li></ol>
+      <div class="check-why">EBITDA is useful for comparing operations, but capital-heavy companies can look healthy on EBITDA while burning cash.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=__5MtdoKHfx" target="_blank" rel="noopener"><span><b>How to Read Company Financial Statements (Basics Explained)</b><small>The Duomo Initiative</small></span></a>
     </div>
   </section>
   <!-- ===================== Lesson 3.2 ===================== -->
   <section class="lesson" id="w3-l2">
-    <header><span class="eyebrow">Lesson 3.2 · 35 min</span><h2>Inflation</h2></header>
-<p><b>Inflation</b> is a general rise in prices, usually measured by the consumer price index (CPI). Central banks typically target about 2% a year. Inflation rises when demand outruns supply: after heavy government spending and low rates, after supply shocks (oil in the 1970s, pandemic supply chains and the 2022 energy shock), or when wages and prices chase each other.</p>
-<p>Why markets fear it:</p>
+    <header><span class="eyebrow">Lesson 3.2 · 40 min</span><h2>The balance sheet</h2></header>
+<p>The <b>balance sheet</b> is a snapshot at one moment: what the company owns (<b>assets</b>), what it owes (<b>liabilities</b>), and the difference, which belongs to shareholders (<b>equity</b>). It always balances: <code>assets = liabilities + equity</code>.</p>
 <ul>
-<li>It erodes the real value of cash and fixed bond payments.</li>
-<li>It forces central banks to raise rates, which hurts valuations and can cause recessions. Fed chair Paul Volcker raised rates to nearly 20% in 1981 to break 1970s inflation, triggering a deep recession.</li>
-<li>It squeezes companies that can't pass on rising costs. Businesses with <b>pricing power</b> (strong brands, essential products) cope best.</li>
+<li><b>Current assets</b>: cash, receivables (money customers owe), inventory. <b>Non-current</b>: property, equipment, and intangibles like <b>goodwill</b> (the premium paid for acquisitions, which can be written down if a deal goes badly).</li>
+<li><b>Liabilities</b>: payables, short-term and long-term debt, leases.</li>
 </ul>
-<p>Shares are a reasonable long-run inflation hedge, because companies own real assets and can raise prices, but in the short run high and rising inflation has usually been bad for both shares and bonds. In 2022, with US inflation around 9%, both fell together, an unusually painful year for balanced portfolios.</p>
-<p><b>Deflation</b>, falling prices, is feared too: it makes debts harder to repay and encourages people to delay spending. It was a major feature of the Great Depression and of Japan's lost decades.</p>
+<p>The questions that matter most:</p>
+<ul>
+<li><b>How much debt?</b> <b>Net debt</b> = debt − cash. A common rule of thumb compares it to annual operating profit: net debt / EBITDA under about 2–3 is usually comfortable for a steady business; above 4–5 is risky, especially for cyclical companies. Check when the debt is due: a big refinancing in a crisis can sink an otherwise good business.</li>
+<li><b>Can it pay its bills?</b> The <b>current ratio</b> (current assets ÷ current liabilities) shows short-term liquidity.</li>
+<li><b>Interest cover</b>: operating income ÷ interest. Below about 3, a downturn could make interest hard to pay.</li>
+<li><b>Warning signs</b>: receivables or inventory growing much faster than sales (customers not paying, or products not selling), or a large goodwill balance from expensive acquisitions.</li>
+</ul>
+<p>Debt isn't automatically bad: it can boost returns to shareholders. But it removes the margin for error. Most corporate collapses in a recession are companies with too much debt due at the wrong time.</p>
 
-    <div class="check" data-id="w3-c3" data-answer="3">
-      <p class="check-q">Inflation jumps unexpectedly. What's the most likely sequence?</p>
-      <ol class="check-o"><li>Central bank cuts rates; stocks rise</li><li>Nothing changes</li><li>Only commodity prices change</li><li>Markets expect the central bank to raise rates; bond prices and many stock prices fall</li></ol>
-      <div class="check-why">Inflation surprises usually mean higher expected rates.</div>
+    <div class="check" data-id="w3-c3" data-answer="0">
+      <p class="check-q">A company has $10bn of debt, $2bn of cash and $2bn of annual EBITDA. What's its net debt to EBITDA, and how does that look?</p>
+      <ol class="check-o"><li>4×: at the risky end for most businesses</li><li>6×: normal for any company</li><li>It can't be calculated</li><li>1×: very safe</li></ol>
+      <div class="check-why">(10 − 2) / 2 = 4×. Above about 3× deserves scrutiny, especially in cyclical industries.</div>
     </div>
     <div class="check" data-id="w3-c4" data-answer="3">
-      <p class="check-q">Which company is best placed to cope with high inflation?</p>
-      <ol class="check-o"><li>One with heavy debt at floating rates and no pricing power</li><li>A fast-growing company with no profits</li><li>A company that has fixed-price contracts for 10 years</li><li>One with strong pricing power, such as an essential product or dominant brand, and low debt</li></ol>
-      <div class="check-why">Pricing power lets a company pass on rising costs.</div>
+      <p class="check-q">Receivables have grown 50% in a year while revenue grew 10%. What might that signal?</p>
+      <ol class="check-o"><li>Strong sales</li><li>Lower costs</li><li>A share buyback</li><li>Customers are taking longer to pay, or sales are being booked aggressively before cash arrives</li></ol>
+      <div class="check-why">Receivables racing ahead of revenue is a classic warning sign worth investigating.</div>
     </div>
   </section>
   <!-- ===================== Lesson 3.3 ===================== -->
   <section class="lesson" id="w3-l3">
-    <header><span class="eyebrow">Lesson 3.3 · 40 min</span><h2>Bonds and the yield curve</h2></header>
-<p>A <b>bond</b> is a loan. You lend a government or company, say, $1,000; it pays fixed interest (the <b>coupon</b>) and returns the $1,000 at <b>maturity</b>. Government bonds from stable countries are treated as the safest assets; corporate bonds pay more because the borrower could default.</p>
-<p>The key idea: <b>bond prices move opposite to interest rates</b>. If you own a bond paying 3% and new bonds pay 5%, nobody will pay full price for yours, so its price falls until its <b>yield</b> (the return a new buyer gets) matches 5%. Longer bonds are more sensitive. Try it:</p>
-<div data-widget="bondprice"></div>
-<p>The 10-year US Treasury yield is one of the most important numbers in finance: it's the "risk-free" rate used to value almost everything else, including shares and mortgages.</p>
-<p>The <b>yield curve</b> plots yields across maturities. Normally longer bonds yield more (investors want extra for tying money up). When short-term yields exceed long-term ones, the curve is <b>inverted</b>: markets expect rates to fall, usually because they expect a slowdown. An inverted US curve has preceded every US recession since the late 1960s, though the timing varies widely and there has been at least one false alarm.</p>
-<p>The bond market is larger than the stock market, and its moves often lead. Watch <b>credit spreads</b> too: the extra yield on corporate bonds over government bonds widens when investors fear defaults, an early sign of stress.</p>
+    <header><span class="eyebrow">Lesson 3.3 · 35 min</span><h2>The cash flow statement</h2></header>
+<p>Profit is an opinion; cash is a fact. Accounting rules let companies recognise revenue before cash arrives and spread costs over years, so net income can look healthy while the business burns cash. The <b>cash flow statement</b> shows the actual money moving, in three parts:</p>
+<ul>
+<li><b>Operating cash flow</b>: cash generated by the business itself.</li>
+<li><b>Investing cash flow</b>: spending on equipment and buildings (<b>capital expenditure</b>, capex), and acquisitions.</li>
+<li><b>Financing cash flow</b>: borrowing and repaying debt, issuing or buying back shares, and paying dividends.</li>
+</ul>
+<p><b>Free cash flow</b> (FCF) = operating cash flow − capex. It's the cash available for shareholders: for dividends, buybacks, paying down debt or acquisitions. Investors often compare it to market cap as the <b>free cash flow yield</b>.</p>
+<p>Warning signs:</p>
+<ul>
+<li>Net income consistently well above operating cash flow. Enron and Wirecard both reported profits that never turned into cash.</li>
+<li>A company that pays dividends funded by borrowing (financing inflows) rather than free cash flow.</li>
+<li>Heavy and rising capex just to stand still, common in airlines, telecoms and car makers.</li>
+<li><b>Stock-based compensation</b> added back to operating cash flow: it's a real cost paid in shares rather than cash.</li>
+</ul>
+<p>For AI-era companies, capex is the key line: the largest tech companies are spending enormous sums on data centres, which lowers free cash flow today in the hope of higher profits later.</p>
 
     <div class="check" data-id="w3-c5" data-answer="2">
-      <p class="check-q">You hold a 10-year bond paying 3%. Market interest rates for similar bonds rise to 5%. What happens to your bond's price?</p>
-      <ol class="check-o"><li>It rises</li><li>It defaults</li><li>It falls, so a new buyer's yield matches 5%</li><li>It stays at face value</li></ol>
-      <div class="check-why">Prices and yields move in opposite directions.</div>
+      <p class="check-q">A company reports $500m of net income but only $50m of operating cash flow, year after year. What should you think?</p>
+      <ol class="check-o"><li>Very profitable</li><li>It should pay a bigger dividend</li><li>A red flag: profits aren't turning into cash, which can mean aggressive accounting or worse</li><li>Normal for all companies</li></ol>
+      <div class="check-why">Persistent gaps between profit and cash are how many accounting frauds were first spotted.</div>
     </div>
     <div class="check" data-id="w3-c6" data-answer="3">
-      <p class="check-q">What does an inverted yield curve usually signal?</p>
-      <ol class="check-o"><li>Stock prices will rise immediately</li><li>High inflation ahead</li><li>An economic boom</li><li>Markets expect rates to fall, typically because they expect a slowdown or recession</li></ol>
-      <div class="check-why">It has a strong record as a recession signal, with unreliable timing.</div>
+      <p class="check-q">What is free cash flow?</p>
+      <ol class="check-o"><li>Dividends paid</li><li>Cash in the bank</li><li>Revenue minus costs</li><li>Operating cash flow minus capital expenditure: the cash left for shareholders</li></ol>
+      <div class="check-why">It's the cash the business could return to owners without shrinking.</div>
     </div>
   </section>
   <!-- ===================== Lesson 3.4 ===================== -->
   <section class="lesson" id="w3-l4">
-    <header><span class="eyebrow">Lesson 3.4 · 40 min</span><h2>Cycles, debt and sentiment</h2></header>
-<p>Economies move in <b>business cycles</b>: expansion, peak, contraction (recession), recovery. Company profits rise and fall with them, and the stock market usually moves <b>before</b> the economy. It often falls months before a recession starts and starts rising while the news is still bad, because it prices expected future profits.</p>
-<p>Underneath sits the <b>credit cycle</b>, which Ray Dalio's video explains well. Borrowing lets spending grow faster than income for a while: easy credit lifts asset prices, rising prices make lenders comfortable lending more, and so on. Eventually debts become too large relative to incomes, lending tightens, and the process reverses, sometimes violently (a <b>deleveraging</b>). Most severe crashes are credit crashes.</p>
-<p><b>Sentiment</b> amplifies everything. In good times investors extrapolate, lower their guard and borrow; in bad times they panic and sell regardless of value. Economist Hyman Minsky argued that stability itself breeds instability: long calm periods encourage the risk-taking that causes the next crisis. Indicators like the VIX ("the fear index", which measures expected volatility), margin debt and fund flows give a rough read on mood.</p>
-<p><b>Liquidity</b> (how much money is available and how easily assets can be sold) matters too: when everyone wants to sell at once, prices can gap down far further than fundamentals justify, as in March 2020.</p>
-<p>Other forces: <b>currencies</b> (a strong US dollar tightens conditions globally), <b>commodities</b> (oil shocks), <b>geopolitics</b>, and government <b>fiscal policy</b> (spending and taxes).</p>
+    <header><span class="eyebrow">Lesson 3.4 · 40 min</span><h2>Moats and quality</h2></header>
+<p>Numbers describe the past; the question is whether a business can keep earning high returns. Warren Buffett calls a durable competitive advantage a <b>moat</b>: something that stops competitors from taking its profits. The main kinds:</p>
+<ul>
+<li><b>Network effects</b>: the product gets better as more people use it (payment networks, marketplaces, social platforms).</li>
+<li><b>Switching costs</b>: changing is painful (enterprise software, banking, operating systems).</li>
+<li><b>Intangible assets</b>: brands people pay more for, patents, licences.</li>
+<li><b>Cost advantages</b>: scale, unique processes or locations that let it sell cheaper and still profit.</li>
+</ul>
+<p>The best evidence of a moat is a <b>high return on invested capital</b> (ROIC) sustained for many years: operating profit after tax divided by the capital tied up in the business. A company earning 25% on its capital for a decade, when competitors earn 8%, probably has one. <b>Return on equity</b> (ROE) is similar but can be flattered by debt.</p>
+<p>Also judge <b>management and capital allocation</b>: do they reinvest at high returns, buy back shares when cheap (not just when popular), avoid expensive empire-building acquisitions, and talk candidly about mistakes? Is their pay tied to long-term per-share results?</p>
+<p>A quick analysis framework: <b>what does it sell and to whom; how does it make money; is it growing; is it profitable and cash-generative; how much debt; what's the moat; what could go wrong; and what is the price assuming?</b> A wonderful business can still be a bad investment at the wrong price (week 6, Cisco).</p>
 
     <div class="check" data-id="w3-c7" data-answer="0">
-      <p class="check-q">The economy is in recession and unemployment is still rising, yet the stock market has risen 25% from its low. How is that possible?</p>
-      <ol class="check-o"><li>Markets look ahead: prices reflect expected future profits, so they often recover before the economic news does</li><li>Stock prices are random</li><li>The market is irrational</li><li>Only tech stocks rose</li></ol>
-      <div class="check-why">Waiting for good economic news usually means missing much of the recovery.</div>
+      <p class="check-q">Which is the strongest evidence that a company has a durable moat?</p>
+      <ol class="check-o"><li>Returns on invested capital well above competitors' for many years</li><li>Rapid revenue growth last year</li><li>A famous CEO</li><li>A high share price</li></ol>
+      <div class="check-why">Competition normally drives returns down. Sustained high returns suggest something is stopping it.</div>
     </div>
     <div class="check" data-id="w3-c8" data-answer="1">
-      <p class="check-q">What is Minsky's insight about financial stability?</p>
-      <ol class="check-o"><li>Central banks prevent all crises</li><li>Long periods of stability encourage more borrowing and risk-taking, which sets up the next crisis</li><li>Markets are always efficient</li><li>Stability is permanent</li></ol>
-      <div class="check-why">Calm periods breed complacency.</div>
-    </div>
-    <div class="videos">
-      <a class="video" href="https://www.youtube.com/watch?v=PHe0bXAIuk0" target="_blank" rel="noopener"><span><b>How The Economic Machine Works (31 min)</b><small>Ray Dalio</small></span></a>
+      <p class="check-q">A payments network becomes more useful to shoppers as more shops accept it, and to shops as more shoppers use it. What kind of moat is this?</p>
+      <ol class="check-o"><li>Patent</li><li>Network effect</li><li>Switching cost</li><li>Cost advantage</li></ol>
+      <div class="check-why">Two-sided networks are among the strongest moats.</div>
     </div>
   </section>
 
   <!-- ===================== Exercise ===================== -->
   <section class="project" id="project">
     <span class="eyebrow">Scenario exercise · 60–90 minutes</span>
-    <h2>Scenario exercise: read the macro picture</h2>
-    <p>In <code>finance/exercises/week-03.md</code>:</p>
+    <h2>Scenario exercise: analyse a real company</h2>
+    <p>Pick a listed company you know (for example a supermarket, a bank, a tech company or a miner). Find its latest annual report or a site like Morningstar or Yahoo Finance, and in <code>finance/exercises/week-03.md</code>:</p>
 <ol>
-<li><b>Dashboard.</b> Look up today's values: the Fed's policy rate, US CPI inflation, the 2-year and 10-year Treasury yields (is the curve inverted?), and the VIX. Write one sentence on what each suggests.</li>
-<li><b>Fed day.</b> Find the most recent central bank decision and the market's reaction that day. Was the decision expected? What surprised the market, if anything?</li>
-<li><b>Scenario.</b> Inflation suddenly rises to 6% and the central bank signals more hikes. Predict what happens to: long-term bonds, fast-growing tech stocks, banks, energy companies, and the US dollar. Explain each.</li>
-<li><b>The machine.</b> After watching Ray Dalio's video, describe in five sentences where you think the major economies are in the short-term and long-term debt cycles, and why.</li>
+<li><b>Income statement.</b> Revenue and its growth over 3–5 years, gross and operating margins and their trend, EPS, and whether the share count is rising.</li>
+<li><b>Balance sheet.</b> Net debt, net debt to EBITDA, and anything unusual (big goodwill, receivables growing fast).</li>
+<li><b>Cash flow.</b> Operating cash flow versus net income, capex, free cash flow, and how the company used its cash.</li>
+<li><b>Moat and management.</b> What, if anything, protects its profits? Is ROIC high and stable? How has management allocated capital?</li>
+<li><b>Verdict.</b> At today's price (P/E or free cash flow yield), what growth is the market assuming? Is that realistic? What could go wrong?</li>
 </ol>
     <p>There are no right answers to look up: the point is to apply the week to real markets and real history. Write in your own words. This is education, not financial advice.</p>
     <div id="project-tracker"></div>

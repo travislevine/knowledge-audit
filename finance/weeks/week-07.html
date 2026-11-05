@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 7: Traders, funds and market players</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Markets and Investing</a></nav>
+    <span class="eyebrow">Week 7 of 10 · about 5 hours</span>
+    <h1>Traders, funds and market players</h1>
+    <p class="lede">Every time you buy, someone sells. This week looks at who is on the other side: day traders, high-frequency firms, market makers, hedge funds and short sellers. You'll see how each one tries to make money, what the evidence says about who actually does, and how leverage and options turn small edges, or small mistakes, into large results.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Explain how day traders try to make money, and what large studies show about their results</li>
+      <li>Explain how market makers, high-frequency traders and brokers earn money from trading activity</li>
+      <li>Describe hedge funds and short selling, including famous successes and blow-ups</li>
+      <li>Explain options and leverage at a basic level, and why they magnify both gains and losses</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 7.1 and 7.2 (how day traders try to make money; who profits from trading activity)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 7.3 and 7.4 (hedge funds and short sellers; options and leverage)</td></tr>
+      <tr><td>Day 3</td><td>Scenario exercise</td></tr>
+      <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 7.1 ===================== -->
+  <section class="lesson" id="w7-l1">
+    <header><span class="eyebrow">Lesson 7.1 · 45 min</span><h2>How day traders try to make money</h2></header>
+<p>A <b>day trader</b> buys and sells within the same day, closing positions before the market shuts, aiming to profit from short-term price moves rather than a business's long-term value. Common styles:</p>
+<ul>
+<li><b>Scalping</b>: many tiny trades capturing a few cents each.</li>
+<li><b>Momentum</b>: buying what's moving up (often on news or high volume) and riding it.</li>
+<li><b>Mean reversion</b>: betting that a sharp move will partly reverse.</li>
+<li><b>News and event trading</b>: reacting to earnings, economic data or headlines faster than others.</li>
+</ul>
+<p>Most use <b>leverage</b> (margin accounts, futures or CFDs, contracts for difference), and many follow technical analysis: chart patterns, moving averages and indicators.</p>
+<p>The economics are harsh. Before costs, short-term trading is close to <b>zero-sum</b>: one trader's gain is another's loss. After costs (spreads, commissions, financing, taxes) it's <b>negative-sum</b>. And the competition includes professional firms with faster technology, better data and lower costs. To win, a trader needs an edge larger than all their costs, every year.</p>
+<p>The evidence is consistent:</p>
+<ul>
+<li>A study of every person who started day trading Brazilian futures from 2013 to 2015 found that <b>97% of those who persisted more than 300 days lost money</b>, and only about 1% earned more than the minimum wage. There was no evidence that traders improved with experience.</li>
+<li>Studies of Taiwan's market by Barber, Lee, Liu and Odean found that fewer than 1% of day traders were predictably profitable after fees, and most quit within a couple of years.</li>
+<li>Regulators require CFD brokers in Europe and Australia to disclose how many retail accounts lose money; typical disclosures are around 70–80%.</li>
+</ul>
+<p>Try the simulator to see why small costs and modest edges decide everything:</p>
+<div data-widget="daytrader"></div>
+
+    <div class="check" data-id="w7-c1" data-answer="1">
+      <p class="check-q">Why is day trading negative-sum for participants as a group?</p>
+      <ol class="check-o"><li>Day trading is illegal</li><li>Before costs, short-term gains and losses roughly cancel; spreads, commissions, financing and taxes then come out of the total</li><li>Brokers cheat</li><li>Markets always fall</li></ol>
+      <div class="check-why">Costs are certain; the edge is not.</div>
+    </div>
+    <div class="check" data-id="w7-c2" data-answer="1">
+      <p class="check-q">What did the study of Brazilian day traders find?</p>
+      <ol class="check-o"><li>Most made a living</li><li>About 97% of those who kept going for 300+ days lost money, and experience didn't help</li><li>Results depended on age</li><li>Half made money</li></ol>
+      <div class="check-why">The people reliably making money were not the traders.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3423101" target="_blank" rel="noopener"><span><b>Research: Day Trading for a Living? (Chague, De-Losso and Giovannetti)</b><small>SSRN working paper</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 7.2 ===================== -->
+  <section class="lesson" id="w7-l2">
+    <header><span class="eyebrow">Lesson 7.2 · 40 min</span><h2>Who profits from trading activity</h2></header>
+<p>If most active traders lose, who wins? Mostly the businesses that serve them:</p>
+<ul>
+<li><b>Market makers</b> quote buy and sell prices all day and earn the spread. They don't need to predict direction; they need lots of two-way flow and good risk management.</li>
+<li><b>High-frequency trading</b> (HFT) firms use speed (computers next to exchange servers, microsecond reactions) to make markets and exploit tiny price differences. When Virtu Financial went public in 2014, it disclosed just one losing day in 1,238 trading days: a business of small, repeated edges, not bold bets.</li>
+<li><b>Brokers</b> earn commissions, interest on margin loans and on idle cash, and in the US, <b>payment for order flow</b>: market makers pay "zero-commission" apps for the right to fill their customers' orders. The trades are often filled at fair prices, but it gives brokers an incentive to encourage frequent trading. Gamified apps, confetti and push notifications are design choices, not accidents.</li>
+<li><b>Exchanges</b> earn trading and data fees.</li>
+<li><b>Course sellers, signal groups and "prop firm challenges"</b> often earn more from traders' fees than traders earn from markets. If someone could reliably make money trading, selling a course would be a strange way to spend their time.</li>
+</ul>
+<p>Some individuals do succeed: a small minority with real edges, discipline and risk control, plus some who were simply lucky. Survivorship bias means you hear their stories, not those of the many who quietly stopped.</p>
+<p>Active trading also isn't useless to society: traders provide liquidity and help prices reflect information quickly. That's why long-term investors can buy and sell index funds cheaply.</p>
+
+    <div class="check" data-id="w7-c3" data-answer="2">
+      <p class="check-q">A trading app charges zero commission. How does it make money?</p>
+      <ol class="check-o"><li>It doesn't</li><li>Government grants</li><li>From payment for order flow, interest on cash and margin loans, and premium subscriptions; more trading means more revenue</li><li>Advertising only</li></ol>
+      <div class="check-why">If the product is free, ask what's being sold.</div>
+    </div>
+    <div class="check" data-id="w7-c4" data-answer="3">
+      <p class="check-q">What does Virtu's record of one losing day in 1,238 tell you about high-frequency market making?</p>
+      <ol class="check-o"><li>The market is rigged</li><li>They're lucky</li><li>They predict the future</li><li>Their profits come from tiny, repeated edges on enormous volumes, earned by speed and scale rather than forecasting</li></ol>
+      <div class="check-why">It's the opposite of a retail trader's position.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 7.3 ===================== -->
+  <section class="lesson" id="w7-l3">
+    <header><span class="eyebrow">Lesson 7.3 · 40 min</span><h2>Hedge funds and short sellers</h2></header>
+<p><b>Hedge funds</b> are lightly regulated pooled funds for wealthy and institutional investors. They use strategies ordinary funds can't: short selling, leverage, derivatives, and concentrated or exotic bets. The traditional fee is <b>"2 and 20"</b>: 2% of assets a year plus 20% of profits.</p>
+<p>Results vary enormously. Renaissance Technologies' Medallion fund, run by mathematicians using quantitative models, earned about 66% a year before fees (about 39% after) from 1988 to 2018, the best record known, and is closed to outsiders. But as an industry, hedge funds have trailed simple index funds since the 2000s. In 2008 Warren Buffett bet $1 million that an S&amp;P 500 index fund would beat a selection of hedge funds over 10 years; the index fund returned about 7% a year against about 2% for the funds.</p>
+<p><b>Short selling</b> means borrowing shares, selling them, and buying them back later, hopefully cheaper. Losses are unlimited if the price keeps rising. Short sellers are often unpopular, but they help expose frauds: short sellers flagged problems at Enron and Wirecard before they collapsed.</p>
+<p>A <b>short squeeze</b> happens when a heavily shorted stock rises and short sellers rush to buy it back, pushing it higher still. In January 2021, retail traders coordinating online drove GameStop up more than 1,500% in weeks; hedge fund Melvin Capital lost about half its value that month and later closed.</p>
+<p>Leverage has sunk even the cleverest: <b>Long-Term Capital Management</b>, run by star traders and two Nobel laureates, borrowed about 25 times its capital. When Russia defaulted in 1998, its "safe" bets moved against it, and the Federal Reserve organised a rescue by Wall Street banks to prevent wider damage.</p>
+
+    <div class="check" data-id="w7-c5" data-answer="1">
+      <p class="check-q">Why are short sellers' potential losses unlimited?</p>
+      <ol class="check-o"><li>They're not unlimited</li><li>A share's price can rise without limit, and they must eventually buy it back</li><li>Regulators fine them</li><li>They pay interest</li></ol>
+      <div class="check-why">A buyer can lose at most 100%; a short seller can lose many times their stake.</div>
+    </div>
+    <div class="check" data-id="w7-c6" data-answer="3">
+      <p class="check-q">What does LTCM's 1998 collapse teach?</p>
+      <ol class="check-o"><li>Russia caused all crashes</li><li>Hedge funds always fail</li><li>Nobel laureates can't invest</li><li>Even sophisticated strategies fail when highly leveraged, because rare events and forced selling can overwhelm small, reliable-looking edges</li></ol>
+      <div class="check-why">Leverage turns small errors into ruin.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 7.4 ===================== -->
+  <section class="lesson" id="w7-l4">
+    <header><span class="eyebrow">Lesson 7.4 · 40 min</span><h2>Options and leverage</h2></header>
+<p>An <b>option</b> is a contract giving the right, but not the obligation, to buy (a <b>call</b>) or sell (a <b>put</b>) a share at a set price (the <b>strike</b>) before a set date (<b>expiry</b>). The buyer pays a <b>premium</b>.</p>
+<ul>
+<li>A call is a leveraged bet on a rise: if the share stays below the strike, the option expires worthless and the buyer loses the whole premium.</li>
+<li>A put is a bet on a fall, or <b>insurance</b>: a shareholder can buy puts to limit losses.</li>
+<li><b>Selling</b> (writing) options earns the premium but takes on the risk: sellers of uncovered calls face unlimited losses.</li>
+<li>Option prices depend heavily on expected <b>volatility</b> and lose value as time passes (<b>time decay</b>), which works against buyers.</li>
+</ul>
+<p>Very short-dated options, including ones that expire the same day ("0DTE"), have become hugely popular with retail traders. They're cheap per contract and can multiply in value in hours, which also makes them very likely to expire worthless.</p>
+<p><b>Leverage</b> means controlling more than your capital: margin loans, futures, CFDs, leveraged ETFs and options all do this. At 10:1, a 10% move doubles or wipes out your stake. Leverage also brings <b>margin calls</b>: if losses eat into your capital, the broker demands more money or sells your position, often at the worst moment. Every crash in week 6 involved leverage.</p>
+<p><b>Leveraged ETFs</b> (for example "3× Nasdaq") reset daily, so in volatile, sideways markets they lose value even if the index ends where it started: a good example of why simple-looking products can behave unexpectedly.</p>
+<p>Used carefully, derivatives help businesses and investors manage risk (farmers lock in crop prices; airlines hedge fuel). Used for speculation, they mostly transfer money from the inexperienced to the experienced.</p>
+
+    <div class="check" data-id="w7-c7" data-answer="0">
+      <p class="check-q">You buy a call option with a $100 strike for a $5 premium. At expiry the share is $98. What's your result?</p>
+      <ol class="check-o"><li>You lose the $5 premium: the option expires worthless</li><li>You make $2</li><li>You lose $2</li><li>You break even</li></ol>
+      <div class="check-why">The right to buy at $100 is worthless when the share is $98.</div>
+    </div>
+    <div class="check" data-id="w7-c8" data-answer="3">
+      <p class="check-q">An index rises 10% one day and falls 9.1% the next, ending where it started. What happens to a 3× daily leveraged ETF on it?</p>
+      <ol class="check-o"><li>It also ends unchanged</li><li>It ends 3× higher</li><li>It's unaffected by daily moves</li><li>It ends lower: +30% then −27.3% leaves about 94.5% of the starting value</li></ol>
+      <div class="check-why">1.3 × 0.727 ≈ 0.945. Daily resets cause decay in volatile markets.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Exercise ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Scenario exercise · 60–90 minutes</span>
+    <h2>Scenario exercise: follow the money</h2>
+    <p>In <code>finance/exercises/week-07.md</code>:</p>
+<ol>
+<li><b>Simulator.</b> Using the day-trading widget, find the combination of win rate and payoff needed to make most simulated traders profitable after costs of 0.1R per trade. How realistic does that edge seem against professional competition?</li>
+<li><b>Read a disclosure.</b> Find a CFD or trading platform's risk warning (the "% of retail investor accounts lose money" statement). What percentage does it state?</li>
+<li><b>Business models.</b> Pick one trading app or broker. List every way it earns money from customers. Which ones benefit from customers trading more?</li>
+<li><b>Case study.</b> Read about the GameStop squeeze of January 2021 or LTCM in 1998. Write a short account: who made money, who lost, and the role of leverage and shorting.</li>
+</ol>
+    <p>There are no right answers to look up: the point is to apply the week to real markets and real history. Write in your own words. This is education, not financial advice.</p>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 7 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-07.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas to real market news, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-06.html">← Week 6</a><a class="btn" href="week-08.html">Next: Week 8 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 7;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

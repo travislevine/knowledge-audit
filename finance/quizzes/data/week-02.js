@@ -181,7 +181,7 @@ const Q = [
    "It falls 15%"
   ],
   "a": 1,
-  "e": "Leverage magnifies losses and adds forced-selling risk; it's central to most crashes (week 4).",
+  "e": "Leverage magnifies losses and adds forced-selling risk; it's central to most crashes (week 6).",
   "s": "Reread lesson 2.3."
  },
  {

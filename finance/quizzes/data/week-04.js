@@ -1,10 +1,10 @@
-/* Markets week 4 quiz: Bubbles and crashes */
+/* Markets week 4 quiz: What moves markets */
 (function () {
 "use strict";
 const TOPICS = {
  "l1": {
-  "name": "4.1 1929 and the Great Depression",
-  "short": "1929",
+  "name": "4.1 Central banks and interest rates",
+  "short": "Central banks",
   "res": [
    [
     "Reread lesson 4.1",
@@ -13,8 +13,8 @@ const TOPICS = {
   ]
  },
  "l2": {
-  "name": "4.2 1987 and the dot-com bust",
-  "short": "1987",
+  "name": "4.2 Inflation",
+  "short": "Inflation",
   "res": [
    [
     "Reread lesson 4.2",
@@ -23,26 +23,26 @@ const TOPICS = {
   ]
  },
  "l3": {
-  "name": "4.3 The 2008 global financial crisis",
-  "short": "The 2008 global financial crisis",
+  "name": "4.3 Bonds and the yield curve",
+  "short": "Bonds",
   "res": [
    [
     "Reread lesson 4.3",
     "../weeks/week-04.html#w4-l3"
-   ],
-   [
-    "How it Happened: The 2008 Financial Crisis",
-    "https://www.youtube.com/watch?v=GPOv72Awo68"
    ]
   ]
  },
  "l4": {
-  "name": "4.4 2020, 2022 and the patterns",
-  "short": "2020",
+  "name": "4.4 Cycles, debt and sentiment",
+  "short": "Cycles",
   "res": [
    [
     "Reread lesson 4.4",
     "../weeks/week-04.html#w4-l4"
+   ],
+   [
+    "How The Economic Machine Works (31 min)",
+    "https://www.youtube.com/watch?v=PHe0bXAIuk0"
    ]
   ]
  }
@@ -53,16 +53,16 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "1929 depth",
-  "p": "Roughly how far did the Dow fall from its 1929 peak to the 1932 low?",
+  "c": "Rates and valuations",
+  "p": "Why do higher interest rates tend to lower stock valuations?",
   "o": [
-   "25%",
-   "About 89%",
-   "50%",
-   "100%"
+   "Companies stop paying dividends",
+   "Stock exchanges charge more",
+   "Future cash flows are discounted more heavily, bonds and cash become more attractive alternatives, and the economy slows",
+   "They don't"
   ],
-  "a": 1,
-  "e": "The deepest US crash on record.",
+  "a": 2,
+  "e": "Rates are gravity for asset prices.",
   "s": "Reread lesson 4.1."
  },
  {
@@ -70,50 +70,50 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "Legacy",
-  "p": "Which reform followed the 1929 crash and bank failures?",
+  "c": "QE",
+  "p": "What is quantitative easing?",
   "o": [
-   "Circuit breakers",
-   "Bitcoin",
-   "Quantitative easing",
-   "Deposit insurance and securities regulation (the SEC)"
+   "Printing physical cash for people",
+   "Raising interest rates",
+   "Cutting taxes",
+   "A central bank buying bonds to lower longer-term rates and add money to the financial system"
   ],
   "a": 3,
-  "e": "Bank runs were a central cause of the Depression's depth.",
+  "e": "Used heavily after 2008 and in 2020.",
   "s": "Reread lesson 4.1."
  },
  {
   "id": "t4q03",
   "l": 1,
-  "t": "l2",
+  "t": "l1",
   "k": "concept",
-  "c": "1987",
-  "p": "What amplified the 1987 crash?",
+  "c": "Expectations",
+  "p": "What moves markets on central bank decision days?",
   "o": [
-   "Portfolio insurance: automated selling that triggered more selling as prices fell",
-   "High oil prices",
-   "Bank failures",
-   "A war"
+   "The difference between what was expected and what the bank did or signalled",
+   "Nothing",
+   "Only the size of the rate change",
+   "The time of the announcement"
   ],
   "a": 0,
-  "e": "Circuit breakers were introduced afterwards.",
-  "s": "Reread lesson 4.2."
+  "e": "Prices already reflect expectations.",
+  "s": "Reread lesson 4.1."
  },
  {
   "id": "t4q04",
   "l": 1,
   "t": "l2",
   "k": "scenario",
-  "c": "Dot-com",
-  "p": "An investor in 2000 says, \"The internet will change everything, so these stocks can't be overpriced.\" What's the flaw?",
+  "c": "2022",
+  "p": "In 2022, why did shares and bonds both fall, hurting balanced portfolios?",
   "o": [
-   "Tech stocks are always overpriced",
-   "Nothing",
-   "The internet didn't matter",
-   "A real revolution doesn't justify any price: returns depend on what you pay versus the profits that actually arrive"
+   "Bond defaults",
+   "A currency crisis",
+   "A tech scandal",
+   "High inflation forced rapid rate rises, which lowered bond prices and stock valuations at the same time"
   ],
   "a": 3,
-  "e": "Both statements can be true: transformative technology, terrible returns.",
+  "e": "Inflation shocks can make the usual diversification between stocks and bonds fail.",
   "s": "Reread lesson 4.2."
  },
  {
@@ -121,84 +121,84 @@ const Q = [
   "l": 1,
   "t": "l2",
   "k": "concept",
-  "c": "Nasdaq recovery",
-  "p": "How long did the Nasdaq take to regain its March 2000 peak?",
+  "c": "Volcker",
+  "p": "What did Paul Volcker's Fed do in 1979–81?",
   "o": [
-   "It never has",
-   "About 15 years",
-   "6 months",
-   "2 years"
+   "Printed money",
+   "Introduced QE",
+   "Cut rates to zero",
+   "Raised rates to nearly 20% to break high inflation, causing a deep recession"
   ],
-  "a": 1,
-  "e": "It regained the peak in 2015.",
+  "a": 3,
+  "e": "It ended 1970s inflation and set up the long bond bull market.",
   "s": "Reread lesson 4.2."
  },
  {
   "id": "t4q06",
   "l": 1,
   "t": "l3",
-  "k": "concept",
-  "c": "2008 trigger",
-  "p": "Which event in September 2008 turned a housing bust into a global panic?",
+  "k": "scenario",
+  "c": "Bond prices",
+  "p": "Interest rates fall. What happens to the price of an existing long-term bond?",
   "o": [
-   "A pandemic",
-   "The dot-com crash",
-   "The Fed raising rates",
-   "The failure of Lehman Brothers, which froze credit markets worldwide"
+   "It's repaid early",
+   "Unchanged",
+   "It falls",
+   "It rises"
   ],
   "a": 3,
-  "e": "No one knew who else held losses, so lending stopped.",
-  "s": "Watch the CrashCourse video."
+  "e": "Prices move opposite to yields; long bonds move most.",
+  "s": "Try the bond widget again."
  },
  {
   "id": "t4q07",
   "l": 1,
   "t": "l3",
-  "k": "scenario",
-  "c": "Leverage maths",
-  "p": "A bank is leveraged 25:1. Roughly what fall in its assets wipes out its equity?",
+  "k": "concept",
+  "c": "Risk-free rate",
+  "p": "Why is the 10-year US Treasury yield so important?",
   "o": [
-   "25%",
-   "1%",
-   "50%",
-   "4%"
+   "It's the highest yield",
+   "It's fixed by law",
+   "It sets oil prices",
+   "It's the benchmark 'risk-free' rate used to value shares, mortgages and most other assets"
   ],
   "a": 3,
-  "e": "Equity is 1/25 = 4% of assets.",
+  "e": "Changes ripple through every valuation.",
   "s": "Reread lesson 4.3."
  },
  {
   "id": "t4q08",
   "l": 1,
-  "t": "l4",
+  "t": "l3",
   "k": "concept",
-  "c": "COVID speed",
-  "p": "What was unusual about the 2020 crash?",
+  "c": "Credit spreads",
+  "p": "Corporate bond yields rise sharply relative to government yields. What does that suggest?",
   "o": [
-   "It was the fastest fall into a bear market in history, followed by one of the fastest recoveries",
-   "It lasted 10 years",
-   "Only bonds fell",
-   "It was the deepest ever"
+   "Investors increasingly fear defaults: a sign of financial stress",
+   "Inflation is falling",
+   "Nothing",
+   "Investors are more confident"
   ],
   "a": 0,
-  "e": "About −34% in 33 days, recovered within about six months.",
-  "s": "Reread lesson 4.4."
+  "e": "Widening spreads often precede trouble in stocks.",
+  "s": "Reread lesson 4.3."
  },
  {
   "id": "t4q09",
   "l": 1,
   "t": "l4",
   "k": "concept",
-  "c": "2022",
-  "p": "What drove the 2022 bear market?",
+  "c": "Leading",
+  "p": "Why does the stock market often bottom before the economy does?",
   "o": [
-   "An oil glut",
-   "A pandemic",
-   "Bank failures",
-   "High inflation and the fastest rate rises in four decades"
+   "It's a coincidence",
+   "Central banks buy shares",
+   "Companies lie",
+   "It prices expected future profits, so it turns when investors expect improvement, not when it arrives"
   ],
   "a": 3,
-  "e": "Rates up, valuations down, especially for long-duration growth stocks.",
+  "e": "The market is a forward-looking machine.",
   "s": "Reread lesson 4.4."
  },
  {
@@ -206,17 +206,17 @@ const Q = [
   "l": 1,
   "t": "l4",
   "k": "concept",
-  "c": "Market timing",
-  "p": "Why is selling during crashes and buying back later usually a losing strategy?",
+  "c": "Deleveraging",
+  "p": "What makes a debt-driven crash especially severe?",
   "o": [
-   "The best days tend to cluster near the worst ones, so sellers often miss the rebound that drives long-run returns",
-   "Crashes never recover",
-   "It's illegal",
-   "Brokers forbid it"
+   "As debts are cut, spending and asset prices fall, which forces more selling and more debt reduction: a self-reinforcing spiral",
+   "Strong currencies",
+   "Low interest rates",
+   "High dividends"
   ],
   "a": 0,
-  "e": "Missing a handful of the best days dramatically cuts returns.",
-  "s": "Reread lesson 4.4."
+  "e": "Leverage turns falls into spirals (week 6's case studies).",
+  "s": "Watch Ray Dalio's video."
  }
 ];
 window.AUDIT = Object.assign({
@@ -228,7 +228,7 @@ window.AUDIT = Object.assign({
   "href": "../weeks/week-04.html",
   "label": "Week 4"
  },
- "lede": "Bubbles and crashes. 10 questions; take it after the scenario exercise, without notes.",
+ "lede": "What moves markets. 10 questions; take it after the scenario exercise, without notes.",
  "topicOrder": [
   "l1",
   "l2",

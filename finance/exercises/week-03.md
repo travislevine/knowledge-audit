@@ -1,19 +1,23 @@
-# Week 3 exercise: Scenario exercise: read the macro picture
+# Week 3 exercise: Scenario exercise: analyse a real company
 
 _Write your answers under each heading. Be concrete and use real examples._
 
-## 1. **Dashboard.** Look up today's values: the Fed's policy rate, US CPI inflation, the 2-year and 10-year Treasury yields (is the curve inverted?), and the VIX. Write one sentence on what each suggests.
+## 1. **Income statement.** Revenue and its growth over 3–5 years, gross and operating margins and their trend, EPS, and whether the share count is rising.
 
 _Your answer:_
 
-## 2. **Fed day.** Find the most recent central bank decision and the market's reaction that day. Was the decision expected? What surprised the market, if anything?
+## 2. **Balance sheet.** Net debt, net debt to EBITDA, and anything unusual (big goodwill, receivables growing fast).
 
 _Your answer:_
 
-## 3. **Scenario.** Inflation suddenly rises to 6% and the central bank signals more hikes. Predict what happens to: long-term bonds, fast-growing tech stocks, banks, energy companies, and the US dollar. Explain each.
+## 3. **Cash flow.** Operating cash flow versus net income, capex, free cash flow, and how the company used its cash.
 
 _Your answer:_
 
-## 4. **The machine.** After watching Ray Dalio's video, describe in five sentences where you think the major economies are in the short-term and long-term debt cycles, and why.
+## 4. **Moat and management.** What, if anything, protects its profits? Is ROIC high and stable? How has management allocated capital?
+
+_Your answer:_
+
+## 5. **Verdict.** At today's price (P/E or free cash flow yield), what growth is the market assuming? Is that realistic? What could go wrong?
 
 _Your answer:_

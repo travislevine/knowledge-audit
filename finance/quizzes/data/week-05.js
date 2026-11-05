@@ -1,24 +1,20 @@
-/* Markets week 5 quiz: Today's market: AI, news and investing */
+/* Markets week 5 quiz: Beyond shares: other asset classes */
 (function () {
 "use strict";
 const TOPICS = {
  "l1": {
-  "name": "5.1 The AI boom through a historical lens",
-  "short": "The AI boom through a historical lens",
+  "name": "5.1 Bonds and cash in practice",
+  "short": "Bonds",
   "res": [
    [
     "Reread lesson 5.1",
     "../weeks/week-05.html#w5-l1"
-   ],
-   [
-    "What Caused the Dot-Com Bubble and Its Crash?",
-    "https://www.youtube.com/watch?v=25_WjiZnvQk"
    ]
   ]
  },
  "l2": {
-  "name": "5.2 Reading earnings and the news",
-  "short": "Reading earnings",
+  "name": "5.2 Property, commodities and gold",
+  "short": "Property",
   "res": [
    [
     "Reread lesson 5.2",
@@ -27,8 +23,8 @@ const TOPICS = {
   ]
  },
  "l3": {
-  "name": "5.3 Investor psychology",
-  "short": "Investor psychology",
+  "name": "5.3 Currencies and crypto",
+  "short": "Currencies",
   "res": [
    [
     "Reread lesson 5.3",
@@ -37,12 +33,16 @@ const TOPICS = {
   ]
  },
  "l4": {
-  "name": "5.4 Evidence-based investing basics",
-  "short": "Evidence-based investing basics",
+  "name": "5.4 Asset allocation",
+  "short": "Asset allocation",
   "res": [
    [
     "Reread lesson 5.4",
     "../weeks/week-05.html#w5-l4"
+   ],
+   [
+    "Reading: Beginners' Guide to Asset Allocation, Diversification and Rebalancing",
+    "https://www.investor.gov/sites/investorgov/files/2019-02/Beginners-Guide-to-Asset-Allocation.pdf"
    ]
   ]
  }
@@ -53,16 +53,16 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "Bubble ingredients",
-  "p": "Which of these is a bubble ingredient that the AI boom shares with the dot-com era?",
+  "c": "Yield to maturity",
+  "p": "What does a bond's yield to maturity at purchase estimate?",
   "o": [
-   "A real technological revolution combined with extrapolation and heavy concentration in a few stocks",
-   "Deflation",
-   "High bank leverage",
-   "Falling interest rates only"
+   "The annual return you'll earn if you hold it to maturity and it doesn't default",
+   "Its price next year",
+   "Its coupon only",
+   "The inflation rate"
   ],
   "a": 0,
-  "e": "Several ingredients are present; others (leverage, profitability) differ.",
+  "e": "Starting yields are a good guide to future bond returns.",
   "s": "Reread lesson 5.1."
  },
  {
@@ -70,16 +70,16 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "Capex",
-  "p": "Why do investors watch big tech companies' capital expenditure on AI so closely?",
+  "c": "Inflation-linked bonds",
+  "p": "What do inflation-linked bonds protect against?",
   "o": [
-   "It's illegal",
-   "It's small",
-   "It's enormous, and the key question is whether AI revenue will grow enough to justify it; it's also revenue for chip makers",
-   "It's tax-deductible"
+   "Currency moves",
+   "Rising share prices",
+   "Inflation eroding the real value of payments",
+   "Default"
   ],
   "a": 2,
-  "e": "One company's spending is another's sales.",
+  "e": "Principal adjusts with inflation.",
   "s": "Reread lesson 5.1."
  },
  {
@@ -87,16 +87,16 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "History of tech booms",
-  "p": "What does history suggest about transformative technologies and their stocks?",
+  "c": "Cash role",
+  "p": "What's cash best used for?",
   "o": [
-   "Stocks always rise steadily",
-   "Only the first company wins",
-   "They often go through boom-bust cycles even when the technology succeeds",
-   "They always fail"
+   "Long-term growth",
+   "Speculation",
+   "An emergency fund and money needed soon; its long-run real return is low",
+   "Beating inflation"
   ],
   "a": 2,
-  "e": "Railways, radio and the internet all followed this pattern.",
+  "e": "Safety, not growth.",
   "s": "Reread lesson 5.1."
  },
  {
@@ -104,16 +104,16 @@ const Q = [
   "l": 1,
   "t": "l2",
   "k": "concept",
-  "c": "Guidance",
-  "p": "Why can a company's shares fall after strong results?",
+  "c": "REITs",
+  "p": "Why do REITs often fall sharply in a share market crash, unlike the apparent stability of a house's value?",
   "o": [
-   "Strong results are bad",
-   "They never do",
-   "Analysts sell",
-   "Results or guidance fell short of high expectations already in the price"
+   "They pay no rent",
+   "REITs are riskier properties",
+   "They're illegal in crashes",
+   "They're priced every day on an exchange; a directly owned property just isn't priced daily"
   ],
   "a": 3,
-  "e": "Expectations are the benchmark.",
+  "e": "Lack of daily prices hides volatility; it doesn't remove it.",
   "s": "Reread lesson 5.2."
  },
  {
@@ -121,33 +121,33 @@ const Q = [
   "l": 1,
   "t": "l2",
   "k": "concept",
-  "c": "Adjusted earnings",
-  "p": "What's a warning sign in a company's reported earnings?",
+  "c": "Productive assets",
+  "p": "Which of these is a productive asset?",
   "o": [
-   "Paying dividends",
-   "Large, recurring \"one-off\" adjustments that make adjusted profit look much better than official profit",
-   "GAAP earnings",
-   "Rising revenue"
+   "Bitcoin",
+   "A company's shares",
+   "Gold",
+   "A painting"
   ],
   "a": 1,
-  "e": "Recurring one-offs aren't one-offs.",
+  "e": "Productive assets generate cash flows.",
   "s": "Reread lesson 5.2."
  },
  {
   "id": "t5q06",
   "l": 1,
   "t": "l2",
-  "k": "concept",
-  "c": "Forecasts",
-  "p": "How much weight should you give to strategists' year-end index targets?",
+  "k": "scenario",
+  "c": "Commodities and inflation",
+  "p": "Inflation surges due to an energy shortage. Which asset class is most likely to do well?",
   "o": [
-   "Only if they're bullish",
-   "A lot: they're experts",
-   "Full weight",
-   "Little: their track record is poor, and media rewards confidence over accuracy"
+   "Cash",
+   "Long-term bonds",
+   "Unprofitable tech stocks",
+   "Commodities and energy producers"
   ],
   "a": 3,
-  "e": "Thinking Skills week 3: overconfidence and incentives.",
+  "e": "Commodities often rise when inflation hurts shares and bonds.",
   "s": "Reread lesson 5.2."
  },
  {
@@ -155,16 +155,16 @@ const Q = [
   "l": 1,
   "t": "l3",
   "k": "concept",
-  "c": "Loss aversion",
-  "p": "How does loss aversion hurt investors?",
+  "c": "Hedging",
+  "p": "When is currency hedging most common, and why?",
   "o": [
-   "It doesn't",
-   "It makes them diversify",
-   "It reduces fees",
-   "It drives panic selling in downturns and holding losers to 'get back to even'"
+   "Only for crypto",
+   "For shares, because currencies always fall",
+   "Never",
+   "For foreign bonds, because currency swings would overwhelm their modest returns"
   ],
   "a": 3,
-  "e": "Losses hurt about twice as much as equal gains feel good.",
+  "e": "Bonds are meant to be stable; currency risk undoes that.",
   "s": "Reread lesson 5.3."
  },
  {
@@ -172,50 +172,50 @@ const Q = [
   "l": 1,
   "t": "l3",
   "k": "concept",
-  "c": "Trading frequency",
-  "p": "What do studies of individual brokerage accounts find about frequent traders?",
+  "c": "Safe haven",
+  "p": "What tends to happen to the US dollar in a global panic?",
   "o": [
-   "They earn the most",
-   "They avoid crashes",
-   "They match the market",
-   "They tend to earn the least, after costs"
+   "It collapses",
+   "It's frozen",
+   "Nothing",
+   "It often strengthens as investors seek safety"
   ],
   "a": 3,
-  "e": "Overconfidence plus costs.",
+  "e": "Reserve currency status makes it a haven.",
   "s": "Reread lesson 5.3."
  },
  {
   "id": "t5q09",
   "l": 1,
-  "t": "l4",
+  "t": "l3",
   "k": "concept",
-  "c": "Foundations",
-  "p": "What should usually come before investing in shares?",
+  "c": "Crypto sizing",
+  "p": "How should a speculative asset like crypto be sized in a portfolio, if held at all?",
   "o": [
-   "Buying a home",
-   "Picking individual stocks",
-   "Nothing",
-   "An emergency fund and paying off high-interest debt"
+   "As the largest holding",
+   "With leverage",
+   "Equal to bonds",
+   "Small enough that a 70–80% fall wouldn't seriously harm your finances"
   ],
   "a": 3,
-  "e": "Foundations protect you from forced selling.",
-  "s": "Reread lesson 5.4."
+  "e": "Size by worst case.",
+  "s": "Reread lesson 5.3."
  },
  {
   "id": "t5q10",
   "l": 1,
   "t": "l4",
-  "k": "scenario",
-  "c": "Too good",
-  "p": "An investment promises 2% a month with \"no risk\". What should you conclude?",
+  "k": "concept",
+  "c": "Risk parity",
+  "p": "What's the idea behind risk parity (All Weather)?",
   "o": [
-   "High return with low risk is almost always a misunderstanding or a fraud",
-   "It's normal",
-   "Great deal",
-   "Buy it with leverage"
+   "Balance risk across assets that do well in different economic environments, rather than balancing dollars",
+   "Avoid bonds",
+   "Hold only shares",
+   "Time the market"
   ],
   "a": 0,
-  "e": "Return and risk go together.",
+  "e": "Diversify across environments.",
   "s": "Reread lesson 5.4."
  }
 ];
@@ -228,7 +228,7 @@ window.AUDIT = Object.assign({
   "href": "../weeks/week-05.html",
   "label": "Week 5"
  },
- "lede": "Today's market: AI, news and investing. 10 questions; take it after the scenario exercise, without notes.",
+ "lede": "Beyond shares: other asset classes. 10 questions; take it after the scenario exercise, without notes.",
  "topicOrder": [
   "l1",
   "l2",

@@ -1,20 +1,24 @@
-/* Markets week 3 quiz: What moves markets */
+/* Markets week 3 quiz: Reading a company */
 (function () {
 "use strict";
 const TOPICS = {
  "l1": {
-  "name": "3.1 Central banks and interest rates",
-  "short": "Central banks",
+  "name": "3.1 The income statement",
+  "short": "The income statement",
   "res": [
    [
     "Reread lesson 3.1",
     "../weeks/week-03.html#w3-l1"
+   ],
+   [
+    "How to Read Company Financial Statements (Basics Explained)",
+    "https://www.youtube.com/watch?v=__5MtdoKHfx"
    ]
   ]
  },
  "l2": {
-  "name": "3.2 Inflation",
-  "short": "Inflation",
+  "name": "3.2 The balance sheet",
+  "short": "The balance sheet",
   "res": [
    [
     "Reread lesson 3.2",
@@ -23,8 +27,8 @@ const TOPICS = {
   ]
  },
  "l3": {
-  "name": "3.3 Bonds and the yield curve",
-  "short": "Bonds",
+  "name": "3.3 The cash flow statement",
+  "short": "The cash flow statement",
   "res": [
    [
     "Reread lesson 3.3",
@@ -33,16 +37,12 @@ const TOPICS = {
   ]
  },
  "l4": {
-  "name": "3.4 Cycles, debt and sentiment",
-  "short": "Cycles",
+  "name": "3.4 Moats and quality",
+  "short": "Moats",
   "res": [
    [
     "Reread lesson 3.4",
     "../weeks/week-03.html#w3-l4"
-   ],
-   [
-    "How The Economic Machine Works (31 min)",
-    "https://www.youtube.com/watch?v=PHe0bXAIuk0"
    ]
   ]
  }
@@ -53,16 +53,16 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "Rates and valuations",
-  "p": "Why do higher interest rates tend to lower stock valuations?",
+  "c": "Gross margin",
+  "p": "What does a consistently high gross margin often indicate?",
   "o": [
-   "Future cash flows are discounted more heavily, bonds and cash become more attractive alternatives, and the economy slows",
-   "They don't",
-   "Companies stop paying dividends",
-   "Stock exchanges charge more"
+   "Pricing power: customers pay well above what the product costs to make",
+   "Fast growth",
+   "High debt",
+   "Low taxes"
   ],
   "a": 0,
-  "e": "Rates are gravity for asset prices.",
+  "e": "Software and strong brands have high gross margins; commodities low ones.",
   "s": "Reread lesson 3.1."
  },
  {
@@ -70,16 +70,16 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "QE",
-  "p": "What is quantitative easing?",
+  "c": "Dilution",
+  "p": "Net income grew 10% but the number of shares grew 8%. Roughly how much did EPS grow?",
   "o": [
-   "A central bank buying bonds to lower longer-term rates and add money to the financial system",
-   "Printing physical cash for people",
-   "Cutting taxes",
-   "Raising interest rates"
+   "About 2%",
+   "8%",
+   "18%",
+   "10%"
   ],
   "a": 0,
-  "e": "Used heavily after 2008 and in 2020.",
+  "e": "1.10 / 1.08 ≈ 1.02. Dilution from share issues and stock-based pay eats per-share growth.",
   "s": "Reread lesson 3.1."
  },
  {
@@ -87,101 +87,101 @@ const Q = [
   "l": 1,
   "t": "l1",
   "k": "concept",
-  "c": "Expectations",
-  "p": "What moves markets on central bank decision days?",
+  "c": "Operating leverage",
+  "p": "What is operating leverage?",
   "o": [
-   "Only the size of the rate change",
-   "The time of the announcement",
-   "Nothing",
-   "The difference between what was expected and what the bank did or signalled"
+   "Borrowing to invest",
+   "A type of option",
+   "Paying high dividends",
+   "When costs grow slower than revenue, so profits grow faster than sales"
   ],
   "a": 3,
-  "e": "Prices already reflect expectations.",
+  "e": "It works in reverse too: in a downturn, profits fall faster than sales.",
   "s": "Reread lesson 3.1."
  },
  {
   "id": "t3q04",
   "l": 1,
   "t": "l2",
-  "k": "scenario",
-  "c": "2022",
-  "p": "In 2022, why did shares and bonds both fall, hurting balanced portfolios?",
+  "k": "concept",
+  "c": "Balance sheet identity",
+  "p": "What does a balance sheet always satisfy?",
   "o": [
-   "Bond defaults",
-   "A currency crisis",
-   "High inflation forced rapid rate rises, which lowered bond prices and stock valuations at the same time",
-   "A tech scandal"
+   "Cash = profit",
+   "Debt = equity",
+   "Assets = liabilities + equity",
+   "Revenue = costs"
   ],
   "a": 2,
-  "e": "Inflation shocks can make the usual diversification between stocks and bonds fail.",
+  "e": "Equity is what's left for shareholders after liabilities.",
   "s": "Reread lesson 3.2."
  },
  {
   "id": "t3q05",
   "l": 1,
   "t": "l2",
-  "k": "concept",
-  "c": "Volcker",
-  "p": "What did Paul Volcker's Fed do in 1979–81?",
+  "k": "scenario",
+  "c": "Refinancing risk",
+  "p": "Two companies have the same debt. One's debt is due in 9 years, the other's mostly next year, in the middle of a credit crunch. Which is riskier?",
   "o": [
-   "Raised rates to nearly 20% to break high inflation, causing a deep recession",
-   "Introduced QE",
-   "Cut rates to zero",
-   "Printed money"
+   "The one that must refinance next year, when lenders may refuse or charge far more",
+   "Neither",
+   "The 9-year one",
+   "They're equal"
   ],
   "a": 0,
-  "e": "It ended 1970s inflation and set up the long bond bull market.",
+  "e": "When debt is due can matter as much as how much there is.",
   "s": "Reread lesson 3.2."
  },
  {
   "id": "t3q06",
   "l": 1,
-  "t": "l3",
-  "k": "scenario",
-  "c": "Bond prices",
-  "p": "Interest rates fall. What happens to the price of an existing long-term bond?",
+  "t": "l2",
+  "k": "concept",
+  "c": "Goodwill",
+  "p": "What is goodwill on a balance sheet?",
   "o": [
-   "It rises",
-   "Unchanged",
-   "It's repaid early",
-   "It falls"
+   "The premium paid over the value of identifiable assets when acquiring another company",
+   "Cash reserves",
+   "Charitable donations",
+   "Customer satisfaction"
   ],
   "a": 0,
-  "e": "Prices move opposite to yields; long bonds move most.",
-  "s": "Try the bond widget again."
+  "e": "Large goodwill write-downs signal acquisitions that went badly.",
+  "s": "Reread lesson 3.2."
  },
  {
   "id": "t3q07",
   "l": 1,
   "t": "l3",
   "k": "concept",
-  "c": "Risk-free rate",
-  "p": "Why is the 10-year US Treasury yield so important?",
+  "c": "Profit vs cash",
+  "p": "Why is the cash flow statement harder to manipulate than the income statement?",
   "o": [
-   "It's the benchmark 'risk-free' rate used to value shares, mortgages and most other assets",
-   "It's the highest yield",
-   "It's fixed by law",
-   "It sets oil prices"
+   "It records actual cash moving, while profit depends on accounting judgements about timing and estimates",
+   "It's audited more",
+   "It's not published",
+   "It's shorter"
   ],
   "a": 0,
-  "e": "Changes ripple through every valuation.",
+  "e": "Cash is a fact; profit is partly an opinion.",
   "s": "Reread lesson 3.3."
  },
  {
   "id": "t3q08",
   "l": 1,
   "t": "l3",
-  "k": "concept",
-  "c": "Credit spreads",
-  "p": "Corporate bond yields rise sharply relative to government yields. What does that suggest?",
+  "k": "scenario",
+  "c": "Dividend funding",
+  "p": "A company's dividends exceed its free cash flow every year, and its debt keeps rising. What's happening?",
   "o": [
-   "Investors increasingly fear defaults: a sign of financial stress",
-   "Investors are more confident",
-   "Inflation is falling",
-   "Nothing"
+   "It's borrowing to pay dividends, which can't last",
+   "It's very healthy",
+   "It's buying back shares",
+   "Nothing unusual"
   ],
   "a": 0,
-  "e": "Widening spreads often precede trouble in stocks.",
+  "e": "Sustainable dividends come from free cash flow.",
   "s": "Reread lesson 3.3."
  },
  {
@@ -189,34 +189,34 @@ const Q = [
   "l": 1,
   "t": "l4",
   "k": "concept",
-  "c": "Leading",
-  "p": "Why does the stock market often bottom before the economy does?",
+  "c": "ROIC",
+  "p": "What does return on invested capital measure?",
   "o": [
-   "Central banks buy shares",
-   "Companies lie",
-   "It's a coincidence",
-   "It prices expected future profits, so it turns when investors expect improvement, not when it arrives"
+   "Dividend yield",
+   "Share price growth",
+   "Revenue growth",
+   "How much operating profit a business earns on the capital tied up in it"
   ],
   "a": 3,
-  "e": "The market is a forward-looking machine.",
+  "e": "Sustained high ROIC is the fingerprint of a moat.",
   "s": "Reread lesson 3.4."
  },
  {
   "id": "t3q10",
   "l": 1,
   "t": "l4",
-  "k": "concept",
-  "c": "Deleveraging",
-  "p": "What makes a debt-driven crash especially severe?",
+  "k": "scenario",
+  "c": "Quality vs price",
+  "p": "A company has a wide moat and 30% ROIC, and trades at 60 times earnings. What's the key question?",
   "o": [
-   "High dividends",
-   "As debts are cut, spending and asset prices fall, which forces more selling and more debt reduction: a self-reinforcing spiral",
-   "Strong currencies",
-   "Low interest rates"
+   "Whether the CEO is famous",
+   "What growth that price assumes, and whether it's realistic; great businesses can still be poor investments at the wrong price",
+   "Its share price",
+   "None: buy it"
   ],
   "a": 1,
-  "e": "Leverage turns falls into spirals (week 4's case studies).",
-  "s": "Watch Ray Dalio's video."
+  "e": "Quality and price are separate questions.",
+  "s": "Reread lesson 3.4."
  }
 ];
 window.AUDIT = Object.assign({
@@ -228,7 +228,7 @@ window.AUDIT = Object.assign({
   "href": "../weeks/week-03.html",
   "label": "Week 3"
  },
- "lede": "What moves markets. 10 questions; take it after the scenario exercise, without notes.",
+ "lede": "Reading a company. 10 questions; take it after the scenario exercise, without notes.",
  "topicOrder": [
   "l1",
   "l2",
