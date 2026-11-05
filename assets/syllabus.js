@@ -2153,6 +2153,77 @@
     render();
   };
 
+  /* From revenue to share price */
+  W.statements = el => {
+    const v = { revenue: 10, margin: 20, shares: 1, pe: 20, growth: 10 };
+    const F = [["revenue", "Revenue ($bn)", 1, 100, 1], ["margin", "Net margin (%)", -10, 50, 1], ["shares", "Shares outstanding (bn)", 0.2, 5, 0.1], ["pe", "P/E the market pays", 5, 60, 1], ["growth", "Revenue growth next year (%)", -30, 60, 5]];
+    const body = widgetShell(el, "From revenue to share price");
+    const money = x => (x < 0 ? "−$" : "$") + Math.abs(x).toFixed(2);
+    const render = focusK => {
+      const ni = v.revenue * v.margin / 100, eps = ni / v.shares, price = eps * v.pe;
+      const ni2 = v.revenue * (1 + v.growth / 100) * v.margin / 100, price2 = ni2 / v.shares * v.pe;
+      body.innerHTML = F.map(f => `<label class="small" style="display:block">${f[1]}: <b>${v[f[0]]}</b><input type="range" min="${f[2]}" max="${f[3]}" step="${f[4]}" value="${v[f[0]]}" data-k="${f[0]}" style="width:100%"></label>`).join("") +
+        `<div class="readout"><div><span>Net income</span><b>${money(ni)}bn</b></div><div><span>Earnings per share</span><b>${money(eps)}</b></div>
+        <div class="em"><span>Share price (EPS × P/E)</span><b>${eps > 0 ? money(price) : "No earnings: P/E meaningless"}</b></div><div><span>Market cap</span><b>${eps > 0 ? money(price * v.shares) + "bn" : "—"}</b></div>
+        <div><span>Price next year, same margin and P/E</span><b>${eps > 0 ? money(price2) + " (" + (v.growth >= 0 ? "+" : "") + v.growth + "%)" : "—"}</b></div></div>
+        <p class="wg-note">Try halving the P/E while growth stays at 10%: the price falls even though the business grew. That's multiple compression, the story of many tech stocks after 2000 and in 2022.</p>`;
+      body.querySelectorAll("input").forEach(r => r.oninput = e => { v[e.target.dataset.k] = +e.target.value; render(e.target.dataset.k); });
+      if (focusK) body.querySelector(`[data-k="${focusK}"]`).focus();
+    };
+    render();
+  };
+
+  /* Asset mix: approximate US history 1926 onwards */
+  W.mix = el => {
+    // [shares %, average annual return %, worst calendar year %], approximate long-run US figures
+    const P = [[0, 5.3, -13.1], [20, 6.7, -10.1], [40, 7.8, -18.4], [60, 8.8, -26.6], [80, 9.6, -34.9], [100, 10.3, -43.1]];
+    let s = 60;
+    const body = widgetShell(el, "Shares versus bonds: return and pain");
+    const interp = (i) => { const lo = P[Math.floor(s / 20)], hi = P[Math.min(5, Math.ceil(s / 20))]; const t = lo === hi ? 0 : (s - lo[0]) / 20; return lo[i] + (hi[i] - lo[i]) * t; };
+    const render = focus => {
+      const ret = interp(1), worst = interp(2), grow = 10000 * (1 + ret / 100) ** 30;
+      body.innerHTML = `<label class="small" style="display:block">Shares <b>${s}%</b> · bonds <b>${100 - s}%</b><input type="range" min="0" max="100" step="10" value="${s}" style="width:100%"></label>
+        <div style="display:flex;height:14px;border-radius:4px;overflow:hidden;margin:8px 0"><span style="width:${s}%;background:currentColor;opacity:.8"></span><span style="width:${100 - s}%;background:currentColor;opacity:.25"></span></div>
+        <div class="readout"><div class="em"><span>Average annual return (approx.)</span><b>${ret.toFixed(1)}%</b></div><div><span>Worst calendar year (approx.)</span><b>${worst.toFixed(1)}%</b></div>
+        <div><span>$100,000 in that worst year</span><b>$${Math.round(100000 * (1 + worst / 100)).toLocaleString()}</b></div><div><span>$10,000 after 30 years at the average</span><b>$${Math.round(grow).toLocaleString()}</b></div></div>
+        <p class="wg-note">Approximate US figures from 1926, before fees, tax and inflation, in the style of published long-run model portfolio studies. The future will differ: the point is the shape of the trade-off, not the exact numbers.</p>`;
+      $("input", body).oninput = e => { s = +e.target.value; render(true); };
+      if (focus) $("input", body).focus();
+    };
+    render();
+  };
+
+  /* Day trading simulator */
+  W.daytrader = el => {
+    const v = { win: 50, payoff: 1.0, cost: 0.1, trades: 4 };
+    const F = [["win", "Win rate (%)", 30, 70, 1], ["payoff", "Average win ÷ average loss", 0.5, 3, 0.1], ["cost", "Costs per trade (fraction of the amount risked)", 0, 0.3, 0.02], ["trades", "Trades per day", 1, 10, 1]];
+    const body = widgetShell(el, "1,000 day traders, one year");
+    let seed = 7;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    const render = focusK => {
+      seed = 7;
+      const n = v.trades * 250, results = [];
+      for (let t = 0; t < 1000; t++) {
+        let r = 0;
+        for (let i = 0; i < n; i++) {
+          r += ((rnd() < v.win / 100 ? v.payoff : -1) - v.cost) * 0.5;   // each trade risks 0.5% of the starting account
+          if (r <= -100) { r = -100; break; }                           // the account is wiped out
+        }
+        results.push(r);
+      }
+      results.sort((a, b) => a - b);
+      const prof = results.filter(x => x > 0).length / 10, wiped = results.filter(x => x <= -100).length / 10, edge = v.win / 100 * v.payoff - (1 - v.win / 100) - v.cost;
+      const pct = x => { const r = Math.round(x) || 0; return (r > 0 ? "+" : "") + r + "%"; };
+      body.innerHTML = F.map(f => `<label class="small" style="display:block">${f[1]}: <b>${v[f[0]]}</b><input type="range" min="${f[2]}" max="${f[3]}" step="${f[4]}" value="${v[f[0]]}" data-k="${f[0]}" style="width:100%"></label>`).join("") +
+        `<div class="readout"><div class="em"><span>Traders profitable after a year</span><b>${prof.toFixed(1)}%</b></div><div><span>Expected result per trade</span><b>${edge >= 0 ? "+" : ""}${edge.toFixed(2)} × risk</b></div>
+        <div><span>Median trader's year</span><b>${pct(results[500])}</b></div><div><span>Accounts wiped out</span><b>${wiped.toFixed(1)}%</b></div><div><span>Unluckiest 5% / luckiest 5%</span><b>${pct(results[50])} / ${pct(results[950])}</b></div></div>
+        <p class="wg-note">Each trade risks 0.5% of the starting account (not compounded), and an account that reaches −100% stops, ${n.toLocaleString()} trades a year. With a 50% win rate and equal wins and losses, costs alone make everyone lose. Raise the win rate until the expected result is near zero: luck alone then splits traders into winners and losers, and the winners are the ones you hear about.</p>`;
+      body.querySelectorAll("input").forEach(r => r.oninput = e => { v[e.target.dataset.k] = +e.target.value; render(e.target.dataset.k); });
+      if (focusK) body.querySelector(`[data-k="${focusK}"]`).focus();
+    };
+    render();
+  };
+
   function setupWidgets() {
     $$("[data-widget]").forEach(el => {
       const fn = W[el.dataset.widget];
