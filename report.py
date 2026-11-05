@@ -21,6 +21,7 @@ PROJECT_STATUS = {
     "done": "Done",
 }
 WEEK_QUIZ = re.compile(r"^week-(\d+)-quiz$")
+THINKING_QUIZ = re.compile(r"^thinking-(\d+)-quiz$")
 
 
 def load_results():
@@ -70,12 +71,12 @@ def review_lines(summary, limit=None):
     return [f"- [{i['status']}] {i.get('topic', '')}: {i.get('concept', '')}" for i in items]
 
 
-def syllabus_section(syl, quizzes):
+def syllabus_section(syl, quizzes, title="Syllabus"):
     summary = syl.get("summary") or {}
     weeks = summary.get("weeks") or []
-    out = ["## Syllabus", ""]
+    out = [f"## {title}", ""]
     if not weeks:
-        return out + ["No syllabus progress yet.", ""]
+        return out + [f"No {title.lower()} progress yet.", ""]
 
     out += [
         "| Week | Lessons | Checkpoints | Project | Quiz (first attempt) | Avg self-rating |",
@@ -165,15 +166,17 @@ def audit_section(data):
 def build_report():
     files = load_results()
     syl = files.pop("syllabus", None)
-    quizzes = {}
+    thinking = files.pop("thinking", None)
+    quizzes, tquizzes = {}, {}
     for key in list(files):
         m = WEEK_QUIZ.match(key)
+        t = THINKING_QUIZ.match(key)
         if m:
             quizzes[int(m.group(1))] = files.pop(key)
+        elif t:
+            tquizzes[int(t.group(1))] = files.pop(key)
 
-    stamps = [d.get("updatedAt") or 0 for d in files.values()] + [d.get("updatedAt") or 0 for d in quizzes.values()]
-    if syl:
-        stamps.append(syl.get("updatedAt") or 0)
+    stamps = [d.get("updatedAt") or 0 for d in [*files.values(), *quizzes.values(), *tquizzes.values(), syl or {}, thinking or {}]]
 
     out = [
         "# Progress report",
@@ -184,6 +187,8 @@ def build_report():
         "",
     ]
     out += syllabus_section(syl or {}, quizzes)
+    if thinking or tquizzes:
+        out += syllabus_section(thinking or {}, tquizzes, "Thinking Skills course")
     out += ["## Audits", ""]
     if files:
         for data in files.values():

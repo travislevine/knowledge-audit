@@ -20,12 +20,13 @@
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 
   /* ---------- State ---------- */
-  const LS_KEY = "knowledge-audit:syllabus";
-  const API = "/api/results/syllabus";
+  const SID = P.id || "syllabus";
+  const LS_KEY = "knowledge-audit:" + SID;
+  const API = "/api/results/" + SID;
   const PROJECT_STATUS = [
     ["not-started", "Not started"],
     ["in-progress", "In progress"],
-    ["tests-passing", "Tests passing"],
+    ["tests-passing", P.passingLabel || "Tests passing"],
     ["done", "Done"]
   ];
   const fresh = () => ({ lessons: {}, checks: {}, projects: {}, ratings: {}, notes: {}, activity: {}, updatedAt: 0 });
@@ -126,7 +127,7 @@
 
   async function connect() {
     try {
-      const { server, data } = await fetchResult("syllabus");
+      const { server, data } = await fetchResult(SID);
       if (!server) { setSync("local"); return; }
       store.server = true;
       const remote = normalize(data);
@@ -145,7 +146,7 @@
 
   const SYNC = {
     connecting: ["", "Checking for the save server…"],
-    server: ["ok", "Auto-saving to results/syllabus.json"],
+    server: ["ok", `Auto-saving to results/${SID}.json`],
     local: ["", "Saved in this browser. Run serve.py to save to the repo."],
     error: ["err", "Couldn't reach the save server. Progress is kept in this browser."]
   };
@@ -293,7 +294,7 @@
           ${PROJECT_STATUS.map(([v, label]) => `<button type="button" role="radio" aria-checked="${v === cur}" class="${v === cur ? "on" : ""}" data-v="${v}">${label}</button>`).join("")}
         </div>
         <label class="field-label" for="project-notes">Project notes: what you built, what was hard, anything a reviewer should look at</label>
-        <textarea id="project-notes" rows="4" placeholder="e.g. All tests pass except utf8_decode on invalid input. Not sure my float32_value handles subnormals.">${esc(p.notes || "")}</textarea>`;
+        <textarea id="project-notes" rows="4" placeholder="${esc(P.notesPlaceholder || "e.g. All tests pass except utf8_decode on invalid input. Not sure my float32_value handles subnormals.")}">${esc(p.notes || "")}</textarea>`;
       $$(".seg button", box).forEach(b => b.addEventListener("click", () => {
         state.projects[WEEK.n] = Object.assign({}, state.projects[WEEK.n], { status: b.dataset.v, updatedAt: Date.now() });
         persist(WEEK.n);
@@ -399,13 +400,13 @@
         <nav class="crumbs"><a href="../index.html">← Knowledge Audit</a></nav>
         <span class="eyebrow">${P.weeks.length} weeks · about ${P.hoursPerWeek} hours a week</span>
         <h1>${esc(P.title)}</h1>
-        <p class="lede">The core of a computer science degree, condensed: the 20% of ideas that carry 80% of the weight, from how bits become numbers up to distributed systems and how software companies run. Each week has written lessons with interactive checkpoints, short videos, a hands-on Python project, an end-of-week quiz and a self-rating.</p>
+        ${P.lede ? `<p class="lede">${P.lede}</p>` : `<p class="lede">The core of a computer science degree, condensed: the 20% of ideas that carry 80% of the weight, from how bits become numbers up to distributed systems and how software companies run. Each week has written lessons with interactive checkpoints, short videos, a hands-on Python project, an end-of-week quiz and a self-rating.</p>`}
       </header>
-      <div class="how">
+      ${P.how ? `<div class="how">${P.how.map(h => `<div><strong>${h[0]}</strong><p>${h[1]}</p></div>`).join("")}</div>` : `<div class="how">
         <div><strong>Lessons (4–5 h)</strong><p>Read each lesson, try the widgets, answer the checkpoints and watch the linked video. Mark each lesson complete as you go.</p></div>
         <div><strong>Project (4–5 h)</strong><p>Each week has a Python project in <code>syllabus/projects/</code> with starter code and tests. Make the tests pass, then record your status and notes.</p></div>
         <div><strong>Quiz and reflection (45 min)</strong><p>Finish with the 15-question quiz (70% to pass), then rate yourself on each objective and write a short reflection.</p></div>
-      </div>
+      </div>`}
       <section class="weeks">${cards}</section>
       <section class="panel">
         <h3>Sharing your progress</h3>
