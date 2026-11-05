@@ -78,12 +78,81 @@ window.SYLLABUS = {
       quiz: "week-03-quiz",
       quizQuestions: 15
     },
-    { n: 4, slug: "week-04", status: "planned", title: "Operating systems and concurrency",
-      summary: "Processes and threads, scheduling, virtual memory, file systems and permissions, system calls, race conditions, locks and deadlocks." },
-    { n: 5, slug: "week-05", status: "planned", title: "Networking",
-      summary: "The layer model, IP addressing and subnets, TCP vs UDP, ports, DNS, NAT, and debugging connections with real tools." },
-    { n: 6, slug: "week-06", status: "planned", title: "The web, cryptography and security",
-      summary: "HTTP, browsers, cookies and CORS; hashing, symmetric and public-key crypto, TLS; the OWASP Top 10 and authentication." },
+    {
+      n: 4, slug: "week-04", status: "ready",
+      title: "Operating systems and concurrency",
+      summary: "What the kernel does, processes and scheduling, virtual memory, files and the shell, threads and race conditions, locks, and deadlock.",
+      objectives: [
+        { id: "w4-o1", text: "Explain what the kernel does, system calls, and how processes are created and managed" },
+        { id: "w4-o2", text: "Explain how a scheduler shares the CPU, and the trade-offs between scheduling policies" },
+        { id: "w4-o3", text: "Explain virtual memory, paging, page faults and the stack and heap" },
+        { id: "w4-o4", text: "Use file descriptors, pipes, redirection, permissions and exit codes" },
+        { id: "w4-o5", text: "Recognize race conditions and fix them with locks" },
+        { id: "w4-o6", text: "Coordinate threads with condition variables and avoid deadlock" }
+      ],
+      lessons: [
+        { id: "w4-l1", title: "What an operating system does", minutes: 45 },
+        { id: "w4-l2", title: "Scheduling: sharing the CPU", minutes: 40 },
+        { id: "w4-l3", title: "Memory: virtual memory and paging", minutes: 50 },
+        { id: "w4-l4", title: "Files, the shell and permissions", minutes: 40 },
+        { id: "w4-l5", title: "Threads and race conditions", minutes: 50 },
+        { id: "w4-l6", title: "Coordination and deadlock", minutes: 50 }
+      ],
+      checkpoints: 14,
+      project: { title: "Job runner: threads, locks and processes", path: "syllabus/projects/week-04-jobrunner" },
+      quiz: "week-04-quiz",
+      quizQuestions: 15
+    },
+    {
+      n: 5, slug: "week-05", status: "ready",
+      title: "Networking",
+      summary: "The layer model, IP addresses and subnets, TCP and UDP, DNS, NAT and the path a packet takes, sockets and network debugging.",
+      objectives: [
+        { id: "w5-o1", text: "Explain the layer model and what encapsulation adds at each layer" },
+        { id: "w5-o2", text: "Work with IPv4 addresses, CIDR, subnet masks and routing tables" },
+        { id: "w5-o3", text: "Explain how TCP gives reliable ordered delivery, and when UDP is the better choice" },
+        { id: "w5-o4", text: "Explain how DNS resolves a name, and read DNS records and TTLs" },
+        { id: "w5-o5", text: "Explain NAT, DHCP, ARP and firewalls, and trace the path of a packet" },
+        { id: "w5-o6", text: "Write socket code that frames messages correctly, and debug connections with standard tools" }
+      ],
+      lessons: [
+        { id: "w5-l1", title: "Layers and packets", minutes: 40 },
+        { id: "w5-l2", title: "IP addresses, subnets and routing", minutes: 50 },
+        { id: "w5-l3", title: "TCP and UDP", minutes: 50 },
+        { id: "w5-l4", title: "DNS", minutes: 40 },
+        { id: "w5-l5", title: "Getting onto the internet: DHCP, ARP, NAT and firewalls", minutes: 40 },
+        { id: "w5-l6", title: "Sockets and debugging", minutes: 45 }
+      ],
+      checkpoints: 14,
+      project: { title: "Network toolkit: subnets, a chat server and DNS", path: "syllabus/projects/week-05-nettools" },
+      quiz: "week-05-quiz",
+      quizQuestions: 15
+    },
+    {
+      n: 6, slug: "week-06", status: "ready",
+      title: "The web, cryptography and security",
+      summary: "HTTP and browsers, cookies and the same-origin policy, hashing and encryption, public keys and TLS, common web vulnerabilities, and authentication.",
+      objectives: [
+        { id: "w6-o1", text: "Read and write raw HTTP requests and responses, including caching and cookies" },
+        { id: "w6-o2", text: "Explain the same-origin policy, CORS, and cookie security attributes" },
+        { id: "w6-o3", text: "Choose correctly between hashing, MACs, encryption and encoding, and store passwords safely" },
+        { id: "w6-o4", text: "Explain public-key cryptography, key exchange, certificates and the TLS handshake" },
+        { id: "w6-o5", text: "Find and fix SQL injection, XSS, CSRF, path traversal and broken access control" },
+        { id: "w6-o6", text: "Design authentication and sessions securely, and reason about threats" }
+      ],
+      lessons: [
+        { id: "w6-l1", title: "HTTP in depth", minutes: 45 },
+        { id: "w6-l2", title: "Browsers, origins and cookies", minutes: 40 },
+        { id: "w6-l3", title: "Cryptography building blocks", minutes: 50 },
+        { id: "w6-l4", title: "Public keys, certificates and TLS", minutes: 50 },
+        { id: "w6-l5", title: "Web vulnerabilities", minutes: 55 },
+        { id: "w6-l6", title: "Authentication and secure design", minutes: 40 }
+      ],
+      checkpoints: 14,
+      project: { title: "Break it, then fix it: a vulnerable web app", path: "syllabus/projects/week-06-secure-app" },
+      quiz: "week-06-quiz",
+      quizQuestions: 15
+    },
     { n: 7, slug: "week-07", status: "planned", title: "Databases and SQL",
       summary: "Relational modelling, SQL from joins to aggregates, indexes and query plans, transactions and isolation, NoSQL trade-offs." },
     { n: 8, slug: "week-08", status: "planned", title: "Software engineering practice",
