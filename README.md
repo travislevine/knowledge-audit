@@ -15,14 +15,17 @@ and builds a gap report with a study plan and links to resources.
 A 10-week plan covering the core of a computer science degree, about 10 hours
 a week. Each week has written lessons with interactive widgets and
 checkpoint questions, short videos, a Python mini-project with tests, a
-15-question quiz and a self-rating. Weeks 1–3 are written so far:
+15-question quiz and a self-rating. Weeks 1–6 are written so far:
 
 1. How computers represent and run things
 2. Programming fundamentals and data structures
 3. Algorithms
+4. Operating systems and concurrency
+5. Networking
+6. The web, cryptography and security
 
 Open `syllabus/index.html` (or the link on the landing page). Projects live
-in `syllabus/projects/` and run with `python3 -m unittest -v`.
+in `syllabus/projects/` and run with `python -m unittest -v`.
 
 Progress is summarized in `results/REPORT.md`, rebuilt after every save. See
 `syllabus/REVIEW.md` for how someone else can review it.
@@ -38,7 +41,7 @@ Progress is summarized in `results/REPORT.md`, rebuilt after every save. See
 ## Running it
 
 ```bash
-python3 serve.py
+python serve.py
 ```
 
 This opens `http://localhost:8000` and saves every answer to
@@ -51,7 +54,8 @@ git add results/
 git commit -m "Update audit results"
 ```
 
-No dependencies, just Python 3.8+. Use `--port` to change the port and
+No dependencies, just Python 3.8+. Commands here use `python`, which is
+what Windows installs; on macOS and Linux, use `python3` instead. Use `--port` to change the port and
 `--no-browser` to skip opening a tab.
 
 You can also open `index.html` directly without the server. Progress is then

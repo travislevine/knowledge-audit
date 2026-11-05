@@ -16,7 +16,7 @@ and what kind of feedback is most useful.
 3. **Git history**: `git log --stat -- syllabus/projects results` shows when
    work was done and how it evolved.
 
-If `REPORT.md` looks out of date, run `python3 report.py` to rebuild it from
+If `REPORT.md` looks out of date, run `python report.py` to rebuild it from
 the JSON files in `results/`.
 
 ## What the data means
@@ -34,10 +34,17 @@ the JSON files in `results/`.
 ## How to run my work
 
 ```bash
-cd syllabus/projects/week-01-bitkit && python3 -m unittest -v
-cd syllabus/projects/week-02-structures && python3 -m unittest -v
-cd syllabus/projects/week-03-routes && python3 -m unittest -v && python3 demo.py
+cd syllabus/projects/week-01-bitkit && python -m unittest -v
+cd syllabus/projects/week-02-structures && python -m unittest -v
+cd syllabus/projects/week-03-routes && python -m unittest -v && python demo.py
+cd syllabus/projects/week-04-jobrunner && python -m unittest -v && python benchmark.py
+cd syllabus/projects/week-05-nettools && python -m unittest -v
+cd syllabus/projects/week-06-secure-app && python -m unittest -v
 ```
+
+Week 6 is a break-then-fix project: `exploits.py` holds my attacks (checked
+against the untouched `vulnerable/app.py`), `app.py` holds my fixes, and
+`FINDINGS.md` is my write-up of each vulnerability.
 
 Tests passing is the minimum. Code quality, clarity and the written answers
 are where feedback helps most.
@@ -71,4 +78,4 @@ example `w2-c7`) so I can find what you mean.
 - `syllabus/quizzes/data/week-NN.js`: quiz questions, explanations and study
   pointers.
 - `syllabus/projects/`: weekly projects with tests.
-- Weeks 1–3 are written. Weeks 4–10 are outlined in `plan.js`.
+- Weeks 1–6 are written. Weeks 7–10 are outlined in `plan.js`.
