@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 4: Operating systems and concurrency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 4 of 10 · about 10 hours</span>
+    <h1>Operating systems and concurrency</h1>
+    <p class="lede">Every program you write runs on top of an operating system that quietly shares one machine between hundreds of processes, gives each of them the illusion of its own memory, and mediates every file, socket and keystroke. This week opens that layer up, then tackles the hardest part of it to get right in your own code: several things happening at once.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Explain what the kernel does, system calls, and how processes are created and managed</li>
+      <li>Explain how a scheduler shares the CPU, and the trade-offs between scheduling policies</li>
+      <li>Explain virtual memory, paging, page faults and the stack and heap</li>
+      <li>Use file descriptors, pipes, redirection, permissions and exit codes</li>
+      <li>Recognize race conditions and fix them with locks</li>
+      <li>Coordinate threads with condition variables and avoid deadlock</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 4.1 and 4.2 (the kernel and processes, scheduling)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 4.3 and 4.4 (memory, files and the shell)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 4.5 and 4.6 (threads, races, locks, deadlock)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: job runner</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+    <div class="note-box"><strong>On Windows?</strong><p>Everything in the project runs on Windows. A few ideas in the lessons (fork, signals, Unix permissions) are Unix-specific; each one notes the Windows equivalent. If you later install WSL (Windows Subsystem for Linux), the optional stretch goals let you try them for real.</p></div>
+  </section>
+
+  <!-- ===================== Lesson 4.1 ===================== -->
+  <section class="lesson" id="w4-l1">
+    <header><span class="eyebrow">Lesson 4.1 · 45 min</span><h2>What an operating system does</h2></header>
+
+    <p>An operating system has two jobs. It <b>shares the hardware</b> safely between many programs that don't trust each other, and it <b>hides the hardware</b> behind simpler abstractions: files instead of disk sectors, sockets instead of network cards, processes instead of raw CPU time.</p>
+
+    <h3>Kernel mode and user mode</h3>
+    <p>The core of the OS is the <b>kernel</b>. The CPU itself enforces two privilege levels. Code in <b>kernel mode</b> can do anything: touch any memory, talk to devices, change page tables. Your programs run in <b>user mode</b>, where those instructions are forbidden. If a user program tries to access hardware directly or touch memory it doesn't own, the CPU traps into the kernel, which usually kills the program. That's what a "segmentation fault" or "access violation" is.</p>
+
+    <h3>System calls</h3>
+    <p>So how does your program read a file? It asks the kernel, with a <b>system call</b>: a special instruction that switches the CPU into kernel mode at a fixed entry point. The kernel checks the request (does this process have permission?), does the work, and switches back.</p>
+    <pre class="code"><code>with open("notes.txt") as f:    <span class="c"># open()  → system call: openat</span>
+    data = f.read()             <span class="c"># read()  → system call: read  (maybe several)</span>
+print(data)                     <span class="c"># write() → system call: write to stdout</span>
+                                <span class="c"># close() → system call: close</span></code></pre>
+    <p>Python's <code>open</code> and <code>print</code> are wrappers around these. On Linux, <code>strace python script.py</code> shows every system call a program makes, and it's a great debugging tool. System calls are much slower than ordinary function calls, which is why I/O libraries <b>buffer</b>: they collect many small writes and make one big system call.</p>
+
+    <h3>Processes</h3>
+    <p>A <b>process</b> is a running program plus everything the kernel tracks for it:</p>
+    <ul>
+      <li>a <b>process ID</b> (PID) and a parent process</li>
+      <li>its own <b>virtual address space</b> (lesson 4.3), so it can't see other processes' memory</li>
+      <li>open files and sockets, the current directory, environment variables</li>
+      <li>one or more <b>threads</b>, each with its own registers, program counter and stack</li>
+      <li>a user identity, which decides what it's allowed to access</li>
+    </ul>
+    <p>A process moves between a few <b>states</b>: <i>running</i> on a CPU, <i>ready</i> (could run, waiting for a CPU), or <i>blocked</i> (waiting for something such as disk, network or a keypress). Most processes on your computer right now are blocked; open Task Manager or <code>top</code> and you'll see hundreds of processes using almost no CPU.</p>
+
+    <h3>Creating processes</h3>
+    <p>On Unix, new processes are made in two steps. <code>fork()</code> creates an almost exact copy of the calling process. Then the child usually calls <code>exec()</code> to replace itself with a different program. A shell running <code>ls</code> forks itself, and the child execs <code>ls</code>. Splitting the steps lets the child set things up in between, such as redirecting output to a file. Windows uses a single <code>CreateProcess</code> call instead. In Python, the portable way is the <code>subprocess</code> module:</p>
+    <pre class="code"><code>import subprocess, sys
+result = subprocess.run([sys.executable, "--version"], capture_output=True, text=True, timeout=10)
+print(result.returncode, result.stdout)</code></pre>
+    <p>When a process ends it returns an <b>exit code</b>: 0 means success, anything else means failure. Shells, CI pipelines and scripts all branch on it.</p>
+
+    <h3>Signals</h3>
+    <p>Unix processes can be sent <b>signals</b>: small asynchronous notifications. Ctrl+C sends <code>SIGINT</code> (Python turns it into <code>KeyboardInterrupt</code>), <code>kill PID</code> sends <code>SIGTERM</code> (a polite request to shut down), and <code>kill -9</code> sends <code>SIGKILL</code>, which can't be caught. Well-behaved servers handle SIGTERM by finishing current work and exiting cleanly, which matters a lot in containers (week 8). Windows has Ctrl+C events and <code>TerminateProcess</code> instead.</p>
+
+    <div class="check" data-id="w4-c1" data-answer="2">
+      <p class="check-q">Why can't an ordinary program read another program's memory or talk directly to the disk?</p>
+      <ol class="check-o"><li>Programming languages don't have instructions for it</li><li>It would be too slow</li><li>The CPU runs user programs in a restricted mode; only the kernel can do those things, and it checks permissions first</li><li>Other programs encrypt their memory</li></ol>
+      <div class="check-why">Hardware-enforced privilege levels plus separate address spaces are what make it safe to run untrusted programs side by side. Programs ask the kernel via system calls.</div>
+    </div>
+    <div class="check" data-id="w4-c2" data-answer="0">
+      <p class="check-q">A script writes a million lines, one <code>write()</code> system call per line, and is very slow. Python's default buffered file object is much faster. Why?</p>
+      <ol class="check-o"><li>Buffering collects many small writes in memory and makes far fewer system calls, each of which costs a switch into the kernel</li><li>Buffering compresses the data</li><li>Buffered writes skip the disk entirely</li><li>System calls are only slow on Windows</li></ol>
+      <div class="check-why">Crossing into the kernel has a fixed cost per call. Batching is the fix, which is also why <code>print</code> output can appear "late" until a buffer is flushed.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=26QPDBe-NB8" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/26QPDBe-NB8/mqdefault.jpg" alt="" loading="lazy"><span><b>Operating Systems</b><small>Crash Course Computer Science #18</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 4.2 ===================== -->
+  <section class="lesson" id="w4-l2">
+    <header><span class="eyebrow">Lesson 4.2 · 40 min</span><h2>Scheduling: sharing the CPU</h2></header>
+
+    <p>A laptop might have 8 CPU cores and 400 processes. The <b>scheduler</b> decides which ready thread runs on each core, and for how long. It switches so quickly (every few milliseconds) that everything appears to run at once. That's <b>concurrency</b>: making progress on many tasks by interleaving them. <b>Parallelism</b> is tasks literally running at the same instant on different cores.</p>
+
+    <h3>Context switches</h3>
+    <p>To switch from one thread to another, the kernel saves the running thread's registers and program counter, picks the next thread, and restores its saved state. Switching between processes also means switching address spaces, which makes cached memory translations useless. A <b>context switch</b> takes microseconds, which is small but not free: too many of them and the CPU spends its time switching instead of working.</p>
+    <p>Switches happen in two ways. A thread gives up the CPU voluntarily when it <b>blocks</b>, for example waiting on disk or network. Or a timer interrupt fires and the kernel <b>preempts</b> it, taking the CPU away so others get a turn. Preemption is why one buggy program stuck in an infinite loop doesn't freeze your whole computer.</p>
+
+    <h3>Scheduling policies</h3>
+    <p>Different goals pull in different directions: high <b>throughput</b> (finish as much work as possible), low <b>response time</b> (interactive programs react quickly), and <b>fairness</b> (nobody starves). Compare three classic policies on the same jobs:</p>
+
+    <div data-widget="scheduler"></div>
+
+    <ul>
+      <li><b>First come, first served</b> is simple, but a long job at the front makes everyone wait: the <b>convoy effect</b>.</li>
+      <li><b>Shortest job first</b> provably minimizes average waiting time, but requires knowing how long jobs take, and long jobs can wait forever if short ones keep arriving (<b>starvation</b>).</li>
+      <li><b>Round robin</b> gives each job a fixed <b>time slice</b> in turn. Response time is good for everyone. A short slice means snappier response but more switching overhead; a very long slice turns it back into first come, first served.</li>
+    </ul>
+    <p>Real schedulers combine these ideas. Linux's scheduler (CFS, now EEVDF) tracks how much CPU each thread has had and runs the one that's had least, weighted by priority. Most schedulers also favor threads that block often, because those are usually interactive and only need a moment of CPU.</p>
+
+    <h3>CPU-bound and I/O-bound work</h3>
+    <p>A <b>CPU-bound</b> task (compressing a video, training a model) is limited by computation; more cores help it. An <b>I/O-bound</b> task (a web server, a crawler) spends most of its time waiting for disk or network; it benefits from doing other things while waiting, even on one core. Telling these apart is the key to choosing between threads, processes and async code in lesson 4.6, and you'll measure it in this week's project.</p>
+
+    <div class="check" data-id="w4-c3" data-answer="1">
+      <p class="check-q">In the scheduler widget, round robin often has a worse average waiting time than shortest job first. Why do interactive systems still prefer round-robin-style scheduling?</p>
+      <ol class="check-o"><li>Round robin has fewer context switches</li><li>Every job gets the CPU soon after it arrives (good response time), and no job can be starved, without needing to know job lengths in advance</li><li>Shortest job first only works on servers</li><li>Round robin always finishes all jobs sooner</li></ol>
+      <div class="check-why">A text editor waiting behind a long compile feels broken, even if average waiting time looks good on paper. Response time and fairness often matter more than the average.</div>
+    </div>
+    <div class="check" data-id="w4-c4" data-answer="3">
+      <p class="check-q">Why does a program stuck in an infinite loop not freeze a modern computer?</p>
+      <ol class="check-o"><li>The compiler detects infinite loops</li><li>The program eventually runs out of memory</li><li>Programs voluntarily give up the CPU every loop</li><li>A timer interrupt lets the kernel preempt it and run other threads; the looping program only gets its share of CPU time</li></ol>
+      <div class="check-why">Preemptive multitasking. (Very old systems used cooperative multitasking, where one misbehaving program really could hang everything.)</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=DKmBRl8j3Ak" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/DKmBRl8j3Ak/mqdefault.jpg" alt="" loading="lazy"><span><b>OS Context Switching</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 4.3 ===================== -->
+  <section class="lesson" id="w4-l3">
+    <header><span class="eyebrow">Lesson 4.3 · 50 min</span><h2>Memory: virtual memory and paging</h2></header>
+
+    <p>Every process sees a large, private, contiguous range of memory addresses, starting at the same places, as if it had the machine to itself. None of that is real. These are <b>virtual addresses</b>, and the CPU translates every single one into a <b>physical address</b> in RAM as the program runs.</p>
+
+    <h3>Pages and page tables</h3>
+    <p>Memory is managed in fixed-size chunks called <b>pages</b>, usually 4 KB. The kernel keeps a <b>page table</b> for each process that maps its virtual pages to physical frames in RAM. A hardware unit in the CPU (the MMU) does the lookup on every memory access, with a small cache of recent translations called the <b>TLB</b> to keep it fast.</p>
+    <pre class="code"><code>Virtual address 0x7f3a_2b41 = page 0x7f3a2, offset 0xb41
+Page table: page 0x7f3a2 → physical frame 0x1c09f
+Physical address           = frame 0x1c09f, offset 0xb41</code></pre>
+    <p>This one mechanism gives you a lot:</p>
+    <ul>
+      <li><b>Isolation</b>: a process can only reach frames its page table maps, so it can't read or corrupt anyone else's memory.</li>
+      <li><b>Permissions per page</b>: code pages are read-only and executable; data pages are writable but not executable. Writing to a read-only page or reading an unmapped address triggers a fault, and the program gets a segfault or access violation.</li>
+      <li><b>Sharing</b>: ten processes running Python can map the same physical copy of the interpreter's code.</li>
+      <li><b>Laziness</b>: memory you allocate isn't given real frames until you first touch it.</li>
+      <li><b>Copy-on-write</b>: after <code>fork()</code>, parent and child share all pages read-only, and a page is only copied when one of them writes to it. That makes fork cheap.</li>
+    </ul>
+
+    <h3>Page faults and swapping</h3>
+    <p>When a program touches a page that isn't in RAM, the CPU raises a <b>page fault</b> and the kernel steps in. If the page is just untouched new memory, it hands over a zeroed frame. If the page was moved out to disk (<b>swapped</b> or <b>paged out</b>), it reads it back, which is thousands of times slower than a RAM access. When RAM is full, the kernel must choose which page to evict. Evicting a page that's needed again soon costs another fault, so the choice matters:</p>
+
+    <div data-widget="pages"></div>
+
+    <p>If the combined working sets of running programs don't fit in RAM, the system spends most of its time moving pages back and forth: <b>thrashing</b>. Everything slows to a crawl and the disk is constantly busy. On Linux, the out-of-memory (OOM) killer eventually ends a process to recover.</p>
+
+    <h3>Inside one process: stack and heap</h3>
+    <p>A process's address space has a few regions. The <b>code</b> (text) and constant data are loaded from the program file. The <b>stack</b> holds function call frames (week 2): it grows and shrinks automatically as functions are called and return, it's fast, and it's small (often 1–8 MB per thread). The <b>heap</b> holds data whose lifetime isn't tied to one function call, like Python objects, lists and dicts. In C, you manage the heap yourself with <code>malloc</code> and <code>free</code>, and getting it wrong causes leaks, use-after-free bugs and crashes. Python, Java and JavaScript use <b>garbage collection</b> to free heap objects that nothing refers to any more.</p>
+
+    <div class="check" data-id="w4-c5" data-answer="1">
+      <p class="check-q">Two processes both store a value at virtual address <code>0x1000</code>. What happens?</p>
+      <ol class="check-o"><li>They overwrite each other's value</li><li>Nothing unusual: each process's page table maps 0x1000 to a different physical frame, so they're separate</li><li>The second process crashes</li><li>The kernel merges the values</li></ol>
+      <div class="check-why">Virtual addresses only mean something within one process. That's exactly how isolation works.</div>
+    </div>
+    <div class="check" data-id="w4-c6" data-answer="2">
+      <p class="check-q">In the widget, LRU usually beats FIFO. What property of real programs does LRU exploit?</p>
+      <ol class="check-o"><li>Programs use pages in a random order</li><li>Programs never reuse pages</li><li>Locality: a page used recently is likely to be used again soon, so evicting the least recently used page is usually a good bet</li><li>Older pages are smaller</li></ol>
+      <div class="check-why">The same temporal locality that makes CPU caches work (week 1). The LRU cache you built in week 2 uses the same idea for application data.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=5lFnKYCZT5o" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/5lFnKYCZT5o/mqdefault.jpg" alt="" loading="lazy"><span><b>What's Virtual Memory?</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 4.4 ===================== -->
+  <section class="lesson" id="w4-l4">
+    <header><span class="eyebrow">Lesson 4.4 · 40 min</span><h2>Files, the shell and permissions</h2></header>
+
+    <h3>File descriptors</h3>
+    <p>When a process opens a file, the kernel hands back a small integer called a <b>file descriptor</b> (Windows calls it a handle). Every later read or write uses that number. Unix extends the idea widely, which is the source of the saying "everything is a file": the same read and write calls work on files, pipes, sockets, terminals and devices.</p>
+    <p>Every process starts with three already open:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>fd</th><th>Name</th><th>Normally connected to</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>stdin</td><td>keyboard input</td></tr>
+        <tr><td>1</td><td>stdout</td><td>the terminal (normal output)</td></tr>
+        <tr><td>2</td><td>stderr</td><td>the terminal (errors and diagnostics)</td></tr>
+      </tbody>
+    </table></div>
+    <p>Keeping errors on a separate stream means you can send output to a file or another program while errors still show on screen.</p>
+
+    <h3>Redirection and pipes</h3>
+    <p>The shell can rewire those descriptors before starting a program:</p>
+    <pre class="code"><code>python report.py &gt; out.txt          <span class="c"># stdout to a file (overwrite)</span>
+python report.py &gt;&gt; out.txt         <span class="c"># append instead</span>
+python report.py 2&gt; errors.txt      <span class="c"># stderr to a file</span>
+python report.py &gt; all.txt 2&gt;&amp;1     <span class="c"># both to the same file</span>
+python report.py &lt; input.txt        <span class="c"># stdin from a file</span>
+cat access.log | grep 404 | wc -l   <span class="c"># pipe: each program's stdout feeds the next one's stdin</span></code></pre>
+    <p>A <b>pipe</b> is a kernel buffer with a write end and a read end. The programs in a pipeline run <i>at the same time</i>: <code>grep</code> starts filtering as soon as <code>cat</code> produces its first lines. If the buffer fills up, the writer blocks until the reader catches up. That's backpressure, which you'll build yourself with a bounded queue in the project. These commands work in Git Bash, WSL and macOS; PowerShell supports most of the same redirections.</p>
+
+    <h3>Exit codes in the shell</h3>
+    <pre class="code"><code>python -m unittest &amp;&amp; git push     <span class="c"># push only if tests pass (exit code 0)</span>
+python build.py || echo "build failed"
+echo $?                             <span class="c"># exit code of the last command (bash)</span></code></pre>
+
+    <h3>Permissions</h3>
+    <p>Each Unix file has an owner, a group, and three sets of permission bits: read, write and execute, for the <b>owner</b>, the <b>group</b> and <b>everyone else</b>.</p>
+    <pre class="code"><code>$ ls -l deploy.sh
+-rwxr-x---  1 travis  devs  2048 Nov  3 10:12 deploy.sh
+ └┬┘└┬┘└┬┘
+ owner group others     owner: read+write+execute, group: read+execute, others: nothing
+
+$ chmod 640 secrets.env   <span class="c"># 6 = rw- (4+2), 4 = r--, 0 = ---</span></code></pre>
+    <p>On directories, "execute" means "may enter and access files inside". Processes run as a user, and the kernel checks these bits on every open. The <b>principle of least privilege</b> applies directly: run services as a dedicated user that can only touch what it needs, never as root (or Administrator) unless you have to. Windows uses <b>access control lists</b> (ACLs), which are more flexible (per-user and per-group entries), but the idea is the same.</p>
+
+    <h3>Durability</h3>
+    <p>When <code>write()</code> returns, your data is usually only in the kernel's memory (the page cache); it reaches the disk a little later. A crash in between can lose it. Databases call <code>fsync()</code> to force data onto the disk before saying a transaction is committed. It's also why the save server in this repo writes to a temporary file and renames it: a rename replaces the file atomically, so you never end up with half a file.</p>
+
+    <div class="check" data-id="w4-c7" data-answer="3">
+      <p class="check-q">You run <code>python job.py &gt; log.txt</code>, but an error message still appears in your terminal instead of the file. Why?</p>
+      <ol class="check-o"><li>The file was locked</li><li>Python ignores redirection</li><li>The error was too long for the file</li><li>Errors go to stderr (file descriptor 2), and only stdout (1) was redirected; use <code>2&gt;&amp;1</code> or <code>2&gt; errors.txt</code></li></ol>
+      <div class="check-why">Separate streams are deliberate: you can capture output while still seeing errors.</div>
+    </div>
+    <div class="check" data-id="w4-c8" data-answer="0">
+      <p class="check-q">What does <code>chmod 750 tool</code> give the group?</p>
+      <ol class="check-o"><li>Read and execute</li><li>Read, write and execute</li><li>Read only</li><li>Nothing</li></ol>
+      <div class="check-why">The digits are owner, group, others. 5 = 4 (read) + 1 (execute). So the owner has rwx (7), the group r-x (5), and others nothing (0).</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=KN8YgJnShPM" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/KN8YgJnShPM/mqdefault.jpg" alt="" loading="lazy"><span><b>Files &amp; File Systems</b><small>Crash Course Computer Science #20</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 4.5 ===================== -->
+  <section class="lesson" id="w4-l5">
+    <header><span class="eyebrow">Lesson 4.5 · 50 min</span><h2>Threads and race conditions</h2></header>
+
+    <h3>Threads vs processes</h3>
+    <p>A <b>thread</b> is an independent sequence of execution inside a process. Threads in the same process <b>share memory</b>: the same heap, globals and open files. Each has its own stack and registers. Processes, by contrast, share nothing by default.</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th></th><th>Threads</th><th>Processes</th></tr></thead>
+      <tbody>
+        <tr><td>Memory</td><td>Shared, so communication is just reading and writing variables</td><td>Separate; communicate via pipes, sockets, files or shared memory</td></tr>
+        <tr><td>Cost to create and switch</td><td>Cheap</td><td>More expensive</td></tr>
+        <tr><td>If one crashes</td><td>The whole process dies</td><td>Others keep running</td></tr>
+        <tr><td>Main risk</td><td>Race conditions on shared data</td><td>Overhead of copying data between them</td></tr>
+      </tbody>
+    </table></div>
+    <p>Browsers like Chrome use a separate process per site partly for that crash and security isolation.</p>
+
+    <h3>Race conditions</h3>
+    <p>Shared memory is convenient and dangerous. Consider <code>counter += 1</code> running in two threads. It looks like one step, but it's really three: <b>read</b> the counter, <b>add</b> one, <b>write</b> it back. If the scheduler switches threads between those steps, both threads can read the same old value, and one increment is lost. Try to make it happen:</p>
+
+    <div data-widget="race"></div>
+
+    <p>That's a <b>race condition</b>: the result depends on the timing of threads. Races are nasty because they're <b>non-deterministic</b>. The code works in testing, on your machine, 999 times out of 1,000, and fails in production under load. Adding print statements changes the timing and can hide the bug.</p>
+
+    <h3>Critical sections and locks</h3>
+    <p>The fix is to make the read-modify-write <b>atomic</b>: no other thread can see or change the counter in the middle. Code that must run without interference is called a <b>critical section</b>, and the usual tool is a <b>lock</b> (also called a <b>mutex</b>, for mutual exclusion). Only one thread can hold it; others trying to acquire it block until it's released.</p>
+    <pre class="code"><code>import threading
+
+class SafeCounter:
+    def __init__(self):
+        self.value = 0
+        self._lock = threading.Lock()
+
+    def increment(self):
+        with self._lock:          <span class="c"># acquire; released automatically, even on exceptions</span>
+            self.value += 1</code></pre>
+    <p>Rules of thumb for locks:</p>
+    <ul>
+      <li><b>Every</b> access to the shared data must go through the same lock, including reads. One unlocked access breaks it.</li>
+      <li>Keep critical sections <b>short</b>. Never do slow I/O while holding a lock if you can avoid it; every other thread is waiting.</li>
+      <li>Use <code>with lock:</code> rather than separate acquire and release calls, so an exception can't leave the lock held forever.</li>
+      <li>Better still, <b>avoid sharing mutable state</b>: give each thread its own data and combine results at the end, or pass messages through a thread-safe queue.</li>
+    </ul>
+
+    <h3>Python's GIL</h3>
+    <p>Standard CPython has a <b>global interpreter lock</b> (GIL): only one thread runs Python bytecode at a time. So Python threads don't speed up CPU-bound work, but they do help I/O-bound work, because the GIL is released while waiting on I/O. The GIL does <b>not</b> make your code thread-safe: a thread can still be switched out between the read and the write of <code>counter += 1</code>. Python 3.13 added an optional "free-threaded" build without the GIL, which makes correct locking even more important.</p>
+
+    <div class="check" data-id="w4-c9" data-answer="1">
+      <p class="check-q">Two threads each run <code>balance = balance - 10</code> once on a shared balance of 100, with no lock. Which final values are possible?</p>
+      <ol class="check-o"><li>Only 80</li><li>80 or 90</li><li>80, 90 or 100</li><li>Only 90</li></ol>
+      <div class="check-why">If the updates don't overlap, 80. If both read 100 before either writes, both write 90 and one withdrawal is lost. (100 isn't possible, because at least one write of 90 happens.)</div>
+    </div>
+    <div class="check" data-id="w4-c10" data-answer="2">
+      <p class="check-q">A colleague says, "Python has a GIL, so I don't need locks." What's wrong with that?</p>
+      <ol class="check-o"><li>Nothing; the GIL makes all Python code thread-safe</li><li>The GIL only exists on Windows</li><li>The GIL stops two threads running bytecode at the same instant, but a thread can still be switched out in the middle of a multi-step update like <code>x += 1</code>, so races still happen</li><li>Locks are only needed for processes</li></ol>
+      <div class="check-why">The GIL protects the interpreter's own internals, not your program's invariants. Any read-modify-write on shared data still needs a lock.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=7ENFeb-J75k" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/7ENFeb-J75k/mqdefault.jpg" alt="" loading="lazy"><span><b>Multithreading Code</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 4.6 ===================== -->
+  <section class="lesson" id="w4-l6">
+    <header><span class="eyebrow">Lesson 4.6 · 50 min</span><h2>Coordination and deadlock</h2></header>
+
+    <h3>Waiting for a condition</h3>
+    <p>Locks stop threads interfering. Often threads also need to <b>wait for each other</b>: a consumer waits until a queue has an item, a producer waits until there's space. Spinning in a loop checking a variable wastes CPU. A <b>condition variable</b> lets a thread sleep until another thread signals that something changed.</p>
+    <pre class="code"><code>class BoundedQueue:
+    def __init__(self, capacity):
+        self.items, self.capacity = [], capacity
+        self.cond = threading.Condition()       <span class="c"># a lock plus a waiting room</span>
+
+    def put(self, item):
+        with self.cond:
+            while len(self.items) &gt;= self.capacity:
+                self.cond.wait()                <span class="c"># releases the lock while asleep</span>
+            self.items.append(item)
+            self.cond.notify_all()              <span class="c"># wake anyone waiting for an item</span>
+
+    def get(self):
+        with self.cond:
+            while not self.items:
+                self.cond.wait()
+            item = self.items.pop(0)
+            self.cond.notify_all()              <span class="c"># wake anyone waiting for space</span>
+            return item</code></pre>
+    <p>Two details matter. <code>wait()</code> releases the lock while sleeping and re-acquires it on waking, so others can make progress. And the check is a <code>while</code>, not an <code>if</code>: when a thread wakes, another thread may have taken the item first, so it must check again. This <b>producer–consumer</b> pattern, with a bounded buffer providing backpressure, is everywhere: pipes, thread pools, message queues between services. You'll build it in the project.</p>
+    <p>A <b>semaphore</b> is a related tool: a counter that allows up to N threads in at once. It's useful for limiting concurrency, such as "at most 10 simultaneous downloads".</p>
+
+    <h3>Deadlock</h3>
+    <p>Two threads transfer money between accounts. Thread 1 locks account A then tries to lock B. Thread 2 locks B then tries to lock A. Each holds what the other needs, and both wait forever. That's <b>deadlock</b>. It requires four conditions at once (the Coffman conditions):</p>
+    <ol>
+      <li><b>Mutual exclusion</b>: resources can't be shared.</li>
+      <li><b>Hold and wait</b>: a thread holds one resource while waiting for another.</li>
+      <li><b>No preemption</b>: resources can't be taken away.</li>
+      <li><b>Circular wait</b>: a cycle of threads, each waiting for the next.</li>
+    </ol>
+    <p>Break any one and deadlock can't happen. The most practical fix is to break circular wait with a <b>global lock order</b>: every thread acquires locks in the same order, for example sorted by account ID. Then a cycle is impossible. Other options are lock timeouts (give up, release everything, retry), acquiring all needed locks at once, or redesigning so a single thread owns the data.</p>
+    <pre class="code"><code>def transfer(a, b, amount):
+    first, second = sorted([a, b], key=lambda acct: acct.id)   <span class="c"># same order everywhere</span>
+    with first.lock, second.lock:
+        a.balance -= amount
+        b.balance += amount</code></pre>
+    <p>Related problems: <b>livelock</b> (threads keep reacting to each other and retrying, so they're busy but make no progress, like two people stepping aside in a corridor in sync) and <b>starvation</b> (a thread never gets the lock because others keep winning).</p>
+
+    <h3>Threads, processes or async?</h3>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Workload</th><th>Good choice in Python</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>CPU-bound (number crunching, image processing)</td><td>Processes (<code>multiprocessing</code>, <code>ProcessPoolExecutor</code>)</td><td>Each process has its own interpreter and GIL, so cores run in parallel</td></tr>
+        <tr><td>I/O-bound, moderate concurrency (tens to hundreds of requests)</td><td>Threads (<code>ThreadPoolExecutor</code>)</td><td>Threads wait on I/O without holding the GIL; simple to write</td></tr>
+        <tr><td>I/O-bound, very high concurrency (thousands of connections)</td><td>Async (<code>asyncio</code>)</td><td>One thread, an event loop, and cheap coroutines that yield at every <code>await</code></td></tr>
+      </tbody>
+    </table></div>
+    <p><b>Async</b> code is cooperative: a coroutine only gives up control at an <code>await</code>, so there's no preemption in the middle of your code, which removes most race conditions. The cost is that one blocking call (like <code>time.sleep</code> or a slow computation) freezes every other task on the loop.</p>
+
+    <div class="check" data-id="w4-c11" data-answer="0">
+      <p class="check-q">Why does a consumer use <code>while not self.items: self.cond.wait()</code> instead of <code>if not self.items: self.cond.wait()</code>?</p>
+      <ol class="check-o"><li>After waking, another consumer may already have taken the item (or the wake-up was spurious), so the condition must be checked again</li><li>It's faster</li><li>wait() only works inside a while loop</li><li>It prevents deadlock</li></ol>
+      <div class="check-why">Waking up means "something changed", not "your condition is now true". Always re-check in a loop.</div>
+    </div>
+    <div class="check" data-id="w4-c12" data-answer="3">
+      <p class="check-q">Thread 1 locks <code>orders</code> then <code>inventory</code>; thread 2 locks <code>inventory</code> then <code>orders</code>. Occasionally the service hangs. What's the most reliable fix?</p>
+      <ol class="check-o"><li>Add a short sleep before each lock</li><li>Use more threads</li><li>Restart the service when it hangs</li><li>Make both threads acquire the locks in the same order, which removes the circular wait</li></ol>
+      <div class="check-why">A consistent global lock order makes cycles impossible, so deadlock can't happen.</div>
+    </div>
+    <div class="check" data-id="w4-c13" data-answer="1">
+      <p class="check-q">You need to resize 10,000 images as fast as possible on an 8-core machine using Python. What should you use?</p>
+      <ol class="check-o"><li>A thread pool with 8 threads</li><li>A process pool with about 8 processes</li><li>asyncio</li><li>A single loop</li></ol>
+      <div class="check-why">Resizing is CPU-bound. Because of the GIL, CPython threads won't run that Python code in parallel; processes will. (Libraries written in C that release the GIL are an exception.)</div>
+    </div>
+    <div class="check" data-id="w4-c14" data-answer="2">
+      <p class="check-q">In an asyncio web server, one handler calls <code>time.sleep(5)</code>. What happens?</p>
+      <ol class="check-o"><li>Only that request is delayed</li><li>asyncio automatically moves it to another thread</li><li>The entire event loop is blocked for 5 seconds, so every other request stalls too</li><li>It raises an error</li></ol>
+      <div class="check-why">Async is cooperative; a blocking call never yields. Use <code>await asyncio.sleep(5)</code>, or run blocking work in a thread or process with <code>asyncio.to_thread</code> or <code>run_in_executor</code>.</div>
+    </div>
+
+    <div class="note-box"><strong>Week 4 in one paragraph</strong><p>The kernel runs in privileged mode and does risky work on behalf of processes through system calls. Each process gets its own virtual address space, built from pages the kernel maps to physical memory, and the scheduler shares CPUs by switching threads, trading response time against throughput. File descriptors make files, pipes and sockets look alike. Threads share memory, so read-modify-write on shared data needs locks; condition variables let threads wait for each other; and a consistent lock order prevents deadlock. Choose processes for CPU-bound work, and threads or async for I/O-bound work.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Job runner: threads, locks and processes</h2>
+    <p>Build the pieces of a small job-running system: a thread-safe counter, a bounded producer–consumer queue, a thread pool that returns results, a bank that moves money between accounts without deadlocking, a safe wrapper for running external commands, and a parallel map that uses threads or processes. Then run the benchmark to see when threads help and when only processes do.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-04-jobrunner/</code>. Read its <code>README.md</code> first. Everything runs on Windows, macOS and Linux.</p>
+    <pre class="code"><code>cd syllabus/projects/week-04-jobrunner
+python -m unittest -v
+python benchmark.py       <span class="c"># once the tests pass</span></code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li><code>SafeCounter</code>, <code>BoundedQueue</code>, <code>ThreadPool</code>, <code>Bank.transfer</code>, <code>run_command</code> and <code>parallel_map</code> implemented in <code>jobrunner.py</code></li>
+      <li>All tests passing, and <code>benchmark.py</code> run with its output pasted into the README</li>
+      <li>Short answers to the questions at the bottom of the README</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 4 quiz</h2>
+    <p>15 questions covering all six lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-04.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-03.html">← Week 3</a><a class="btn" href="week-05.html">Next: Week 5 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 4;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
