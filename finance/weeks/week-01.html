@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 1: How the stock market works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Markets and Investing</a></nav>
+    <span class="eyebrow">Week 1 of 5 · about 5 hours</span>
+    <h1>How the stock market works</h1>
+    <p class="lede">Before you can make sense of headlines, crashes or the AI boom, you need a clear picture of the machine itself. This week covers what you actually own when you buy a share, how a price is set every second, what "the market" means when the news says it fell 2%, and the vehicles people use to invest in it.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Explain what a share is, why companies issue them, and how shareholders get paid</li>
+      <li>Describe how exchanges, order books, bid and ask prices and market makers set prices</li>
+      <li>Explain what an index measures and why most major indices are weighted by market capitalisation</li>
+      <li>Compare individual stocks, managed funds, index funds and ETFs</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 1.1 and 1.2 (shares, companies and owners; exchanges and how prices are set)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 1.3 and 1.4 (indices: what "the market" means; ways to own the market)</td></tr>
+      <tr><td>Day 3</td><td>Scenario exercise</td></tr>
+      <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 1.1 ===================== -->
+  <section class="lesson" id="w1-l1">
+    <header><span class="eyebrow">Lesson 1.1 · 40 min</span><h2>Shares, companies and owners</h2></header>
+<p>A <b>share</b> (or stock) is a slice of ownership in a company. Own one share of a company with a billion shares and you own one-billionth of it: its factories, its brands, its cash, and its future profits. That last part is what matters most: <b>a share's value comes from the cash the business will produce over its whole life</b>.</p>
+<p>Companies sell shares to raise money without borrowing. The first sale to the public is an <b>initial public offering</b> (IPO). The Dutch East India Company did the first in 1602 to fund trading voyages. After the IPO, shares trade between investors on the <b>secondary market</b>; the company doesn't get money when you buy from another investor.</p>
+<p>Shareholders get paid in two ways:</p>
+<ul>
+<li><b>Dividends</b>: the company pays out part of its profits in cash. Mature businesses (banks, utilities, supermarkets) pay a lot; fast-growing ones often pay none.</li>
+<li><b>Capital growth</b>: the share price rises because the company's expected future profits rise. Companies can also return cash through <b>buybacks</b>, purchasing their own shares so each remaining share owns a bigger slice.</li>
+</ul>
+<p><b>Total return</b> = price change + dividends. Over the long run, dividends have contributed a large share of stock market returns, so price-only charts understate what investors actually earned.</p>
+<p>Shareholders also have rights: voting for the board, and a claim on what's left if the company is wound up. But they're last in line, behind lenders and bondholders. That extra risk is why shares are expected to return more than bonds over time.</p>
+
+    <div class="check" data-id="w1-c1" data-answer="0">
+      <p class="check-q">A company's shares change hands between two investors on the stock exchange. How much money does the company receive?</p>
+      <ol class="check-o"><li>Nothing: it's a trade between investors on the secondary market</li><li>A commission</li><li>The full sale price</li><li>Half</li></ol>
+      <div class="check-why">Companies raise money when they issue shares (an IPO or later share issues). Day-to-day trading is investors swapping ownership.</div>
+    </div>
+    <div class="check" data-id="w1-c2" data-answer="1">
+      <p class="check-q">A share rose 5% this year and paid a 3% dividend. What was the total return, roughly?</p>
+      <ol class="check-o"><li>15%</li><li>8%</li><li>3%</li><li>5%</li></ol>
+      <div class="check-why">Total return adds price change and dividends. Comparing price-only returns understates what holders earned.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=p7HKvqRI_Bo" target="_blank" rel="noopener"><span><b>How does the stock market work? (4 min)</b><small>TED-Ed</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.2 ===================== -->
+  <section class="lesson" id="w1-l2">
+    <header><span class="eyebrow">Lesson 1.2 · 40 min</span><h2>Exchanges and how prices are set</h2></header>
+<p>An <b>exchange</b> (the New York Stock Exchange, Nasdaq, London, Tokyo, Shanghai) is a marketplace with rules. Buyers post <b>bids</b> (the most they'll pay) and sellers post <b>asks</b> (the least they'll accept) in an <b>order book</b>. A trade happens when a bid meets an ask. The gap between the best bid and best ask is the <b>spread</b>; for big companies it's a fraction of a cent, for small ones it can be a meaningful cost.</p>
+<ul>
+<li>A <b>market order</b> buys or sells immediately at the best available price.</li>
+<li>A <b>limit order</b> sets a maximum (or minimum) price, and may not fill.</li>
+<li><b>Market makers</b> and high-frequency traders continuously quote both sides, providing <b>liquidity</b>: the ability to trade quickly without moving the price much.</li>
+</ul>
+<p>So the price is simply the last price at which a buyer and seller agreed. It moves when the balance of eagerness changes: more eager buyers lift asks, more eager sellers hit bids. News that changes expectations of future profits (an earnings report, an interest rate decision, a new product, a lawsuit) shifts that balance in seconds.</p>
+<p><b>Market capitalisation</b> = share price × number of shares. It's the market's current price tag on the whole company. A $10 share isn't "cheaper" than a $500 share; what matters is the price relative to what the business earns.</p>
+<p>Some useful vocabulary: a <b>bull market</b> is a sustained rise, a <b>bear market</b> is a fall of 20% or more from a peak, and a <b>correction</b> is a fall of 10–20%. A <b>short seller</b> borrows shares and sells them, hoping to buy them back cheaper later.</p>
+
+    <div class="check" data-id="w1-c3" data-answer="2">
+      <p class="check-q">Company A's shares cost $10 and Company B's cost $500. What can you conclude?</p>
+      <ol class="check-o"><li>A is cheaper</li><li>B is a bigger company</li><li>Nothing about value: you need the number of shares (for market cap) and how much each company earns</li><li>B is more profitable</li></ol>
+      <div class="check-why">Share price alone means little. Compare market cap to earnings, cash flow or assets.</div>
+    </div>
+    <div class="check" data-id="w1-c4" data-answer="1">
+      <p class="check-q">A stock falls 22% from its peak. What's the common term?</p>
+      <ol class="check-o"><li>A crash</li><li>A bear market</li><li>A correction</li><li>Volatility</li></ol>
+      <div class="check-why">By convention, 10–20% is a correction and 20% or more is a bear market.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.3 ===================== -->
+  <section class="lesson" id="w1-l3">
+    <header><span class="eyebrow">Lesson 1.3 · 40 min</span><h2>Indices: what "the market" means</h2></header>
+<p>When the news says "the market fell 2%", it means an <b>index</b>: a basket of shares used to measure a market. The ones worth knowing:</p>
+<div class="table-wrap"><table>
+<tr><th>Index</th><th>What it covers</th></tr>
+<tr><td>S&amp;P 500</td><td>About 500 of the largest US companies, roughly 80% of US market value. The most watched index in the world.</td></tr>
+<tr><td>Nasdaq Composite / Nasdaq-100</td><td>Companies listed on the Nasdaq exchange, heavily weighted to technology.</td></tr>
+<tr><td>Dow Jones Industrial Average</td><td>30 large US companies, weighted oddly by share price. Old and famous, but a poor measure.</td></tr>
+<tr><td>MSCI World / MSCI ACWI</td><td>Large companies across developed markets (World) or developed and emerging (ACWI). The US is about two-thirds of it.</td></tr>
+<tr><td>FTSE 100, Nikkei 225, DAX, Hang Seng</td><td>UK, Japan, Germany and Hong Kong benchmarks.</td></tr>
+</table></div>
+<p>Most indices are <b>market-cap weighted</b>: each company counts in proportion to its size. That means a few giants can move the whole index. In recent years a handful of US tech companies have made up around a third of the S&amp;P 500, so "the market" has partly become a bet on them. Try it:</p>
+<div data-widget="capweight"></div>
+<p>Two more things to know. Indices change members: companies that shrink are dropped and rising ones added, so the index survives even when companies don't. And the US is a much larger share of global markets (around 60% or more) than of the global economy (around 25%), because its companies are large, profitable and highly valued.</p>
+
+    <div class="check" data-id="w1-c5" data-answer="2">
+      <p class="check-q">In a market-cap-weighted index, which company's 10% fall moves the index most?</p>
+      <ol class="check-o"><li>The company with the highest share price</li><li>They all count equally</li><li>The company with the largest market capitalisation</li><li>The newest member</li></ol>
+      <div class="check-why">Weights are proportional to market cap, so the biggest companies dominate.</div>
+    </div>
+    <div class="check" data-id="w1-c6" data-answer="2">
+      <p class="check-q">Why isn't the Dow Jones Industrial Average a good measure of the US market?</p>
+      <ol class="check-o"><li>It's too new</li><li>It's not published daily</li><li>It has only 30 companies and weights them by share price, which doesn't reflect company size</li><li>It only covers technology</li></ol>
+      <div class="check-why">A company with a high share price counts more in the Dow, regardless of its size.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 1.4 ===================== -->
+  <section class="lesson" id="w1-l4">
+    <header><span class="eyebrow">Lesson 1.4 · 35 min</span><h2>Ways to own the market</h2></header>
+<p>There are four main ways to invest in shares:</p>
+<ul>
+<li><b>Individual stocks</b>: you choose companies. Concentrated, so one bad pick hurts a lot, and research takes time.</li>
+<li><b>Actively managed funds</b>: a professional picks stocks for you, for a fee (often 0.5–2% a year).</li>
+<li><b>Index funds</b>: buy every company in an index in its weight, for very low fees (often 0.03–0.3%). No forecasting, just the market's return minus a tiny cost.</li>
+<li><b>Exchange-traded funds</b> (ETFs): funds that trade on an exchange like a share. Most are index funds; some track sectors, themes (AI, clean energy), bonds or commodities. Thematic ETFs are more concentrated and often launch after a theme has already run up.</li>
+</ul>
+<p>Most active funds fail to beat their index after fees over long periods. S&amp;P's SPIVA reports consistently find that around 85–90% of US large-company funds trail the S&amp;P 500 over 15 years. The reason is arithmetic, not incompetence: before costs, all investors together <i>are</i> the market, so the average active dollar earns the market return; after costs, the average active dollar must earn less. Week 2 shows how much those costs compound.</p>
+<p>Other asset classes you'll hear about: <b>bonds</b> (loans to governments and companies, week 3), <b>cash</b>, <b>property</b>, <b>commodities</b> like oil and gold, and <b>crypto</b>, which has no cash flows and behaves as a highly speculative asset.</p>
+
+    <div class="check" data-id="w1-c7" data-answer="3">
+      <p class="check-q">Why do most actively managed funds underperform their index over the long run?</p>
+      <ol class="check-o"><li>Indices are rigged</li><li>Fund managers are unskilled</li><li>Active funds hold bonds</li><li>Before costs, active investors as a group earn the market return; after their higher fees and trading costs, the average must trail it</li></ol>
+      <div class="check-why">This is William Sharpe's "arithmetic of active management".</div>
+    </div>
+    <div class="check" data-id="w1-c8" data-answer="0">
+      <p class="check-q">A new "AI Revolution ETF" holds 25 tech stocks. How does it differ from an S&amp;P 500 index fund?</p>
+      <ol class="check-o"><li>It's far more concentrated in one theme, usually with higher fees, so it's riskier and more dependent on that theme being priced correctly</li><li>It's identical</li><li>It's safer because AI is growing</li><li>It guarantees AI returns</li></ol>
+      <div class="check-why">Thematic funds bet on a story that's often already in the price.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Exercise ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Scenario exercise · 60–90 minutes</span>
+    <h2>Scenario exercise: read the market</h2>
+    <p>In <code>finance/exercises/week-01.md</code>:</p>
+<ol>
+<li><b>Pick three companies</b> you use (for example a phone maker, a search engine and a bank). Look up each one's share price, number of shares and market cap. Which is largest? Does the share price tell you that?</li>
+<li><b>Index check.</b> Find the top 10 holdings of the S&amp;P 500 and of MSCI World today. What percentage of each index are they? Which sectors dominate?</li>
+<li><b>Decode a headline.</b> Find today's market news ("stocks fell 1.5% as…"). Which index is it about, what reason is given, and how would you check whether that reason is actually the cause (think about Thinking Skills week 2)?</li>
+<li><b>Fund comparison.</b> Compare one S&amp;P 500 index ETF and one actively managed or thematic fund: fees, number of holdings, and 10-year return if available.</li>
+</ol>
+    <p>There are no right answers to look up: the point is to apply the week to real markets and real history. Write in your own words. This is education, not financial advice.</p>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 1 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-01.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas to real market news, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="../index.html">← Course overview</a><a class="btn" href="week-02.html">Next: Week 2 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 1;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>

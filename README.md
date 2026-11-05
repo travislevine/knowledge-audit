@@ -65,6 +65,23 @@ quiz. Three hardware projects build on each other: an ESP32 plant monitor,
 a Raspberry Pi MQTT pipeline, and an automatic watering system. Progress
 saves to `results/embedded.json`.
 
+## Markets and Investing course
+
+A 5-week course, about 5 hours a week, on understanding the global stock
+market:
+
+1. How the stock market works
+2. Value, return and risk
+3. What moves markets
+4. Bubbles and crashes (1929, 1987, 2000, 2008, 2020, 2022)
+5. Today's market: AI, news and investing
+
+Open `finance/index.html`. Each week has lessons with checkpoints and
+widgets, a video or tool, a written scenario exercise in
+`finance/exercises/`, and a 10-question quiz, followed by a 30-question
+final exam. Progress saves to `results/finance.json`. It's educational, not
+financial advice.
+
 ## How it works
 
 - Pick an answer, then lock it in as **Guessing**, **Fairly sure** or **Certain**.

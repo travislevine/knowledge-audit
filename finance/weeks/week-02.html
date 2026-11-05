@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 2: Value, return and risk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Markets and Investing</a></nav>
+    <span class="eyebrow">Week 2 of 5 · about 5 hours</span>
+    <h1>Value, return and risk</h1>
+    <p class="lede">This week is the core of investing: what makes a company worth more or less, why time is the investor's biggest advantage, and how risk and return are linked. These ideas explain both why stocks have rewarded patient owners and why bubbles eventually pop.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Explain earnings, the P/E ratio and earnings yield, and what a high or low P/E implies</li>
+      <li>Calculate compound growth, and show how fees and time change outcomes</li>
+      <li>Explain the link between risk and expected return, and measure risk with volatility and drawdowns</li>
+      <li>Explain diversification and why it reduces risk without reducing expected return</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 2.1 and 2.2 (valuing a company; compounding and costs)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 2.3 and 2.4 (risk and return; diversification)</td></tr>
+      <tr><td>Day 3</td><td>Scenario exercise</td></tr>
+      <tr><td>Day 4</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 2.1 ===================== -->
+  <section class="lesson" id="w2-l1">
+    <header><span class="eyebrow">Lesson 2.1 · 45 min</span><h2>Valuing a company</h2></header>
+<p>A company is worth the cash it will produce in future, <b>discounted</b> back to today, because a dollar later is worth less than a dollar now. In practice investors use shortcuts:</p>
+<ul>
+<li><b>Earnings per share</b> (EPS): profit divided by the number of shares.</li>
+<li><b>Price-to-earnings ratio</b> (P/E) = share price ÷ EPS. A P/E of 20 means you pay $20 for each $1 of annual profit. Flip it for the <b>earnings yield</b>: 1/20 = 5%.</li>
+<li>The S&amp;P 500's long-run average P/E is around 15–17. It has often been 20–25 in recent years, and was above 30 at the 2000 peak.</li>
+</ul>
+<p>A high P/E isn't automatically "expensive". It means investors expect profits to <b>grow</b> fast. A company earning $1 that grows 30% a year for a decade earns about $13.80 by year ten, so a P/E of 40 today can be reasonable. But a high P/E is fragile: if growth disappoints, both earnings and the multiple can fall together, and the share price drops much more than profits do. That's how many tech stocks fell 80–90% after 2000.</p>
+<p>A low P/E can mean a bargain, or a business in decline (a <b>value trap</b>). The question is always: <b>what growth is the price assuming, and is that realistic?</b></p>
+<p>Other ratios you'll see: <b>price-to-sales</b> (useful for companies without profits, though no profits is itself a warning), <b>price-to-book</b> (for banks), and <b>free cash flow</b>, the cash left after investment, which is harder to flatter with accounting than earnings.</p>
+
+    <div class="check" data-id="w2-c1" data-answer="3">
+      <p class="check-q">A stock trades at $60 with earnings per share of $3. What are its P/E and earnings yield?</p>
+      <ol class="check-o"><li>P/E 63, yield 1.6%</li><li>P/E 0.05, yield 20%</li><li>P/E 3, yield 60%</li><li>P/E 20, yield 5%</li></ol>
+      <div class="check-why">60 / 3 = 20; 1 / 20 = 5%.</div>
+    </div>
+    <div class="check" data-id="w2-c2" data-answer="0">
+      <p class="check-q">A fast-growing company trades at a P/E of 60. Its growth slows sharply and investors now pay a P/E of 25, while earnings rise 20%. What happens to the share price?</p>
+      <ol class="check-o"><li>It falls by about half: 1.2 × 25 / 60 = 0.5</li><li>It rises 20%</li><li>It stays the same</li><li>It falls 20%</li></ol>
+      <div class="check-why">Multiple compression can overwhelm earnings growth. Price = earnings × multiple.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.2 ===================== -->
+  <section class="lesson" id="w2-l2">
+    <header><span class="eyebrow">Lesson 2.2 · 40 min</span><h2>Compounding and costs</h2></header>
+<p>Compound growth means returns earn returns. $10,000 growing at 7% a year becomes about $19,700 in 10 years, $38,700 in 20, and $76,100 in 30. The last decade adds more than the first two combined. The <b>rule of 72</b> estimates doubling time: 72 ÷ return. At 7%, money doubles roughly every 10 years.</p>
+<div data-widget="compound"></div>
+<p>Two consequences matter enormously:</p>
+<ul>
+<li><b>Time beats timing.</b> Starting ten years earlier usually matters more than picking better investments.</li>
+<li><b>Costs compound too.</b> A 1.5% annual fee doesn't cost 1.5% of your money; over 30 years at 7% it consumes roughly a third of your final balance. Taxes and frequent trading work the same way.</li>
+</ul>
+<p>Also know the difference between <b>nominal</b> returns (the raw number) and <b>real</b> returns (after inflation). US stocks have returned roughly 10% a year nominal, about 6–7% real, over the last century, with enormous variation along the way. Some decades were close to zero in real terms (the 1970s and the 2000s).</p>
+
+    <div class="check" data-id="w2-c3" data-answer="3">
+      <p class="check-q">Using the rule of 72, roughly how long does money take to double at 9% a year?</p>
+      <ol class="check-o"><li>12 years</li><li>18 years</li><li>4 years</li><li>8 years</li></ol>
+      <div class="check-why">72 / 9 = 8 years.</div>
+    </div>
+    <div class="check" data-id="w2-c4" data-answer="0">
+      <p class="check-q">Fund A charges 0.1% a year and Fund B 1.5%, and both earn the same before fees. Over 30 years, roughly how much less does Fund B leave you?</p>
+      <ol class="check-o"><li>About a third less</li><li>1.4% less</li><li>The same</li><li>About 15% less</li></ol>
+      <div class="check-why">(1.069/1.055)^30 ≈ 1.48, so B ends about 32% lower. Small annual fees compound into large differences.</div>
+    </div>
+    <div class="videos">
+      <a class="video" href="https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator" target="_blank" rel="noopener"><span><b>Tool: compound interest calculator</b><small>Investor.gov (US SEC)</small></span></a>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.3 ===================== -->
+  <section class="lesson" id="w2-l3">
+    <header><span class="eyebrow">Lesson 2.3 · 40 min</span><h2>Risk and return</h2></header>
+<p>Investors demand a higher expected return for bearing more risk. That's why, over long periods, shares have beaten bonds and bonds have beaten cash. The extra return of shares over safe assets is the <b>equity risk premium</b>. It's a reward for enduring the bad times, and it isn't guaranteed over any particular decade.</p>
+<p>How to think about risk:</p>
+<ul>
+<li><b>Volatility</b>: how much returns swing (measured by standard deviation). The S&amp;P 500's annual returns have swung roughly ±16–20% around their average. In about one year in four, it has fallen.</li>
+<li><b>Drawdown</b>: the fall from a peak to a trough. This is how risk actually feels: in 2008–09 the S&amp;P 500 fell about 57%.</li>
+<li><b>The maths of losses</b>: a 50% loss needs a 100% gain to recover. Large losses are disproportionately hard to come back from, which is why avoiding ruin matters more than squeezing out extra return.</li>
+<li><b>Permanent loss</b>: a diversified index has always recovered eventually (though Japan's Nikkei took 34 years, from 1989 to 2024). Individual companies often don't recover at all.</li>
+<li><b>Time horizon</b>: money needed within a few years shouldn't be in shares, because a bear market could coincide with when you need it.</li>
+</ul>
+<p>Risk also includes things volatility doesn't capture: leverage (borrowing to invest magnifies losses and can force you to sell at the bottom), concentration, and liquidity (not being able to sell when you need to).</p>
+
+    <div class="check" data-id="w2-c5" data-answer="2">
+      <p class="check-q">A portfolio falls 40%. What gain does it need to get back to where it started?</p>
+      <ol class="check-o"><li>80%</li><li>60%</li><li>About 67%</li><li>40%</li></ol>
+      <div class="check-why">0.6 × (1 + g) = 1, so g = 1/0.6 − 1 ≈ 67%.</div>
+    </div>
+    <div class="check" data-id="w2-c6" data-answer="0">
+      <p class="check-q">Why shouldn't money for a house deposit you'll need in 18 months be in shares?</p>
+      <ol class="check-o"><li>A bear market could hit right when you need it, and you'd have no time to recover</li><li>It's illegal</li><li>Shares have no return</li><li>Shares always fall</li></ol>
+      <div class="check-why">Expected return doesn't help if you're forced to sell at the bottom.</div>
+    </div>
+  </section>
+  <!-- ===================== Lesson 2.4 ===================== -->
+  <section class="lesson" id="w2-l4">
+    <header><span class="eyebrow">Lesson 2.4 · 35 min</span><h2>Diversification</h2></header>
+<p><b>Diversification</b> means spreading money across many investments that don't all move together. Harry Markowitz, who won a Nobel Prize for formalising it, called it the only free lunch in investing: it lowers risk without lowering expected return.</p>
+<p>The reason is that much of a single company's risk is <b>specific</b> to it (a failed product, a fraud, a lawsuit) and cancels out across many companies. What's left is <b>market risk</b>, which affects everything together and can't be diversified away within shares. Studies show most specific risk is gone with 20–30 randomly chosen stocks, and an index fund holding hundreds or thousands removes nearly all of it.</p>
+<p>Diversification also protects you from a quieter danger: <b>most individual stocks underperform</b>. Research by Hendrik Bessembinder found that just 4% of US listed companies accounted for all of the stock market's wealth creation above Treasury bills from 1926 to 2016; the majority of stocks did worse than cash over their lifetimes. Owning the whole market guarantees you own the rare huge winners.</p>
+<p>Diversify across dimensions: companies, sectors, countries (home bias, overweighting your own country, is very common), and asset classes (bonds often hold up when shares fall, though not always, as 2022 showed). Note that in a crisis, correlations rise: many risky assets fall together, which is why diversification helps most over the long run, less so in a single panic.</p>
+
+    <div class="check" data-id="w2-c7" data-answer="2">
+      <p class="check-q">What kind of risk does diversification remove?</p>
+      <ol class="check-o"><li>All risk</li><li>Inflation risk</li><li>Company-specific risk; market-wide risk remains</li><li>Market risk only</li></ol>
+      <div class="check-why">No amount of shares removes the risk of the whole market falling.</div>
+    </div>
+    <div class="check" data-id="w2-c8" data-answer="2">
+      <p class="check-q">Bessembinder found that 4% of US stocks created all the market's net wealth over cash from 1926 to 2016. What's the practical lesson?</p>
+      <ol class="check-o"><li>Find the 4%</li><li>Avoid shares</li><li>A concentrated portfolio is likely to miss the rare big winners; owning the whole market guarantees you hold them</li><li>Buy only small companies</li></ol>
+      <div class="check-why">Stock returns are highly skewed: a few huge winners, many losers.</div>
+    </div>
+  </section>
+
+  <!-- ===================== Exercise ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Scenario exercise · 60–90 minutes</span>
+    <h2>Scenario exercise: what's priced in?</h2>
+    <p>In <code>finance/exercises/week-02.md</code>:</p>
+<ol>
+<li><b>Two P/E ratios.</b> Pick a high-P/E company (often a fast-growing tech firm) and a low-P/E one (often a bank, energy or tobacco company). Find each P/E. Roughly what annual earnings growth would the high-P/E company need over 10 years to "grow into" a P/E of 20?</li>
+<li><b>Compounding plan.</b> Use the widget or calculator: how much would $200 a month invested from age 25 to 65 become at 7% with a 0.1% fee, versus a 1.5% fee? Versus starting at 35?</li>
+<li><b>Drawdown thinking.</b> Write down honestly how you'd feel and what you'd do if $50,000 you'd invested became $25,000 within six months. What does that suggest about how much risk you can take?</li>
+<li><b>Diversification check.</b> If you owned only the five companies you know best, what specific risks would you be exposed to?</li>
+</ol>
+    <p>There are no right answers to look up: the point is to apply the week to real markets and real history. Write in your own words. This is education, not financial advice.</p>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 20 minutes</span>
+    <h2>Week 2 quiz</h2>
+    <p>10 questions on this week's lessons. Score 70% to pass.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-02.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note where you used (or could have used) this week's ideas to real market news, and what still feels shaky. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-01.html">← Week 1</a><a class="btn" href="week-03.html">Next: Week 3 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 2;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
