@@ -6,11 +6,13 @@ yourself is the best way to make week 1 stick.
 
 **Time:** 4–5 hours · **Files:** `bitkit.py` (yours to finish), `test_bitkit.py` (don't edit)
 
+On macOS or Linux, type `python3` where these instructions say `python`.
+
 ## Run the tests
 
 ```bash
-python3 -m unittest -v          # from this folder
-python3 -m unittest -v -k utf8  # just the UTF-8 tests
+python -m unittest -v          # from this folder
+python -m unittest -v -k utf8  # just the UTF-8 tests
 ```
 
 Everything starts out failing with `NotImplementedError`. Work through the
@@ -64,7 +66,7 @@ You **may** use `ord()`, `chr()`, arithmetic, bitwise operators
 - Make `utf8_decode` also reject *overlong* encodings (for example
   `C0 80` for U+0000), which have caused real security bugs.
 - Write `float64_fields` for doubles (11 exponent bits, 52 fraction bits).
-- Add a tiny command-line interface: `python3 bitkit.py 202` prints the
+- Add a tiny command-line interface: `python bitkit.py 202` prints the
   number in binary, hex and two's complement.
 
 ## Written questions

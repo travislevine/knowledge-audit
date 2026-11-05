@@ -3,7 +3,7 @@
 
 serve.py runs this after every save. Run it by hand with:
 
-    python3 report.py
+    python report.py
 """
 import json
 import re

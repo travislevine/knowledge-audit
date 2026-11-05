@@ -1,4 +1,4 @@
-"""Run this once the tests pass: python3 demo.py"""
+"""Run this once the tests pass: python demo.py"""
 from routes import binary_search, course_order, grid_path, merge_sort, min_coins, shortest_route
 from test_routes import MAZE, TOWNS
 

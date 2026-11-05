@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Serve the audits locally and save quiz progress into results/.
 
-    python3 serve.py              # http://localhost:8000
-    python3 serve.py --port 9000
-    python3 serve.py --no-browser
+    python serve.py              # http://localhost:8000
+    python serve.py --port 9000
+    python serve.py --no-browser
 
 Every answer is written to results/<id>.json (one file per audit, weekly
 quiz, plus syllabus.json), and results/REPORT.md is rebuilt after each save.
@@ -126,7 +126,7 @@ def main():
     try:
         server = ThreadingHTTPServer(("127.0.0.1", args.port), handler)
     except OSError as exc:
-        sys.exit(f"Couldn't start on port {args.port} ({exc.strerror}). Try: python3 serve.py --port {args.port + 1}")
+        sys.exit(f"Couldn't start on port {args.port} ({exc.strerror}). Try: python serve.py --port {args.port + 1}")
 
     url = f"http://localhost:{args.port}/"
     print(f"Serving audits at {url}")

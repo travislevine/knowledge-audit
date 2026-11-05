@@ -1,4 +1,4 @@
-"""Tests for routes. Run with: python3 -m unittest -v"""
+"""Tests for routes. Run with: python -m unittest -v"""
 import math
 import random
 import unittest

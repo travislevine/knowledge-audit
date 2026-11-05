@@ -1,4 +1,4 @@
-"""Tests for bitkit. Run with: python3 -m unittest -v"""
+"""Tests for bitkit. Run with: python -m unittest -v"""
 import math
 import random
 import struct

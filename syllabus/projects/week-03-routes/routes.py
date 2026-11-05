@@ -1,7 +1,7 @@
 """Route planner: search, sort and shortest paths.
 
 Week 3 project. See README.md for the rules.
-Run the tests with:  python3 -m unittest -v
+Run the tests with:  python -m unittest -v
 """
 import heapq
 import math

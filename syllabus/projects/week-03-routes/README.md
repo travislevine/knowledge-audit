@@ -8,9 +8,9 @@ them working together on a town map, a maze and a course plan.
 ## Run the tests
 
 ```bash
-python3 -m unittest -v
-python3 -m unittest -v -k Dijkstra
-python3 demo.py           # once everything passes
+python -m unittest -v
+python -m unittest -v -k Dijkstra
+python demo.py           # once everything passes
 ```
 
 ## Rules

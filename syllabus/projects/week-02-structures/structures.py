@@ -1,7 +1,7 @@
 """Build your own data structures.
 
 Week 2 project. See README.md for the rules for each class.
-Run the tests with:  python3 -m unittest -v
+Run the tests with:  python -m unittest -v
 """
 
 

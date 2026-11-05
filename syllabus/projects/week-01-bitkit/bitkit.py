@@ -1,7 +1,7 @@
 """bitkit: number and text encodings from scratch.
 
 Week 1 project. See README.md for the rules (no bin/hex/int(x, 2)/encode).
-Run the tests with:  python3 -m unittest -v
+Run the tests with:  python -m unittest -v
 """
 import struct
 

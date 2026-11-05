@@ -9,8 +9,8 @@ and combining two structures to get O(1) operations.
 ## Run the tests
 
 ```bash
-python3 -m unittest -v
-python3 -m unittest -v -k HashMap     # one class at a time
+python -m unittest -v
+python -m unittest -v -k HashMap     # one class at a time
 ```
 
 ## Rules

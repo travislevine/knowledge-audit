@@ -1,4 +1,4 @@
-"""Tests for structures. Run with: python3 -m unittest -v"""
+"""Tests for structures. Run with: python -m unittest -v"""
 import random
 import unittest
 
