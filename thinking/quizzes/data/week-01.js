@@ -207,7 +207,7 @@ const Q = [
   "t": "l4",
   "k": "scenario",
   "c": "Motte and bailey",
-  "p": "Someone claims \"AI will replace all programmers within five years.\" Challenged, they say \"I just mean AI tools will change how programmers work.\" Later they repeat the first claim. What is this?",
+  "p": "Someone claims \"Remote work destroys productivity.\" Challenged, they say \"I just mean some people find it harder to focus at home.\" Later they repeat the first claim. What is this?",
   "o": [
    "A valid argument",
    "An ad hominem",
