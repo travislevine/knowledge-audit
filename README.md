@@ -15,7 +15,7 @@ and builds a gap report with a study plan and links to resources.
 A 10-week plan covering the core of a computer science degree, about 10 hours
 a week. Each week has written lessons with interactive widgets and
 checkpoint questions, short videos, a Python mini-project with tests, a
-15-question quiz and a self-rating. Weeks 1–6 are written so far:
+15-question quiz and a self-rating:
 
 1. How computers represent and run things
 2. Programming fundamentals and data structures
@@ -23,6 +23,10 @@ checkpoint questions, short videos, a Python mini-project with tests, a
 4. Operating systems and concurrency
 5. Networking
 6. The web, cryptography and security
+7. Databases and SQL
+8. Software engineering practice
+9. System design and distributed systems
+10. The business of software, and review (with a capstone project)
 
 Open `syllabus/index.html` (or the link on the landing page). Projects live
 in `syllabus/projects/` and run with `python -m unittest -v`.
@@ -36,7 +40,8 @@ Progress is summarized in `results/REPORT.md`, rebuilt after every save. See
   Wrong-but-certain answers are flagged as misconceptions, and the report shows
   how well your confidence matches your accuracy (calibration).
 - Skipping is allowed and counts as a gap.
-- Retakes are allowed, but the report always uses your first attempt.
+- Retakes are allowed. The report scores your first attempt, and also shows
+  your latest score once you've retaken a quiz.
 
 ## Running it
 

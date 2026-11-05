@@ -25,7 +25,7 @@ the JSON files in `results/`.
 | --- | --- | --- |
 | Checkpoints | `results/syllabus.json` → `checks` | My first answer to each inline question while reading a lesson. Misses point at concepts that didn't land on first read. |
 | Lessons done | `results/syllabus.json` → `lessons` | Which lessons I marked complete, and when. |
-| Weekly quiz | `results/week-NN-quiz.json` | First-attempt answers with a confidence rating. **Misconceptions** (wrong but "Certain") matter most. Retakes are recorded separately and don't overwrite first attempts. |
+| Weekly quiz | `results/week-NN-quiz.json` | First-attempt answers with a confidence rating. **Misconceptions** (wrong but "Certain") matter most. Retakes are recorded separately and don't overwrite first attempts; the report shows the latest retake score next to the first. |
 | Self-ratings | `results/syllabus.json` → `ratings` | 1–5 per learning objective (1 = can't do it yet, 5 = could teach it). |
 | Reflections | `results/syllabus.json` → `notes` | What I found hard, in my own words. |
 | Projects | `results/syllabus.json` → `projects` + the code | Status (not started → in progress → tests passing → done) and my notes. |
@@ -40,11 +40,22 @@ cd syllabus/projects/week-03-routes && python -m unittest -v && python demo.py
 cd syllabus/projects/week-04-jobrunner && python -m unittest -v && python benchmark.py
 cd syllabus/projects/week-05-nettools && python -m unittest -v
 cd syllabus/projects/week-06-secure-app && python -m unittest -v
+cd syllabus/projects/week-07-library && python -m unittest -v
+cd syllabus/projects/week-08-shipit && python -m unittest -v && python check_my_tests.py
+cd syllabus/projects/week-09-distkit && python -m unittest -v
+cd syllabus/projects/week-10-capstone && python -m unittest -v && python server.py
 ```
 
 Week 6 is a break-then-fix project: `exploits.py` holds my attacks (checked
 against the untouched `vulnerable/app.py`), `app.py` holds my fixes, and
 `FINDINGS.md` is my write-up of each vulnerability.
+
+Week 8 has two parts: `test_pricing.py` is a test suite I wrote for a given
+module, graded by `check_my_tests.py` (it plants small bugs and counts how
+many my tests catch), and `shipit.py` holds the code under `test_shipit.py`.
+Week 9's `README.md` ends with a short design write-up. The week 10 capstone
+also includes `DESIGN.md` and an architecture decision record in
+`docs/adr/`.
 
 Tests passing is the minimum. Code quality, clarity and the written answers
 are where feedback helps most.
@@ -59,8 +70,8 @@ are where feedback helps most.
   naming, structure, and whether the Big-O matches what I claimed.
 - **What to revisit or practice** before moving on, and whether the pace is
   right. The plan is about 10 hours a week.
-- **Changes to the plan**: topics to add, cut or reorder in the remaining
-  weeks.
+- **Changes to the plan**: topics to revisit, and what to study or build
+  after the ten weeks.
 
 ## Leaving feedback
 
@@ -78,4 +89,4 @@ example `w2-c7`) so I can find what you mean.
 - `syllabus/quizzes/data/week-NN.js`: quiz questions, explanations and study
   pointers.
 - `syllabus/projects/`: weekly projects with tests.
-- Weeks 1–6 are written. Weeks 7–10 are outlined in `plan.js`.
+- All 10 weeks are written. Week 10 ends with a capstone that combines them.

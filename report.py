@@ -146,7 +146,9 @@ def audit_section(data):
     for key in sorted(levels):
         lv = levels[key]
         state = "passed" if lv.get("passed") else ("in progress" if lv.get("answered") else "not started")
-        out.append(f"- Level {key} {lv.get('name', '')}: {lv.get('firstAttempt', '?')} first attempt ({state})")
+        latest = lv.get("latest")
+        retake = f", latest {latest} after {lv['retakes']} retake{'s' if lv['retakes'] != 1 else ''}" if lv.get("retakes") and latest else ""
+        out.append(f"- Level {key} {lv.get('name', '')}: {lv.get('firstAttempt', '?')} first attempt{retake} ({state})")
     topics = summary.get("topics") or {}
     taken = {k: v for k, v in topics.items() if v.get("answered")}
     if taken:
