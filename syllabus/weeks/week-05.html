@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Week 5: Networking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../../assets/audit.css">
+<link rel="stylesheet" href="../../assets/syllabus.css">
+</head>
+<body>
+<div class="wrap syl">
+  <header class="masthead">
+    <nav class="crumbs"><a href="../index.html">← Syllabus</a></nav>
+    <span class="eyebrow">Week 5 of 10 · about 10 hours</span>
+    <h1>Networking</h1>
+    <p class="lede">Almost every program you'll write talks over a network: to a database, an API, a browser or another service. This week follows a message from your code down through the layers, across routers and the internet, and back up on the other side. You'll learn how addresses, ports, TCP, DNS and NAT fit together, and how to tell which one is broken when a connection fails.</p>
+  </header>
+
+  <div id="week-progress" class="progress-card"></div>
+
+  <section class="panel plan-panel">
+    <h3>By the end of this week you can</h3>
+    <ul>
+      <li>Explain the layer model and what encapsulation adds at each layer</li>
+      <li>Work with IPv4 addresses, CIDR, subnet masks and routing tables</li>
+      <li>Explain how TCP gives reliable ordered delivery, and when UDP is the better choice</li>
+      <li>Explain how DNS resolves a name, and read DNS records and TTLs</li>
+      <li>Explain NAT, DHCP, ARP and firewalls, and trace the path of a packet</li>
+      <li>Write socket code that frames messages correctly, and debug connections with standard tools</li>
+    </ul>
+    <h3>Suggested schedule</h3>
+    <div class="table-wrap"><table class="schedule">
+      <tr><td>Day 1</td><td>Lessons 5.1 and 5.2 (layers, IP addresses and subnets)</td></tr>
+      <tr><td>Day 2</td><td>Lessons 5.3 and 5.4 (TCP and UDP, DNS)</td></tr>
+      <tr><td>Day 3</td><td>Lessons 5.5 and 5.6 (NAT and friends, sockets and debugging)</td></tr>
+      <tr><td>Days 4–5</td><td>Mini-project: network toolkit</td></tr>
+      <tr><td>Day 6</td><td>End-of-week quiz, then self-rating and reflection</td></tr>
+    </table></div>
+  </section>
+
+  <!-- ===================== Lesson 5.1 ===================== -->
+  <section class="lesson" id="w5-l1">
+    <header><span class="eyebrow">Lesson 5.1 · 40 min</span><h2>Layers and packets</h2></header>
+
+    <p>Networking is split into <b>layers</b>, each solving one problem and relying on the layer below. A web browser doesn't care whether you're on Wi-Fi or Ethernet, and Ethernet doesn't care whether it's carrying a web page or a video call. That separation is what lets the internet evolve one piece at a time.</p>
+
+    <h3>Two models</h3>
+    <p>The <b>OSI model</b> has seven layers and is mostly used as shared vocabulary ("that's a layer 7 problem"). The internet actually runs on the simpler <b>TCP/IP model</b>:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>TCP/IP layer</th><th>OSI</th><th>Job</th><th>Examples</th><th>Addresses</th></tr></thead>
+      <tbody>
+        <tr><td>Application</td><td>5–7</td><td>What the programs are saying</td><td>HTTP, DNS, SMTP, SSH, TLS</td><td>URLs, hostnames</td></tr>
+        <tr><td>Transport</td><td>4</td><td>Program-to-program delivery, reliability</td><td>TCP, UDP, QUIC</td><td>Ports</td></tr>
+        <tr><td>Internet (network)</td><td>3</td><td>Host-to-host delivery across many networks</td><td>IP (v4 and v6), ICMP</td><td>IP addresses</td></tr>
+        <tr><td>Link</td><td>1–2</td><td>Getting bits to the next device on the same network</td><td>Ethernet, Wi-Fi</td><td>MAC addresses</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Encapsulation</h3>
+    <p>On the way down, each layer wraps the data from the layer above in its own <b>header</b>. On the way up, each layer reads and strips its header and passes the rest up. A unit of data has a different name at each layer: a <b>segment</b> (TCP), a <b>packet</b> (IP), a <b>frame</b> (Ethernet), though people often just say "packet".</p>
+
+    <div data-widget="encap"></div>
+
+    <p>Notice the difference in scope. The IP header's addresses stay the same for the whole journey from your laptop to the server. The Ethernet header's MAC addresses only cover <b>one hop</b>: your laptop to your router. Each router along the way strips the frame, looks at the IP destination, decides where to send it next, and wraps it in a new frame for the next link.</p>
+
+    <h3>Packets, MTU, latency and bandwidth</h3>
+    <p>Data is split into packets of limited size. Ethernet's <b>MTU</b> (maximum transmission unit) is 1,500 bytes, so a 1 MB download is roughly 700 packets, each routed independently. Two numbers describe a connection's speed, and they're different things:</p>
+    <ul>
+      <li><b>Bandwidth</b> is how much data per second fits through the pipe (e.g. 100 Mbit/s).</li>
+      <li><b>Latency</b> is how long one piece of data takes to arrive (e.g. 20 ms). The <b>round-trip time</b> (RTT) is there and back. It's limited by the speed of light: Sydney to London is about 17,000 km, which takes at least about 85 ms one way in fiber, before any queuing.</li>
+    </ul>
+    <p>Lots of small request–response exchanges are limited by latency, not bandwidth. Upgrading to a faster internet plan won't make a chatty protocol with 50 round trips any quicker.</p>
+
+    <div class="check" data-id="w5-c1" data-answer="2">
+      <p class="check-q">A packet travels from your laptop through four routers to a web server. Which header keeps the same source and destination addresses for the whole trip?</p>
+      <ol class="check-o"><li>The Ethernet header (MAC addresses)</li><li>Both the Ethernet and IP headers</li><li>The IP header</li><li>Neither; every header is rewritten at every hop</li></ol>
+      <div class="check-why">IP addresses are end to end; MAC addresses are hop to hop. (NAT, in lesson 5.5, is the exception that rewrites IP addresses at the edge of your network.)</div>
+    </div>
+    <div class="check" data-id="w5-c2" data-answer="0">
+      <p class="check-q">An app makes 40 sequential API calls to a server with a 100 ms round-trip time. Upgrading the server's bandwidth from 100 Mbit/s to 1 Gbit/s barely helps. Why?</p>
+      <ol class="check-o"><li>The time is dominated by latency: 40 round trips × 100 ms is about 4 seconds no matter how much bandwidth there is</li><li>The server's CPU is the bottleneck</li><li>Bandwidth upgrades take time to apply</li><li>1 Gbit/s is the same as 100 Mbit/s</li></ol>
+      <div class="check-why">Batch the calls, run them concurrently, or move the server closer. Small, chatty exchanges are latency-bound.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=3QhU9jd03a0" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/3QhU9jd03a0/mqdefault.jpg" alt="" loading="lazy"><span><b>Computer Networks</b><small>Crash Course Computer Science #28</small></span></a>
+      <a class="video" href="https://www.youtube.com/watch?v=AEaKrq3SpW8" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/AEaKrq3SpW8/mqdefault.jpg" alt="" loading="lazy"><span><b>The Internet</b><small>Crash Course Computer Science #29</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 5.2 ===================== -->
+  <section class="lesson" id="w5-l2">
+    <header><span class="eyebrow">Lesson 5.2 · 50 min</span><h2>IP addresses, subnets and routing</h2></header>
+
+    <p>An <b>IPv4 address</b> is a 32-bit number, written as four bytes in decimal: <code>192.168.10.77</code>. That gives about 4.3 billion addresses (2³², from week 1), which ran out years ago. Lesson 5.5 covers how the internet copes.</p>
+
+    <h3>Network part and host part</h3>
+    <p>Every address is split into a <b>network part</b> (which network the host is on) and a <b>host part</b> (which machine on that network). <b>CIDR notation</b> says where the split is: <code>192.168.10.0/26</code> means the first 26 bits are the network and the remaining 6 bits identify hosts. The same split written as a <b>subnet mask</b> has 1s for network bits: /26 is <code>255.255.255.192</code>.</p>
+    <p>To find the network an address belongs to, AND the address with the mask. Setting all the host bits to 1 gives the <b>broadcast</b> address. Those two are reserved, so a /26 has 2⁶ = 64 addresses and 62 usable hosts.</p>
+
+    <div data-widget="subnet"></div>
+
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Prefix</th><th>Mask</th><th>Addresses</th><th>Typical use</th></tr></thead>
+      <tbody>
+        <tr><td>/8</td><td>255.0.0.0</td><td>16.7 million</td><td>a huge private network (10.0.0.0/8)</td></tr>
+        <tr><td>/16</td><td>255.255.0.0</td><td>65,536</td><td>a cloud VPC</td></tr>
+        <tr><td>/24</td><td>255.255.255.0</td><td>256 (254 usable)</td><td>a home or office network, a cloud subnet</td></tr>
+        <tr><td>/30</td><td>255.255.255.252</td><td>4 (2 usable)</td><td>a link between two routers</td></tr>
+        <tr><td>/32</td><td>255.255.255.255</td><td>1</td><td>exactly one host, e.g. in a firewall rule</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Private addresses</h3>
+    <p>Three ranges are reserved for private networks and never routed on the public internet: <code>10.0.0.0/8</code>, <code>172.16.0.0/12</code> and <code>192.168.0.0/16</code>. Your home network and most cloud networks use them. <code>127.0.0.0/8</code> is <b>loopback</b>: <code>127.0.0.1</code> ("localhost") always means "this machine", which is how <code>serve.py</code> serves this site to your own browser.</p>
+
+    <h3>Routing</h3>
+    <p>When a host sends a packet, it first asks: is the destination on my own subnet? If so, it delivers it directly over the local link. If not, it sends it to its <b>default gateway</b> (your router). Every router has a <b>routing table</b> of network prefixes and where to forward matching packets. When several entries match, the router uses the <b>most specific</b> one, the <b>longest prefix match</b>:</p>
+    <pre class="code"><code>Destination        Next hop
+0.0.0.0/0          203.0.113.1    <span class="c"># default route: anything not listed below</span>
+10.0.0.0/8         10.255.0.1
+10.20.0.0/16       10.20.0.1
+10.20.30.0/24      direct         <span class="c"># this network is attached locally</span>
+
+Packet to 10.20.30.7 → matches /0, /8, /16 and /24 → use the /24 (longest)
+Packet to 10.99.1.1  → matches /0 and /8           → 10.255.0.1
+Packet to 8.8.8.8    → matches only /0             → 203.0.113.1</code></pre>
+    <p>No router knows the whole internet. Each one only knows the next step. Routers at the internet's core share reachability with each other using <b>BGP</b>, and a misconfigured BGP announcement is one of the classic causes of large outages.</p>
+
+    <h3>IPv6</h3>
+    <p><b>IPv6</b> addresses are 128 bits, written in hex groups like <code>2001:db8::8a2e:370:7334</code> (<code>::</code> stands for a run of zero groups). There are enough addresses for every device to have a public one, so NAT is no longer needed. Adoption has been slow but is now substantial: a large share of traffic to big services uses IPv6.</p>
+
+    <div class="check" data-id="w5-c3" data-answer="1">
+      <p class="check-q">How many usable host addresses does <code>10.1.4.0/23</code> have?</p>
+      <ol class="check-o"><li>254</li><li>510</li><li>512</li><li>1,022</li></ol>
+      <div class="check-why">/23 leaves 9 host bits: 2⁹ = 512 addresses, minus the network and broadcast addresses, gives 510. The range is 10.1.4.0 to 10.1.5.255.</div>
+    </div>
+    <div class="check" data-id="w5-c4" data-answer="3">
+      <p class="check-q">Using the routing table above, where does a router send a packet for <code>10.20.200.9</code>?</p>
+      <ol class="check-o"><li>direct (the /24)</li><li>203.0.113.1 (the default route)</li><li>10.255.0.1 (the /8)</li><li>10.20.0.1 (the /16)</li></ol>
+      <div class="check-why">It matches /0, /8 and /16, but not 10.20.30.0/24 (the third byte is 200, not 30). The longest match is the /16.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=L6bDA5FK6gs" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/L6bDA5FK6gs/mqdefault.jpg" alt="" loading="lazy"><span><b>IP Addresses and the Internet</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 5.3 ===================== -->
+  <section class="lesson" id="w5-l3">
+    <header><span class="eyebrow">Lesson 5.3 · 50 min</span><h2>TCP and UDP</h2></header>
+
+    <p>IP delivers packets from host to host, but makes no promises: packets can be lost, duplicated, delayed or arrive out of order. The transport layer adds two things on top: <b>ports</b>, so traffic reaches the right program, and (for TCP) <b>reliability</b>.</p>
+
+    <h3>Ports</h3>
+    <p>A <b>port</b> is a 16-bit number (0–65535) identifying a program on a host. Servers listen on well-known ports: 22 for SSH, 53 for DNS, 80 for HTTP, 443 for HTTPS, 5432 for PostgreSQL. A client gets a random high <b>ephemeral port</b> for each connection. A TCP connection is identified by four values: source IP, source port, destination IP, destination port. That's how one server on port 443 can handle thousands of connections at once.</p>
+
+    <h3>TCP: a reliable byte stream</h3>
+    <p>TCP gives programs the illusion of a reliable, ordered pipe of bytes. Underneath, it does a lot of work:</p>
+    <ul>
+      <li><b>Connection setup</b>: the three-way handshake (SYN, SYN-ACK, ACK) agrees on starting sequence numbers. It costs one round trip before any data flows.</li>
+      <li><b>Sequence numbers</b>: every byte is numbered, so the receiver can put segments back in order and drop duplicates.</li>
+      <li><b>Acknowledgments and retransmission</b>: the receiver acknowledges what it has received; anything not acknowledged in time is sent again.</li>
+      <li><b>Flow control</b>: the receiver advertises how much buffer space it has (the window), so a fast sender can't overwhelm a slow receiver.</li>
+      <li><b>Congestion control</b>: TCP treats packet loss as a sign the network is overloaded and slows down, then speeds up gradually. This is what stops the internet from collapsing under its own traffic.</li>
+    </ul>
+
+    <div data-widget="tcp"></div>
+
+    <p>TCP has costs too. The handshake adds latency to every new connection (TLS adds more). And because delivery must be in order, one lost segment holds up everything behind it until it's retransmitted, even data that already arrived. That's <b>head-of-line blocking</b>.</p>
+    <p>One more property trips up almost everyone who writes socket code: <b>TCP is a stream of bytes, not of messages</b>. If you send "hello" and then "world", the receiver might get "helloworld" in one read, or "hel" then "loworld". TCP preserves the order of bytes, not the boundaries between your sends. Lesson 5.6 shows how to handle that.</p>
+
+    <h3>UDP: just send it</h3>
+    <p><b>UDP</b> adds ports and a checksum to IP, and nothing else: no connection, no retransmission, no ordering, no congestion control. Each send is one independent datagram that arrives whole or not at all. That suits:</p>
+    <ul>
+      <li><b>DNS</b>: one small question, one small answer; just ask again if it's lost.</li>
+      <li><b>Real-time audio, video and games</b>: a late packet is useless, so it's better to skip it than to wait for a retransmission.</li>
+      <li><b>Protocols that build their own reliability</b>: <b>QUIC</b>, which HTTP/3 uses, runs over UDP and builds encryption, reliability and multiple independent streams on top, avoiding TCP's head-of-line blocking and combining connection and TLS setup into one round trip.</li>
+    </ul>
+
+    <div class="check" data-id="w5-c5" data-answer="2">
+      <p class="check-q">A client sends two messages over TCP: <code>"PING"</code> then <code>"PONG"</code>. On the server, one <code>recv()</code> call returns <code>"PINGPO"</code>. Is something broken?</p>
+      <ol class="check-o"><li>Yes, data was corrupted</li><li>Yes, a packet was lost</li><li>No; TCP is a byte stream and doesn't preserve message boundaries, so the program must frame its own messages</li><li>No, but only because they were sent too quickly</li></ol>
+      <div class="check-why">This is normal TCP behavior, and it can happen at any speed. Use length prefixes or delimiters to mark where each message ends (lesson 5.6 and this week's project).</div>
+    </div>
+    <div class="check" data-id="w5-c6" data-answer="0">
+      <p class="check-q">Why does an online multiplayer game typically send player positions over UDP?</p>
+      <ol class="check-o"><li>A position update that arrives late is already out of date; it's better to drop it and use the next one than to stall waiting for a TCP retransmission</li><li>UDP is encrypted</li><li>UDP guarantees delivery</li><li>TCP can't carry numbers</li></ol>
+      <div class="check-why">Freshness matters more than completeness for real-time state. Games typically add their own lightweight reliability for the few messages that must arrive, like chat or purchases.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=IADOV8UZO34" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/IADOV8UZO34/mqdefault.jpg" alt="" loading="lazy"><span><b>TCP: Ensuring Your Data Gets There &amp; in the Right Order</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 5.4 ===================== -->
+  <section class="lesson" id="w5-l4">
+    <header><span class="eyebrow">Lesson 5.4 · 40 min</span><h2>DNS</h2></header>
+
+    <p>Before your browser can connect to <code>www.example.com</code>, it needs an IP address. The <b>Domain Name System</b> is a distributed, hierarchical, heavily cached database that answers that question billions of times a day.</p>
+
+    <h3>How a lookup works</h3>
+    <ol>
+      <li>Your program asks the operating system, which checks its own cache (and the <code>hosts</code> file).</li>
+      <li>If there's no cached answer, the OS asks a <b>recursive resolver</b>, usually run by your ISP or a public service like 1.1.1.1 or 8.8.8.8.</li>
+      <li>If the resolver has no cached answer either, it works down the hierarchy. A <b>root server</b> says "for <code>.com</code>, ask these servers". A <b>.com TLD server</b> says "for <code>example.com</code>, ask these nameservers". The domain's <b>authoritative nameserver</b> gives the actual answer.</li>
+      <li>The resolver caches the answer for its <b>TTL</b> (time to live, in seconds) and returns it.</li>
+    </ol>
+    <p>Caching at every level is what makes DNS fast. Most lookups are answered from a cache within a millisecond or two.</p>
+
+    <h3>Record types</h3>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Type</th><th>Maps a name to…</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>an IPv4 address</td><td><code>example.com → 93.184.215.14</code></td></tr>
+        <tr><td>AAAA</td><td>an IPv6 address</td><td><code>example.com → 2606:2800:21f:cb07:6820:80da:af6b:8b2c</code></td></tr>
+        <tr><td>CNAME</td><td>another name (an alias)</td><td><code>www.example.com → example.com</code></td></tr>
+        <tr><td>MX</td><td>the mail servers for the domain</td><td><code>example.com → 10 mail.example.com</code></td></tr>
+        <tr><td>TXT</td><td>arbitrary text (domain verification, email security policies)</td><td><code>"v=spf1 include:_spf.google.com ~all"</code></td></tr>
+        <tr><td>NS</td><td>the authoritative nameservers</td><td><code>example.com → a.iana-servers.net</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Reading dig output</h3>
+    <pre class="code"><code>$ dig www.example.com
+;; ANSWER SECTION:
+www.example.com.    3600   IN   CNAME   example.com.
+example.com.        268    IN   A       93.184.215.14
+                    └ TTL: seconds this answer may be cached
+;; Query time: 12 msec
+;; SERVER: 1.1.1.1#53(1.1.1.1)</code></pre>
+    <p>On Windows, <code>nslookup www.example.com</code> or PowerShell's <code>Resolve-DnsName</code> do the same job.</p>
+
+    <h3>TTLs and "DNS propagation"</h3>
+    <p>When you change a DNS record, resolvers keep serving the old answer until their cached copy expires. With a TTL of 86,400 (one day), some users may see the old address for a day. Before a planned migration, lower the TTL to a few minutes a day or two ahead, so the switch takes effect quickly. Low TTLs cost more lookups, so raise it again afterwards.</p>
+    <p>DNS traditionally runs over <b>UDP port 53</b>, unencrypted, so anyone on the path can see (and potentially tamper with) which names you look up. DNS over HTTPS and DNS over TLS encrypt it; DNSSEC adds signatures so answers can't be forged.</p>
+
+    <div class="check" data-id="w5-c7" data-answer="1">
+      <p class="check-q">You moved your website to a new server and updated its A record an hour ago. Some users still reach the old server. The record's TTL was 86400. What's going on?</p>
+      <ol class="check-o"><li>The new server is broken</li><li>Resolvers cached the old answer and can keep using it for up to 24 hours (86,400 seconds)</li><li>DNS changes always take a week</li><li>The users have the wrong browser</li></ol>
+      <div class="check-why">Lower the TTL well before a planned change. Once caches expire, everyone gets the new address.</div>
+    </div>
+    <div class="check" data-id="w5-c8" data-answer="3">
+      <p class="check-q">Which record type lets <code>www.shop.com</code> point at <code>shop-prod.cdnprovider.net</code>, so the CDN can change its IP addresses without you updating anything?</p>
+      <ol class="check-o"><li>A</li><li>MX</li><li>TXT</li><li>CNAME</li></ol>
+      <div class="check-why">A CNAME is an alias to another name; the resolver then looks up that name's own records, which the CDN controls.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=uOfonONtIuk" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/uOfonONtIuk/mqdefault.jpg" alt="" loading="lazy"><span><b>How DNS Works</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 5.5 ===================== -->
+  <section class="lesson" id="w5-l5">
+    <header><span class="eyebrow">Lesson 5.5 · 40 min</span><h2>Getting onto the internet: DHCP, ARP, NAT and firewalls</h2></header>
+
+    <p>When you open your laptop on a home network, several protocols run before you can load a single page.</p>
+
+    <h3>DHCP: getting an address</h3>
+    <p>Your laptop has no IP address yet, so it broadcasts a request. The router's <b>DHCP</b> server replies with an address (say 192.168.1.20), the subnet mask, the default gateway (192.168.1.1) and the DNS servers to use. The address is a <b>lease</b> that expires and gets renewed, which is why your laptop's address can change between days.</p>
+
+    <h3>ARP: from IP address to MAC address</h3>
+    <p>To send a frame to the router, your laptop needs the router's MAC address. It broadcasts an <b>ARP</b> request ("who has 192.168.1.1?"), and the router answers with its MAC. The answer is cached. (IPv6 uses a similar mechanism called neighbor discovery.)</p>
+
+    <h3>NAT: sharing one public address</h3>
+    <p>Your ISP gives your home one public IPv4 address, but you have a dozen devices. <b>Network address translation</b> on the router solves this. When your laptop (192.168.1.20, port 51234) connects to a web server, the router rewrites the packet's source to its own public address and a port it chooses, and remembers the mapping:</p>
+    <pre class="code"><code>Inside                     Router's NAT table                      Outside
+192.168.1.20:51234  →  public 203.0.113.7:40001 ↔ 192.168.1.20:51234  →  93.184.215.14:443
+192.168.1.31:51234  →  public 203.0.113.7:40002 ↔ 192.168.1.31:51234  →  93.184.215.14:443</code></pre>
+    <p>Replies come back to 203.0.113.7:40001, and the router translates them back to your laptop. The side effect is important: <b>unsolicited incoming connections have no mapping, so they're dropped</b>. Nobody on the internet can connect to a server running on your laptop unless you set up <b>port forwarding</b>. That's also why peer-to-peer apps and video calls need tricks (STUN, TURN, hole punching) to connect two devices that are both behind NAT. Cloud networks do the same thing: private instances reach the internet through a NAT gateway.</p>
+
+    <h3>Firewalls</h3>
+    <p>A <b>firewall</b> allows or blocks traffic based on rules, typically about addresses, ports and direction: "allow incoming TCP 443 from anywhere; allow 22 only from the office; block everything else". <b>Stateful</b> firewalls also track connections, so replies to connections you started are allowed back automatically. Cloud "security groups" are firewalls attached to each instance. A useful habit when a connection fails: check whether it's being <b>refused</b> (something answered "nothing is listening on that port") or <b>timing out</b> (no answer at all, often a firewall silently dropping packets).</p>
+
+    <h3>Following a packet's path</h3>
+    <p>Every IP packet has a <b>TTL</b> field that each router decrements; a router that brings it to zero drops the packet and sends back an ICMP "time exceeded" message. <code>traceroute</code> (<code>tracert</code> on Windows) uses this deliberately: it sends packets with TTL 1, 2, 3 and so on, and each router along the path reveals itself in turn.</p>
+
+    <div class="check" data-id="w5-c9" data-answer="2">
+      <p class="check-q">You run a web server on port 8000 on your laptop at home. A friend elsewhere can't connect using your public IP. What's the most likely reason?</p>
+      <ol class="check-o"><li>Port 8000 is reserved</li><li>Your laptop's DHCP lease expired</li><li>Your router does NAT, and with no port forwarding rule, unsolicited incoming connections don't map to any device, so they're dropped</li><li>Public IPs can't receive traffic</li></ol>
+      <div class="check-why">Outbound connections create NAT mappings; inbound ones need explicit port forwarding (or a tunnel service). Be careful: forwarding exposes your laptop to the internet.</div>
+    </div>
+    <div class="check" data-id="w5-c10" data-answer="0">
+      <p class="check-q">Connecting to a database fails instantly with "connection refused" on one server, and hangs for 30 seconds before timing out on another. What's the most likely difference?</p>
+      <ol class="check-o"><li>Refused: the host is reachable but nothing is listening on that port. Timeout: packets are being silently dropped, often by a firewall, or the host is unreachable</li><li>They mean the same thing</li><li>Refused means the password was wrong</li><li>Timeout means the database is overloaded, never a network problem</li></ol>
+      <div class="check-why">Telling these two failures apart quickly narrows a network problem down: wrong port or service down, versus firewall or routing.</div>
+    </div>
+
+    <div class="videos">
+      <a class="video" href="https://www.youtube.com/watch?v=01ajHxPLxAw" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/01ajHxPLxAw/mqdefault.jpg" alt="" loading="lazy"><span><b>Network Address Translation</b><small>Computerphile</small></span></a>
+    </div>
+  </section>
+
+  <!-- ===================== Lesson 5.6 ===================== -->
+  <section class="lesson" id="w5-l6">
+    <header><span class="eyebrow">Lesson 5.6 · 45 min</span><h2>Sockets and debugging</h2></header>
+
+    <h3>The sockets API</h3>
+    <p>Almost every networked program, in every language, sits on the same <b>Berkeley sockets</b> API. A socket is a file descriptor (lesson 4.4) for a network endpoint.</p>
+    <pre class="code"><code>import socket
+
+<span class="c"># Server</span>
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   <span class="c"># IPv4, TCP</span>
+server.bind(("127.0.0.1", 9000))      <span class="c"># claim an address and port</span>
+server.listen()                        <span class="c"># start accepting connections</span>
+conn, addr = server.accept()           <span class="c"># blocks until a client connects</span>
+data = conn.recv(4096)                 <span class="c"># up to 4096 bytes: maybe fewer!</span>
+conn.sendall(b"echo: " + data)         <span class="c"># sendall loops until everything is sent</span>
+conn.close()
+
+<span class="c"># Client</span>
+client = socket.create_connection(("127.0.0.1", 9000), timeout=5)
+client.sendall(b"hello")
+print(client.recv(4096))</code></pre>
+    <p>A few things that catch people out:</p>
+    <ul>
+      <li><code>accept()</code> returns a <b>new</b> socket for each client; the listening socket keeps waiting for more. To serve several clients at once, handle each connection in its own thread (week 4), or use <code>selectors</code> or <code>asyncio</code>.</li>
+      <li><code>recv(4096)</code> returns <b>whatever has arrived</b>, from 1 byte up to 4,096. It returns an empty bytes object only when the other side has closed the connection.</li>
+      <li><code>send()</code> may send only part of the data; <code>sendall()</code> keeps going until it's all sent.</li>
+      <li>Always set <b>timeouts</b>. A socket without one can block forever if the other side disappears.</li>
+      <li>Binding to <code>127.0.0.1</code> accepts only local connections. Binding to <code>0.0.0.0</code> accepts them from any network interface, which is what you want on a server and usually not on your laptop.</li>
+    </ul>
+
+    <h3>Framing messages</h3>
+    <p>Because TCP is a byte stream, your protocol must mark where each message ends. Two common approaches:</p>
+    <ul>
+      <li><b>Delimiters</b>: end each message with a newline (or <code>\r\n</code> in HTTP and SMTP headers). Simple, but the delimiter can't appear inside a message unless you escape it.</li>
+      <li><b>Length prefixes</b>: send a fixed-size header giving the message length, then exactly that many bytes. Works for any binary data.</li>
+    </ul>
+    <pre class="code"><code>import struct
+
+def send_msg(sock, payload: bytes):
+    sock.sendall(struct.pack("!I", len(payload)) + payload)   <span class="c"># 4-byte big-endian length</span>
+
+def recv_exact(sock, n):
+    buf = b""
+    while len(buf) &lt; n:
+        chunk = sock.recv(n - len(buf))
+        if not chunk:
+            raise ConnectionError("peer closed the connection")
+        buf += chunk
+    return buf
+
+def recv_msg(sock):
+    (length,) = struct.unpack("!I", recv_exact(sock, 4))
+    return recv_exact(sock, length)</code></pre>
+    <p>The <code>!</code> in the struct format means <b>network byte order</b>, which is big-endian. Multi-byte numbers in protocol headers are conventionally sent most significant byte first.</p>
+
+    <h3>A network debugging toolkit</h3>
+    <p>When something "can't connect", work up the layers and rule things out:</p>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Question</th><th>Tool (Linux / macOS)</th><th>Windows</th></tr></thead>
+      <tbody>
+        <tr><td>Does the name resolve?</td><td><code>dig name</code></td><td><code>nslookup name</code>, <code>Resolve-DnsName</code></td></tr>
+        <tr><td>Is the host reachable at all?</td><td><code>ping host</code> (ICMP, often blocked)</td><td><code>ping host</code></td></tr>
+        <tr><td>Where along the path does it stop?</td><td><code>traceroute host</code>, <code>mtr host</code></td><td><code>tracert host</code></td></tr>
+        <tr><td>Is the port open?</td><td><code>nc -vz host 443</code></td><td><code>Test-NetConnection host -Port 443</code></td></tr>
+        <tr><td>What does the server actually say?</td><td><code>curl -v https://host/path</code></td><td><code>curl -v …</code> (built in)</td></tr>
+        <tr><td>What's listening on my machine?</td><td><code>ss -tlnp</code>, <code>lsof -i</code></td><td><code>netstat -ano</code></td></tr>
+        <tr><td>What's actually on the wire?</td><td><code>tcpdump</code>, Wireshark</td><td>Wireshark</td></tr>
+      </tbody>
+    </table></div>
+    <p>The order matters: it's no use debugging TLS certificates if DNS is returning the wrong address, or blaming the application when a firewall is dropping packets.</p>
+
+    <div class="check" data-id="w5-c11" data-answer="1">
+      <p class="check-q">Your server code does <code>data = conn.recv(1024)</code> and assumes <code>data</code> is one complete JSON message. It works locally but fails intermittently in production. Why?</p>
+      <ol class="check-o"><li>JSON can't be sent over sockets</li><li>recv returns whatever bytes have arrived: part of a message, or several messages run together, especially over real networks</li><li>1024 is too small for any JSON</li><li>Production servers use UDP</li></ol>
+      <div class="check-why">On localhost, small messages usually arrive in one piece, which hides the bug. Frame your messages and loop until you have a complete one.</div>
+    </div>
+    <div class="check" data-id="w5-c12" data-answer="3">
+      <p class="check-q">What does <code>recv()</code> returning an empty bytes object (<code>b""</code>) mean on a TCP socket?</p>
+      <ol class="check-o"><li>No data has arrived yet; try again</li><li>The message was empty</li><li>A timeout occurred</li><li>The other side closed the connection</li></ol>
+      <div class="check-why">A blocking recv waits for data, and a timeout raises an exception. Only an orderly close produces an empty result, so loops must check for it or they'll spin forever.</div>
+    </div>
+    <div class="check" data-id="w5-c13" data-answer="0">
+      <p class="check-q">A service binds to <code>127.0.0.1:5000</code>. Another machine on the same network can't reach it, although the machine itself can. Why?</p>
+      <ol class="check-o"><li>127.0.0.1 is the loopback interface, which only accepts connections from the same machine; binding to 0.0.0.0 (or the machine's LAN address) would accept remote connections</li><li>Port 5000 is blocked by all routers</li><li>127.0.0.1 is a public address</li><li>The other machine needs IPv6</li></ol>
+      <div class="check-why">This is a very common "works on my machine" network issue, especially with dev servers and containers. Binding only to loopback is the safe default for local development.</div>
+    </div>
+    <div class="check" data-id="w5-c14" data-answer="2">
+      <p class="check-q">An API call fails. <code>dig api.example.com</code> returns the correct IP, <code>Test-NetConnection</code> to port 443 succeeds, but <code>curl -v</code> shows a <code>503 Service Unavailable</code> response. Where is the problem?</p>
+      <ol class="check-o"><li>DNS</li><li>A firewall</li><li>At the application layer: the network path works and the server answered, but the service behind it reported it's unavailable</li><li>Your network card</li></ol>
+      <div class="check-why">Working up the layers rules out DNS and connectivity, so the 503 points at the service itself (overloaded, deploying, or a load balancer with no healthy backends).</div>
+    </div>
+
+    <div class="note-box"><strong>Week 5 in one paragraph</strong><p>Data is wrapped in headers layer by layer: MAC addresses for one hop, IP addresses end to end, ports for the program, then the application's own protocol. Subnet masks split addresses into network and host parts, and routers forward by longest prefix match. TCP turns lossy packets into a reliable, ordered byte stream (but not messages, so you frame them yourself); UDP trades reliability for speed. DNS turns names into addresses through a cached hierarchy governed by TTLs. DHCP, ARP and NAT get your laptop online, and NAT plus firewalls decide which connections are allowed in. When things break, work up the layers.</p></div>
+  </section>
+
+  <!-- ===================== Project ===================== -->
+  <section class="project" id="project">
+    <span class="eyebrow">Mini-project · 4–5 hours</span>
+    <h2>Network toolkit: subnets, a chat server and DNS</h2>
+    <p>Build four small networking tools: a subnet calculator with longest-prefix routing, a length-prefixed message framer that copes with partial reads, a multi-client TCP chat server and client, and a DNS packet builder and parser that handles name compression. All tests run over localhost or on byte strings, so no internet access is needed.</p>
+    <p><b>Where:</b> <code>syllabus/projects/week-05-nettools/</code>. Read its <code>README.md</code> first.</p>
+    <pre class="code"><code>cd syllabus/projects/week-05-nettools
+python -m unittest -v
+python chat_demo.py server      <span class="c"># then, in two more terminals:</span>
+python chat_demo.py client alice
+python chat_demo.py client bob</code></pre>
+    <p><b>Deliverables</b></p>
+    <ol class="deliverables">
+      <li>All functions and classes in <code>nettools.py</code> implemented without the shortcuts listed in the README</li>
+      <li>All tests passing, and the chat demo working across three terminals</li>
+      <li>Short answers to the questions at the bottom of the README</li>
+      <li>A commit with your work, plus your status and notes below</li>
+    </ol>
+    <div id="project-tracker"></div>
+  </section>
+
+  <section class="quiz-block" id="quiz">
+    <span class="eyebrow">End-of-week quiz · 30 minutes</span>
+    <h2>Week 5 quiz</h2>
+    <p>15 questions covering all six lessons. Score 70% to pass. Take it after the project, without notes.</p>
+    <div class="row"><a class="btn primary" href="../quizzes/week-05.html">Open the quiz</a><span class="small muted">Status: <span id="quiz-status">checking…</span></span></div>
+  </section>
+
+  <section class="reflection" id="reflection">
+    <span class="eyebrow">Self-rating and reflection · 15 minutes</span>
+    <h2>How did this week go?</h2>
+    <p>Rate yourself on each objective, then note what clicked and what didn't. This goes into <code>results/REPORT.md</code>.</p>
+    <div id="reflection-form"></div>
+  </section>
+
+  <footer class="foot"><span class="sync-slot"></span><div class="row"><a class="btn ghost" href="week-04.html">← Week 4</a><a class="btn" href="week-06.html">Next: Week 6 →</a></div></footer>
+</div>
+<script src="../data/plan.js"></script>
+<script>window.SYLLABUS_WEEK = 5;</script>
+<script src="../../assets/syllabus.js"></script>
+</body>
+</html>
